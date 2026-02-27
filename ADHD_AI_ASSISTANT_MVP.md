@@ -1,6 +1,6 @@
 # ADHD AI Assistant — MVP Documentation
 
-> **Last updated:** 2026-02-26
+> **Last updated:** 2026-02-27
 > **Repository:** `adhd-ai-assistant`
 > **Package manager:** pnpm 10.29.2 (monorepo workspaces)
 > **Branch strategy:** feature branches → `main` via PR
@@ -16,8 +16,9 @@
 5. [API Endpoints](#5-api-endpoints)
 6. [Environment Variables](#6-environment-variables)
 7. [Scripts & Commands](#7-scripts--commands)
-8. [Branches & Feature Log](#8-branches--feature-log)
-9. [MVP Roadmap](#9-mvp-roadmap)
+8. [Infrastructure Setup Guides](#8-infrastructure-setup-guides)
+9. [Branches & Feature Log](#9-branches--feature-log)
+10. [MVP Roadmap](#10-mvp-roadmap)
 
 ---
 
@@ -25,7 +26,7 @@
 
 An AI-powered assistant designed specifically for people with ADHD. The system provides onboarding (capturing ADHD subtype, personal struggles, sensory triggers, goals), conversational chat with an AI assistant, and a knowledge base for ADHD-related content.
 
-**Current state:** Backend API is scaffolded and functional with PostgreSQL. AI chat integration is stubbed and ready for provider hookup.
+**Current state:** Backend API is scaffolded and functional with Supabase Auth (JWT), Supabase-hosted PostgreSQL, and Railway deployment configuration. AI chat integration is stubbed and ready for provider hookup.
 
 ---
 
@@ -37,12 +38,15 @@ An AI-powered assistant designed specifically for people with ADHD. The system p
 | **Language** | TypeScript | 5.7+ |
 | **API Framework** | Fastify | 5.2 |
 | **ORM** | Prisma | 6.4 |
-| **Database** | PostgreSQL | 14+ |
+| **Database** | PostgreSQL (Supabase-hosted) | 15+ |
+| **Authentication** | Supabase Auth (JWT) | 2.49 |
 | **Validation** | Zod | 3.24 |
 | **CORS** | @fastify/cors | 11.0 |
 | **Logging** | Pino (via Fastify) + pino-pretty | — |
 | **Dev runner** | tsx (watch mode) | 4.19 |
 | **Monorepo** | pnpm workspaces | 10.29 |
+| **Deployment** | Railway (Docker) | — |
+| **Containerization** | Docker (multi-stage) | — |
 
 ---
 
@@ -53,6 +57,9 @@ adhd-ai-assistant/
 ├── package.json                  # Root workspace config
 ├── pnpm-workspace.yaml           # Declares apps/* as workspaces
 ├── pnpm-lock.yaml
+├── Dockerfile                    # Multi-stage build for Railway
+├── .dockerignore                 # Docker build exclusions
+├── railway.toml                  # Railway deployment config
 │
 ├── apps/
 │   └── api/                      # Backend API server
@@ -67,11 +74,12 @@ adhd-ai-assistant/
 │       └── src/
 │           ├── server.ts         # Entry point — Fastify bootstrap
 │           ├── plugins/
-│           │   └── prisma.ts     # Prisma client lifecycle plugin
+│           │   ├── prisma.ts     # Prisma client lifecycle plugin
+│           │   └── supabase.ts   # Supabase Auth + authenticate preHandler
 │           └── routes/
-│               ├── health.ts     # GET /health
-│               ├── onboarding.ts # POST /api/onboarding
-│               └── chat.ts       # POST /api/chat
+│               ├── health.ts     # GET /health (public)
+│               ├── onboarding.ts # POST /api/onboarding (auth required)
+│               └── chat.ts       # POST /api/chat (auth required)
 │
 └── .claude/
     └── launch.json               # Dev server launch config
@@ -84,10 +92,15 @@ adhd-ai-assistant/
 ### Entity Relationship Diagram
 
 ```
+  Supabase auth.users
+         │
+         │ id (UUID) ──────────┐
+         │                     │
+         ▼                     ▼
 ┌──────────────┐       1:1       ┌──────────────────┐
 │     User     │────────────────▶│   UserProfile     │
 │              │                 │                    │
-│ id (uuid)    │                 │ id (uuid)          │
+│ id (from JWT)│                 │ id (uuid)          │
 │ email        │                 │ userId (FK)        │
 │ createdAt    │                 │ adhdType           │
 │ updatedAt    │                 │ struggles[]        │
@@ -124,8 +137,8 @@ adhd-ai-assistant/
 #### User
 | Field | Type | Notes |
 |-------|------|-------|
-| `id` | UUID | Primary key, auto-generated |
-| `email` | String | Unique |
+| `id` | UUID | Primary key — **set from Supabase Auth JWT `sub` claim** (no auto-generate) |
+| `email` | String | Unique, from JWT |
 | `createdAt` | DateTime | Auto-set |
 | `updatedAt` | DateTime | Auto-updated |
 | **Relations** | `profile` (1:1 UserProfile), `conversations` (1:N) | Cascade delete |
@@ -185,7 +198,27 @@ adhd-ai-assistant/
 
 ## 5. API Endpoints
 
-**Base URL:** `http://localhost:3001`
+**Base URL:** `http://localhost:3001` (dev) / `https://YOUR-DOMAIN.up.railway.app` (prod)
+
+### Authentication
+
+Protected routes require a Supabase JWT in the `Authorization` header:
+
+```
+Authorization: Bearer <supabase-access-token>
+```
+
+Unauthenticated requests to protected routes return:
+```json
+{ "error": "Missing or invalid authorization header" }
+```
+
+Invalid/expired tokens return:
+```json
+{ "error": "Invalid or expired token" }
+```
+
+---
 
 ### GET /health
 
@@ -193,7 +226,7 @@ Health check with database connectivity verification.
 
 | | |
 |---|---|
-| **Auth** | None |
+| **Auth** | None (public) |
 | **Success** | `200` |
 | **Failure** | `503` (database unreachable) |
 
@@ -217,19 +250,18 @@ Health check with database connectivity verification.
 
 ### POST /api/onboarding
 
-Creates a new user and their ADHD profile. Idempotent for user creation — if the email exists but onboarding is incomplete, it completes it.
+Creates a new user (linked to Supabase Auth) and their ADHD profile. User identity comes from the JWT — no email in request body.
 
 | | |
 |---|---|
-| **Auth** | None (MVP) |
+| **Auth** | Bearer token required |
 | **Content-Type** | `application/json` |
 | **Success** | `201` |
-| **Errors** | `400` (validation), `409` (already onboarded) |
+| **Errors** | `400` (validation), `401` (unauthenticated), `409` (already onboarded) |
 
 **Request Body:**
 ```json
 {
-  "email": "user@example.com",
   "adhdType": "combined",
   "struggles": ["focus", "time management"],
   "sensoryTriggers": ["loud noises"],
@@ -239,11 +271,10 @@ Creates a new user and their ADHD profile. Idempotent for user creation — if t
 
 | Field | Type | Required | Constraints |
 |-------|------|----------|-------------|
-| `email` | string | Yes | Valid email |
 | `adhdType` | string | Yes | `"inattentive"` \| `"hyperactive"` \| `"combined"` |
-| `struggles` | string[] | Yes | 1–20 items, each non-empty |
-| `sensoryTriggers` | string[] | No | 0–20 items, defaults to `[]` |
-| `goals` | string[] | Yes | 1–20 items, each non-empty |
+| `struggles` | string[] | Yes | 1-20 items, each non-empty |
+| `sensoryTriggers` | string[] | No | 0-20 items, defaults to `[]` |
+| `goals` | string[] | Yes | 1-20 items, each non-empty |
 
 **Response (201):**
 ```json
@@ -269,7 +300,6 @@ Creates a new user and their ADHD profile. Idempotent for user creation — if t
 {
   "error": "Validation failed",
   "details": {
-    "email": ["Invalid email"],
     "adhdType": ["Required"],
     "struggles": ["Required"],
     "goals": ["Required"]
@@ -288,19 +318,18 @@ Creates a new user and their ADHD profile. Idempotent for user creation — if t
 
 ### POST /api/chat
 
-Sends a message and receives an AI assistant response. Creates a new conversation if `conversationId` is not provided.
+Sends a message and receives an AI assistant response. User identity comes from JWT. Creates a new conversation if `conversationId` is not provided.
 
 | | |
 |---|---|
-| **Auth** | None (MVP) |
+| **Auth** | Bearer token required |
 | **Content-Type** | `application/json` |
 | **Success** | `200` |
-| **Errors** | `400` (validation), `404` (user/conversation not found) |
+| **Errors** | `400` (validation), `401` (unauthenticated), `403` (not onboarded), `404` (conversation not found) |
 
 **Request Body:**
 ```json
 {
-  "userId": "fda99d35-fc86-477b-8734-11f6688330d6",
   "message": "I need help focusing today",
   "conversationId": "cc25162f-836e-4202-be15-a83aee2f8dcb"
 }
@@ -308,8 +337,7 @@ Sends a message and receives an AI assistant response. Creates a new conversatio
 
 | Field | Type | Required | Constraints |
 |-------|------|----------|-------------|
-| `userId` | string | Yes | Valid UUID |
-| `message` | string | Yes | 1–5000 characters |
+| `message` | string | Yes | 1-5000 characters |
 | `conversationId` | string | No | Valid UUID, omit to start new conversation |
 
 **Response (200):**
@@ -331,10 +359,10 @@ Sends a message and receives an AI assistant response. Creates a new conversatio
 }
 ```
 
-**Response (404):**
+**Response (403):**
 ```json
 {
-  "error": "User not found"
+  "error": "User has not completed onboarding"
 }
 ```
 
@@ -348,18 +376,34 @@ Located in `apps/api/.env` (git-ignored).
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | Yes | — | PostgreSQL connection string |
+| `DATABASE_URL` | Yes | — | PostgreSQL connection string (Supabase pooled, port 6543) |
+| `DIRECT_URL` | Yes | — | PostgreSQL direct connection (Supabase, port 5432, for migrations) |
+| `SUPABASE_URL` | Yes | — | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Yes | — | Supabase anonymous/public key |
 | `NODE_ENV` | No | `development` | `development` \| `production` \| `test` |
-| `PORT` | No | `3001` | API server port |
+| `PORT` | No | `3001` | API server port (Railway auto-injects) |
 | `HOST` | No | `0.0.0.0` | API server bind address |
 | `CORS_ORIGIN` | No | `http://localhost:3000` | Allowed CORS origin |
 
-**Example `.env`:**
+**Example `.env` (local dev):**
 ```env
 DATABASE_URL="postgresql://username@localhost:5432/adhd_ai_assistant_dev"
+DIRECT_URL="postgresql://username@localhost:5432/adhd_ai_assistant_dev"
+SUPABASE_URL="https://your-project-ref.supabase.co"
+SUPABASE_ANON_KEY="eyJ..."
 NODE_ENV="development"
 PORT=3001
 CORS_ORIGIN="http://localhost:3000"
+```
+
+**Example `.env` (production / Railway):**
+```env
+DATABASE_URL="postgresql://postgres.xxxx:password@aws-0-region.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.xxxx:password@aws-0-region.pooler.supabase.com:5432/postgres"
+SUPABASE_URL="https://xxxx.supabase.co"
+SUPABASE_ANON_KEY="eyJ..."
+NODE_ENV="production"
+CORS_ORIGIN="https://your-frontend.com"
 ```
 
 ---
@@ -384,13 +428,20 @@ CORS_ORIGIN="http://localhost:3000"
 | `pnpm prisma:migrate` | Create/apply migrations |
 | `pnpm prisma:studio` | Open Prisma Studio GUI |
 
+### Docker
+
+| Command | Description |
+|---------|-------------|
+| `docker build -t adhd-api .` | Build production image |
+| `docker run -p 3001:3001 --env-file apps/api/.env adhd-api` | Run locally |
+
 ### First-time setup
 
 ```bash
 # 1. Install dependencies
 pnpm install
 
-# 2. Create apps/api/.env with DATABASE_URL
+# 2. Create apps/api/.env (see Environment Variables section)
 
 # 3. Run database migrations
 pnpm --filter @adhd-ai-assistant/api prisma:migrate
@@ -401,7 +452,103 @@ pnpm dev:api
 
 ---
 
-## 8. Branches & Feature Log
+## 8. Infrastructure Setup Guides
+
+### 8.1 Supabase Setup (supabase.com)
+
+#### Step 1: Create account and project
+1. Go to **supabase.com** → **Sign in with GitHub**
+2. Click **"New Project"**
+3. Fill in:
+   - **Name:** `adhd-ai-assistant`
+   - **Database password:** generate a strong one — **save it somewhere safe**
+   - **Region:** pick closest to your users (e.g. `us-east-1`)
+4. Click **"Create new project"** — wait ~2 minutes for provisioning
+
+#### Step 2: Get database connection strings
+1. Go to **Settings → Database**
+2. Under **"Connection pooling"** section:
+   - Copy the **Transaction mode URI** (port `6543`) → this is your `DATABASE_URL`
+   - **Append `?pgbouncer=true`** to the end of the URL
+3. Copy the **Direct connection URI** (port `5432`) → this is your `DIRECT_URL`
+4. In both URLs, replace `[YOUR-PASSWORD]` with the password from Step 1
+
+#### Step 3: Get API keys
+1. Go to **Settings → API**
+2. Copy **Project URL** → this is your `SUPABASE_URL`
+3. Copy **anon / public** key → this is your `SUPABASE_ANON_KEY`
+
+#### Step 4: Configure authentication
+1. Go to **Authentication → Providers**
+   - **Email** is enabled by default (email + password signup/login)
+   - Optionally toggle on OAuth providers (Google, GitHub, etc.)
+2. Go to **Authentication → Settings**
+   - For development: disable **"Confirm email"** (re-enable for production)
+
+#### Step 5: Set redirect URLs
+1. Go to **Authentication → URL Configuration**
+2. **Site URL:** `http://localhost:3000` (update to production URL later)
+3. **Redirect URLs:** add `http://localhost:3000/**`
+
+#### Step 6: Apply database migrations
+After configuring `.env` with Supabase connection strings:
+```bash
+cd apps/api && npx prisma migrate deploy
+```
+
+---
+
+### 8.2 Railway Setup (railway.com)
+
+#### Step 1: Create account and project
+1. Go to **railway.com** → **Sign in with GitHub**
+2. Click **"New Project"** → **"Deploy from GitHub repo"**
+3. Select the `adhd-ai-assistant` repository
+4. Railway auto-detects the `Dockerfile`
+
+#### Step 2: Configure environment variables
+1. Click on the service → **Variables** tab
+2. Add each variable:
+
+| Variable | Where to get the value |
+|----------|----------------------|
+| `DATABASE_URL` | Supabase → Settings → Database → Pooled URI (port 6543) + `?pgbouncer=true` |
+| `DIRECT_URL` | Supabase → Settings → Database → Direct URI (port 5432) |
+| `SUPABASE_URL` | Supabase → Settings → API → Project URL |
+| `SUPABASE_ANON_KEY` | Supabase → Settings → API → anon public key |
+| `NODE_ENV` | `production` |
+| `CORS_ORIGIN` | Your frontend production URL |
+
+> `PORT` is auto-injected by Railway — do **not** set it manually.
+
+#### Step 3: Configure deployment
+1. Click on the service → **Settings** tab
+2. Railway reads `railway.toml` automatically for:
+   - Docker build path
+   - Health check at `/health`
+   - Restart policy (on failure, max 3 retries)
+3. Under **Networking** → click **"Generate Domain"** to get a public URL
+4. Copy the generated URL (e.g. `adhd-api-production.up.railway.app`)
+
+#### Step 4: Enable CI/CD auto-deploy
+1. In **Settings → Source**:
+   - **Root directory:** `/` (repo root, since Dockerfile is there)
+   - **Watch paths:** leave blank (deploys on any push)
+2. In **Settings → Triggers**:
+   - **Branch:** `main`
+3. CI/CD flow: `git push to main` → Docker build → health check → deploy
+
+#### Step 5: Verify deployment
+1. Wait for build to complete (check **Deployments** tab)
+2. Hit: `https://YOUR-DOMAIN.up.railway.app/health`
+3. Expected response:
+   ```json
+   { "status": "ok", "timestamp": "..." }
+   ```
+
+---
+
+## 9. Branches & Feature Log
 
 ### `main`
 > Stable branch. All features merge here via PR.
@@ -439,12 +586,28 @@ pnpm dev:api
 
 ---
 
-### `<branch-name>` → PR #
-> **Feature: _______**
+### `supabase-railway-setup` → PR pending
+> **Feature: Supabase Auth + Supabase PostgreSQL + Railway Deployment**
 
 **Changes:**
-- [ ] _Change description_
-- [ ] _Change description_
+- [x] Added Supabase Auth (JWT) via `@supabase/supabase-js`
+  - [x] Created `plugins/supabase.ts` — authenticate preHandler
+  - [x] Bearer token verification via `supabase.auth.getUser()`
+  - [x] Type-safe `request.user` with `{ id, email }` from JWT
+- [x] Protected routes with auth middleware
+  - [x] `POST /api/onboarding` — now requires Bearer token, email from JWT
+  - [x] `POST /api/chat` — now requires Bearer token, userId from JWT
+  - [x] `GET /health` — remains public
+- [x] Updated Prisma schema for Supabase PostgreSQL
+  - [x] Added `directUrl` for pgbouncer connection pooling
+  - [x] User.id now set from Supabase auth UUID (removed auto-generate)
+- [x] Railway deployment configuration
+  - [x] Multi-stage `Dockerfile` (build + production)
+  - [x] `railway.toml` with health check + restart policy
+  - [x] `.dockerignore`
+- [x] Updated environment variables
+  - [x] Added `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+- [x] Updated MVP documentation with infrastructure setup guides
 
 ---
 
@@ -457,7 +620,7 @@ pnpm dev:api
 
 ---
 
-## 9. MVP Roadmap
+## 10. MVP Roadmap
 
 ### Phase 1: Backend Foundation ✅
 - [x] Fastify server with TypeScript
@@ -481,9 +644,9 @@ pnpm dev:api
 - [ ] Search/filter endpoints (by category, tags)
 - [ ] Seed initial ADHD knowledge content
 
-### Phase 4: Authentication & Security
-- [ ] Auth provider integration (e.g. Clerk, Auth.js, Supabase Auth)
-- [ ] JWT/session middleware on protected routes
+### Phase 4: Authentication & Security ✅
+- [x] Supabase Auth integration (JWT)
+- [x] Authentication middleware on protected routes
 - [ ] Rate limiting per user
 - [ ] Input sanitization
 
@@ -494,10 +657,10 @@ pnpm dev:api
 - [ ] Blog/knowledge base pages
 - [ ] Responsive mobile-first design
 
-### Phase 6: Production Readiness
+### Phase 6: Production Readiness (partial ✅)
 - [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Docker Compose for local dev
-- [ ] Deployment config (Railway / Vercel / Fly.io)
+- [x] Docker containerization (multi-stage Dockerfile)
+- [x] Railway deployment config with health checks
 - [ ] Monitoring & alerting
 - [ ] Database backups
 - [ ] API documentation (Swagger/OpenAPI)
