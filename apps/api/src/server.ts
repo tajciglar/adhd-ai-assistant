@@ -1,6 +1,7 @@
 import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import prismaPlugin from "./plugins/prisma.js";
+import supabasePlugin from "./plugins/supabase.js";
 import healthRoutes from "./routes/health.js";
 import onboardingRoutes from "./routes/onboarding.js";
 import chatRoutes from "./routes/chat.js";
@@ -33,6 +34,7 @@ async function buildServer() {
   });
 
   await server.register(prismaPlugin);
+  await server.register(supabasePlugin);
 
   await server.register(healthRoutes);
   await server.register(onboardingRoutes, { prefix: "/api" });
