@@ -21,9 +21,6 @@ COPY apps/api/ ./apps/api/
 # Generate Prisma client
 RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
 
-# Stage generated Prisma client to a known path for the production stage
-RUN cp -r /app/node_modules/.prisma /app/generated-prisma
-
 # Build TypeScript
 RUN pnpm --filter @adhd-ai-assistant/api build
 
@@ -43,11 +40,11 @@ COPY apps/api/package.json ./apps/api/
 # Install all dependencies (prisma CLI needed for migrate deploy at startup)
 RUN pnpm install --frozen-lockfile
 
-# Copy Prisma schema and migrations (needed for prisma migrate deploy)
+# Copy Prisma schema and migrations (needed for prisma migrate deploy + generate)
 COPY --from=base /app/apps/api/prisma ./apps/api/prisma
 
-# Copy generated Prisma client from the staged known path
-COPY --from=base /app/generated-prisma /app/node_modules/.prisma
+# Generate Prisma client in production stage so it lands in pnpm's resolved paths
+RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
 
 # Copy built JS
 COPY --from=base /app/apps/api/dist ./apps/api/dist
