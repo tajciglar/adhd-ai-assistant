@@ -40,11 +40,10 @@ COPY apps/api/package.json ./apps/api/
 # Install all dependencies (prisma CLI needed for migrate deploy at startup)
 RUN pnpm install --frozen-lockfile
 
-# Copy Prisma schema and migrations (needed for prisma migrate deploy)
+# Copy Prisma schema and migrations (needed for prisma migrate deploy + generate)
 COPY --from=base /app/apps/api/prisma ./apps/api/prisma
 
-# Generate Prisma client in production stage (must run after pnpm install
-# so it writes to the correct pnpm store path)
+# Generate Prisma client in production stage so it lands in pnpm's resolved paths
 RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
 
 # Copy built JS
