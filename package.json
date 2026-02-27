@@ -1,24 +1,22 @@
 {
   "name": "adhd-ai-assistant",
   "version": "1.0.0",
+  "private": true,
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:api": "pnpm --filter @adhd-ai-assistant/api dev",
+    "build:api": "pnpm --filter @adhd-ai-assistant/api build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.29.2",
-  "dependencies": {
-    "@fastify/cors": "^11.2.0",
-    "@supabase/supabase-js": "^2.97.0",
-    "fastify": "^5.7.4",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@types/node": "^25.3.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild"
+    ]
   }
 }
