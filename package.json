@@ -5,7 +5,9 @@
   "description": "",
   "scripts": {
     "dev:api": "pnpm --filter @adhd-ai-assistant/api dev",
-    "build:api": "pnpm --filter @adhd-ai-assistant/api build"
+    "build:api": "pnpm --filter @adhd-ai-assistant/api build",
+    "dev:web": "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build"
   },
   "keywords": [],
   "author": "",
