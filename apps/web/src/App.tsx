@@ -1,35 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+import AuthPage from "./components/auth/AuthPage";
+import OnboardingPage from "./components/onboarding/OnboardingPage";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-harbor-primary mb-2">
+            Harbor
+          </h1>
+          <p className="text-harbor-text/40">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/auth"
+          element={session ? <Navigate to="/onboarding" /> : <AuthPage />}
+        />
+        <Route
+          path="/onboarding"
+          element={
+            session ? <OnboardingPage /> : <Navigate to="/auth" />
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <Navigate to={session ? "/onboarding" : "/auth"} />
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
 }
-
-export default App
