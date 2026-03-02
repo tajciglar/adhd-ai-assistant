@@ -53,6 +53,23 @@ export default function OnboardingPage() {
     navigate("/chat");
   }, [complete, navigate]);
 
+  const handleAnswer = useCallback(
+    (
+      step: number,
+      key: keyof OnboardingResponses,
+      value: unknown,
+      immediate?: boolean,
+    ) => {
+      saveAnswer(step, key, value, immediate);
+
+      const config = ONBOARDING_STEPS[step - 1];
+      if (config?.type === "single-select" && typeof value === "string") {
+        goNext();
+      }
+    },
+    [saveAnswer, goNext],
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
@@ -85,7 +102,7 @@ export default function OnboardingPage() {
         <StepRenderer
           step={currentStep}
           responses={responses}
-          onAnswer={saveAnswer}
+          onAnswer={handleAnswer}
         />
       </AnimationWrapper>
     </OnboardingLayout>

@@ -7,6 +7,24 @@ interface ParsedRow {
   content: string;
 }
 
+function normalizeHeader(key: string): string {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function pickValue(
+  row: Record<string, string>,
+  normalizedAliases: string[],
+): string {
+  for (const [rawKey, rawValue] of Object.entries(row)) {
+    if (!normalizedAliases.includes(normalizeHeader(rawKey))) {
+      continue;
+    }
+    const value = String(rawValue ?? "").trim();
+    if (value.length > 0) return value;
+  }
+  return "";
+}
+
 interface BulkImportModalProps {
   saving: boolean;
   onImport: (
@@ -42,32 +60,36 @@ export default function BulkImportModal({
           const json = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
 
           const parsed: ParsedRow[] = [];
+          let lastCategory = "";
 
           for (const row of json) {
-            // Try multiple column name variations
-            const category =
-              row["Topic"] || row["topic"] || row["Category"] || row["category"];
-            const title =
-              row["Question/Issue"] ||
-              row["Question"] ||
-              row["question"] ||
-              row["Title"] ||
-              row["title"];
-            const content =
-              row["Content"] || row["content"] || row["Answer"] || row["answer"];
+            const category = pickValue(row, ["topic", "category"]) || lastCategory;
+            const title = pickValue(row, [
+              "questionissue",
+              "question",
+              "title",
+            ]);
+            const rawContent = pickValue(row, [
+              "content",
+              "answer",
+              "response",
+              "body",
+            ]);
+            const content = rawContent || title;
 
             if (category && title && content) {
+              lastCategory = category;
               parsed.push({
-                category: String(category).trim(),
-                title: String(title).trim(),
-                content: String(content).trim(),
+                category,
+                title,
+                content,
               });
             }
           }
 
           if (parsed.length === 0) {
             setError(
-              "No valid rows found. Expected columns: Topic, Question/Issue, Content",
+              "No valid rows found. Expected columns: Topic and Question/Issue (Content optional).",
             );
             return;
           }
