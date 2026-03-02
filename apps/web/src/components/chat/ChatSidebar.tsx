@@ -94,8 +94,8 @@ export default function ChatSidebar({
         ))}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-harbor-text/10 space-y-2">
+      {/* Footer — aligned with ChatInput bar */}
+      <div className="px-4 py-3 border-t border-harbor-text/10 space-y-2 flex flex-col justify-center min-h-[75px]">
         {isAdmin && onAdminClick && (
           <button
             onClick={onAdminClick}
