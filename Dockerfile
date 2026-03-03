@@ -11,17 +11,22 @@ WORKDIR /app
 # Copy workspace config and lockfile first for layer caching
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
 
 # Install all dependencies (frozen lockfile for reproducibility)
 RUN pnpm install --frozen-lockfile
 
-# Copy application source
+# Copy application source (shared + api)
+COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
+
+# Build shared package first (api depends on it)
+RUN pnpm --filter @adhd-ai-assistant/shared build
 
 # Generate Prisma client
 RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
 
-# Build TypeScript
+# Build API TypeScript
 RUN pnpm --filter @adhd-ai-assistant/api build
 
 # --- Production stage ---
@@ -36,6 +41,7 @@ WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
 
 # Install all dependencies (prisma CLI needed for migrate deploy at startup)
 RUN pnpm install --frozen-lockfile
@@ -46,7 +52,10 @@ COPY --from=base /app/apps/api/prisma ./apps/api/prisma
 # Generate Prisma client in production stage so it lands in pnpm's resolved paths
 RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
 
-# Copy built JS
+# Copy built shared package (runtime dependency for API)
+COPY --from=base /app/packages/shared/dist ./packages/shared/dist
+
+# Copy built API JS
 COPY --from=base /app/apps/api/dist ./apps/api/dist
 
 ENV NODE_ENV=production
