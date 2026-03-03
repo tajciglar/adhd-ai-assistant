@@ -2,11 +2,31 @@ import { supabase } from "./supabase";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
+// Cache the token to avoid calling getSession() on every request.
+// Supabase sessions are long-lived; we cache for 30s and refresh on auth changes.
+let cachedToken: string | null = null;
+let tokenExpiresAt = 0;
+
+// Listen for auth state changes to invalidate cache
+supabase.auth.onAuthStateChange(() => {
+  cachedToken = null;
+  tokenExpiresAt = 0;
+});
+
 async function getToken(): Promise<string> {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiresAt) {
+    return cachedToken;
+  }
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) throw new Error("Not authenticated");
+
+  cachedToken = session.access_token;
+  // Cache for 30 seconds (token itself is valid much longer)
+  tokenExpiresAt = now + 30_000;
   return session.access_token;
 }
 

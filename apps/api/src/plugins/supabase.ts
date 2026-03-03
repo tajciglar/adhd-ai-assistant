@@ -20,6 +20,29 @@ declare module "fastify" {
   }
 }
 
+// Cache verified tokens for 60s to avoid hitting Supabase auth API on every request.
+// Key: token hash, Value: { user, expiresAt }
+const tokenCache = new Map<
+  string,
+  { user: AuthUser; expiresAt: number }
+>();
+
+// Simple hash for cache key (avoids storing full tokens in memory)
+function hashToken(token: string): string {
+  // Use last 32 chars as a fast, unique-enough key
+  return token.slice(-32);
+}
+
+// Periodically clean expired entries (every 5 min)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of tokenCache) {
+    if (now >= entry.expiresAt) {
+      tokenCache.delete(key);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
 export default fp(
   async (fastify: FastifyInstance) => {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -47,22 +70,41 @@ export default fp(
         }
 
         const token = authHeader.slice(7);
+        const cacheKey = hashToken(token);
+        const now = Date.now();
 
+        // Check cache first
+        const cached = tokenCache.get(cacheKey);
+        if (cached && now < cached.expiresAt) {
+          request.user = cached.user;
+          return;
+        }
+
+        // Verify with Supabase
         const {
           data: { user },
           error,
         } = await supabase.auth.getUser(token);
 
         if (error || !user) {
+          tokenCache.delete(cacheKey);
           return reply.status(401).send({
             error: "Invalid or expired token",
           });
         }
 
-        request.user = {
+        const authUser: AuthUser = {
           id: user.id,
           email: user.email!,
         };
+
+        // Cache for 60 seconds
+        tokenCache.set(cacheKey, {
+          user: authUser,
+          expiresAt: now + 60_000,
+        });
+
+        request.user = authUser;
       },
     );
   },

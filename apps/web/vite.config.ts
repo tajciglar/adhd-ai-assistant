@@ -15,4 +15,19 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Split vendor chunks for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+    // Target modern browsers for smaller output
+    target: 'es2020',
+    // Disable source maps in production
+    sourcemap: false,
+  },
 })
