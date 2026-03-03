@@ -1,4 +1,4 @@
-import { createEmbeddings } from "./openaiClient.js";
+import { createEmbeddings } from "./geminiClient.js";
 
 const BATCH_SIZE = 64;
 const RETRY_DELAYS_MS = [400, 1200, 2500];

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { createChatCompletion, OPENAI_CHAT_MODEL } from "./openaiClient.js";
+import { createChatCompletion, AI_CHAT_MODEL } from "./geminiClient.js";
 import { retrieveRelevantKnowledge, type RetrievedSource } from "./retrieval.js";
 import { buildGroundedPrompt } from "./prompt.js";
 
@@ -64,7 +64,7 @@ export async function generateGroundedAnswer({
     return {
       content: NO_CONTENT_RESPONSE,
       metadata: {
-        model: OPENAI_CHAT_MODEL,
+        model: AI_CHAT_MODEL,
         grounded: true,
         sources: [],
         errorCode: "retrieval_error",
@@ -78,7 +78,7 @@ export async function generateGroundedAnswer({
     fastify.log.info(
       {
         retrieval: { topK: 8, sourcesCount: 0 },
-        model: OPENAI_CHAT_MODEL,
+        model: AI_CHAT_MODEL,
         latencyMs: Date.now() - start,
       },
       "chat.grounded.no_sources",
@@ -87,7 +87,7 @@ export async function generateGroundedAnswer({
     return {
       content: NO_CONTENT_RESPONSE,
       metadata: {
-        model: OPENAI_CHAT_MODEL,
+        model: AI_CHAT_MODEL,
         grounded: true,
         sources: [],
       },
@@ -116,7 +116,7 @@ export async function generateGroundedAnswer({
     fastify.log.info(
       {
         retrieval: { topK: 8, sourcesCount: sourceMetadata.length },
-        model: OPENAI_CHAT_MODEL,
+        model: AI_CHAT_MODEL,
         usage: completion.usage,
         latencyMs: Date.now() - start,
       },
@@ -126,7 +126,7 @@ export async function generateGroundedAnswer({
     return {
       content,
       metadata: {
-        model: OPENAI_CHAT_MODEL,
+        model: AI_CHAT_MODEL,
         grounded: true,
         sources: sourceMetadata,
         usage: {
@@ -137,17 +137,16 @@ export async function generateGroundedAnswer({
       },
     };
   } catch (error) {
-    fastify.log.error({ error }, "chat.openai.failed");
+    fastify.log.error({ error }, "chat.gemini.failed");
     return {
       content:
         "Harbor is temporarily unable to generate an answer. Please try again in a moment.",
       metadata: {
-        model: OPENAI_CHAT_MODEL,
+        model: AI_CHAT_MODEL,
         grounded: true,
         sources: sourceMetadata,
-        errorCode: "openai_error",
+        errorCode: "gemini_error",
       },
     };
   }
 }
-

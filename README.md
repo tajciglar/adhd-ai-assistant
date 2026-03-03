@@ -89,6 +89,7 @@ packages/
 
 - [Architecture](docs/architecture.md) — system overview, auth flow, database schema, deployment
 - [UI/UX Design System](docs/ui-ux.md) — colors, typography, components, animation guidelines
+- [RAG Setup Guide](docs/rag-setup.md) — Gemini integration, vector indexing, retrieval flow, and local setup
 
 ## Tech Stack
 
