@@ -1,28 +1,18 @@
 import { LIKERT_OPTIONS } from "@adhd-ai-assistant/shared";
 
 interface LikertSelectProps {
-  categoryLabel: string;
-  categorySubtitle: string;
   questionText: string;
   value: number | undefined;
   onChange: (value: number) => void;
 }
 
 export default function LikertSelect({
-  categoryLabel,
-  categorySubtitle,
   questionText,
   value,
   onChange,
 }: LikertSelectProps) {
   return (
     <div>
-      <p className="text-sm font-medium text-harbor-accent/70 mb-1 tracking-wide uppercase">
-        {categoryLabel}{" "}
-        <span className="normal-case text-harbor-text/30 font-normal">
-          — {categorySubtitle}
-        </span>
-      </p>
       <h2 className="text-2xl font-semibold text-harbor-text mb-8">
         {questionText}
       </h2>

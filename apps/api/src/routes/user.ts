@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 
 export default async function userRoutes(fastify: FastifyInstance) {
-  // GET /user/me — return user info + profile for chat greeting & admin check
+  // GET /user/me — return user info + profile + children for chat & admin
   fastify.get(
     "/user/me",
     { preHandler: [fastify.authenticate] },
@@ -14,8 +14,19 @@ export default async function userRoutes(fastify: FastifyInstance) {
           profile: {
             select: {
               onboardingCompleted: true,
-              onboardingResponses: true,
-              traitProfile: true,
+              parentGender: true,
+              parentAgeRange: true,
+              householdStructure: true,
+              children: {
+                select: {
+                  id: true,
+                  childName: true,
+                  childAge: true,
+                  childGender: true,
+                  traitProfile: true,
+                  onboardingCompleted: true,
+                },
+              },
             },
           },
         },
@@ -25,17 +36,30 @@ export default async function userRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: "User not found" });
       }
 
-      const responses =
-        (user.profile?.onboardingResponses as Record<string, unknown>) ?? {};
+      // Active child = first child (supports multiple in the future)
+      const activeChild = user.profile?.children?.[0];
 
       return reply.send({
         id: user.id,
         email: user.email,
         role: user.role,
         profile: {
-          childName: (responses.childName as string) ?? "",
           onboardingCompleted: user.profile?.onboardingCompleted ?? false,
-          traitProfile: user.profile?.traitProfile ?? null,
+          parentGender: user.profile?.parentGender ?? null,
+          parentAgeRange: user.profile?.parentAgeRange ?? null,
+          householdStructure: user.profile?.householdStructure ?? null,
+          children:
+            user.profile?.children?.map((c) => ({
+              id: c.id,
+              childName: c.childName,
+              childAge: c.childAge,
+              childGender: c.childGender,
+              traitProfile: c.traitProfile,
+              onboardingCompleted: c.onboardingCompleted,
+            })) ?? [],
+          // Convenience: active child info for backward compat
+          childName: activeChild?.childName ?? "",
+          traitProfile: activeChild?.traitProfile ?? null,
         },
       });
     },

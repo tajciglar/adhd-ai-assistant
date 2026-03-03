@@ -1,9 +1,21 @@
 import type { RetrievedSource } from "./retrieval.js";
 
+export interface ChildContext {
+  childName: string;
+  childAge: number | null;
+  childGender: string | null;
+  traitProfile: {
+    scores: Record<string, number>;
+    archetypeId: string;
+    archetypeName?: string;
+    archetypeTypeName?: string;
+  } | null;
+}
+
 interface PromptInput {
   question: string;
   sources: RetrievedSource[];
-  onboardingResponses: Record<string, unknown>;
+  child: ChildContext | null;
   history: Array<{ role: "USER" | "ASSISTANT"; content: string }>;
 }
 
@@ -11,22 +23,65 @@ function toAssistantRole(role: "USER" | "ASSISTANT"): "user" | "assistant" {
   return role === "USER" ? "user" : "assistant";
 }
 
-function buildProfileContext(responses: Record<string, unknown>): string {
-  const childName = String(responses.childName ?? "").trim();
-  const childAge = String(responses.childAge ?? "").trim();
-  const diagnosis = String(responses.diagnosisStatus ?? "").trim();
-  const stressors = Array.isArray(responses.stressfulAreas)
-    ? responses.stressfulAreas.join(", ")
-    : "";
+function getIntensityLabel(score: number): string {
+  if (score <= 6) return "Low";
+  if (score <= 12) return "Moderate";
+  return "High";
+}
 
-  const lines = [
-    childName && `Child name: ${childName}`,
-    childAge && `Child age: ${childAge}`,
-    diagnosis && `Diagnosis status: ${diagnosis}`,
-    stressors && `Top stressors: ${stressors}`,
-  ].filter(Boolean);
+function buildProfileContext(child: ChildContext | null): string {
+  if (!child) return "No child profile available yet.";
 
-  return lines.length > 0 ? lines.join("\n") : "No parent profile context available.";
+  const lines: string[] = [];
+
+  if (child.childName) lines.push(`Child's name: ${child.childName}`);
+  if (child.childAge != null) lines.push(`Child's age: ${child.childAge}`);
+  if (child.childGender) lines.push(`Child's gender: ${child.childGender}`);
+
+  if (child.traitProfile) {
+    const tp = child.traitProfile;
+    if (tp.archetypeName && tp.archetypeTypeName) {
+      lines.push(
+        `ADHD archetype: ${tp.archetypeName} — ${tp.archetypeTypeName}`,
+      );
+    }
+
+    const scores = tp.scores;
+    if (scores) {
+      const scoreLabels: Record<string, string> = {
+        filter: "Attention Filter (Inattention)",
+        engine: "Engine Speed (Hyperactivity/Impulse)",
+        sensory: "Sensory Guard (Sensory Processing)",
+        fuse: "Emotional Thermostat (Dysregulation)",
+        time: "Time Horizon (Executive Function)",
+        social: "Social Radar (Social Cues)",
+      };
+
+      const traitLines = Object.entries(scores)
+        .map(([key, score]) => {
+          const label = scoreLabels[key] ?? key;
+          return `  ${label}: ${score}/18 (${getIntensityLabel(score)})`;
+        })
+        .join("\n");
+
+      lines.push(`Trait scores:\n${traitLines}`);
+    }
+
+    // Identify high dimensions for targeted advice
+    const highDimensions = Object.entries(scores ?? {})
+      .filter(([, score]) => score >= 13)
+      .map(([key]) => key);
+
+    if (highDimensions.length > 0) {
+      lines.push(
+        `Primary areas of support needed: ${highDimensions.join(", ")}`,
+      );
+    }
+  }
+
+  return lines.length > 0
+    ? lines.join("\n")
+    : "No child profile context available.";
 }
 
 function buildSourceBlock(sources: RetrievedSource[]): string {
@@ -48,9 +103,12 @@ function buildSourceBlock(sources: RetrievedSource[]): string {
 export function buildGroundedPrompt({
   question,
   sources,
-  onboardingResponses,
+  child,
   history,
-}: PromptInput): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+}: PromptInput): Array<{
+  role: "system" | "user" | "assistant";
+  content: string;
+}> {
   const systemInstructions = [
     "You are Harbor, an ADHD parenting support assistant.",
     "Use ONLY the provided Knowledge Base Sources for factual claims.",
@@ -58,10 +116,12 @@ export function buildGroundedPrompt({
     "Never invent facts, references, or citations.",
     "Use a calm, practical, parent-supportive tone.",
     "Keep answers concise and actionable.",
+    "When the child's trait profile is available, tailor your advice to their specific ADHD archetype and trait scores.",
+    "Focus on the child's high-scoring dimensions when providing strategies.",
   ].join(" ");
 
   const sourceContext = buildSourceBlock(sources);
-  const profileContext = buildProfileContext(onboardingResponses);
+  const profileContext = buildProfileContext(child);
   const historyContext = history.slice(-8).map((m) => ({
     role: toAssistantRole(m.role),
     content: m.content,
@@ -71,7 +131,7 @@ export function buildGroundedPrompt({
     { role: "system", content: systemInstructions },
     {
       role: "system",
-      content: `Parent profile context (for personalization only, not factual grounding):\n${profileContext}`,
+      content: `Child profile context (for personalization only, not factual grounding):\n${profileContext}`,
     },
     {
       role: "system",
@@ -81,4 +141,3 @@ export function buildGroundedPrompt({
     { role: "user", content: question },
   ];
 }
-

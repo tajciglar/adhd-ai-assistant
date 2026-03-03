@@ -28,21 +28,36 @@ model User {
 }
 
 model UserProfile {
-  id                  String   @id @default(uuid())
-  userId              String   @unique @map("user_id")
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  adhdType            String   @default("") @map("adhd_type")
-  struggles           String[] @default([])
-  sensoryTriggers     String[] @default([]) @map("sensory_triggers")
-  goals               String[] @default([])
-  onboardingResponses Json?    @map("onboarding_responses")
-  onboardingStep      Int      @default(0) @map("onboarding_step")
-  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
-  traitProfile        Json?    @map("trait_profile")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  id                  String         @id @default(uuid())
+  userId              String         @unique @map("user_id")
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentGender        String?        @map("parent_gender")
+  parentAgeRange      String?        @map("parent_age_range")
+  householdStructure  String?        @map("household_structure")
+  onboardingCompleted Boolean        @default(false) @map("onboarding_completed")
+  children            ChildProfile[]
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
 
   @@map("user_profiles")
+}
+
+model ChildProfile {
+  id                  String      @id @default(uuid())
+  profileId           String      @map("profile_id")
+  profile             UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  childName           String      @default("") @map("child_name")
+  childAge            Int?        @map("child_age")
+  childGender         String?     @map("child_gender")
+  onboardingResponses Json?       @map("onboarding_responses")
+  onboardingStep      Int         @default(0) @map("onboarding_step")
+  onboardingCompleted Boolean     @default(false) @map("onboarding_completed")
+  traitProfile        Json?       @map("trait_profile")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  @@index([profileId])
+  @@map("child_profiles")
 }
 
 model Conversation {

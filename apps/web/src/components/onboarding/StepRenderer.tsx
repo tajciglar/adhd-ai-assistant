@@ -69,8 +69,6 @@ export default function StepRenderer({
   const key = `${config.categoryId}_${config.questionIndex}`;
   return (
     <LikertSelect
-      categoryLabel={config.categoryLabel}
-      categorySubtitle={config.categorySubtitle}
       questionText={interpolate(config.questionText, responses)}
       value={responses[key] as number | undefined}
       onChange={(v) => onAnswer(step, key, v, true)}

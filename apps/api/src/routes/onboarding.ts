@@ -5,12 +5,23 @@ import {
   TOTAL_STEPS,
   getStepConfig,
   computeTraitProfile,
+  ARCHETYPES,
 } from "@adhd-ai-assistant/shared";
 
 const patchBodySchema = z.object({
   step: z.number().int().min(1).max(TOTAL_STEPS),
   responses: z.record(z.string(), z.unknown()),
 });
+
+// Keys that belong on UserProfile (parent info)
+const PARENT_KEYS = new Set([
+  "parentGender",
+  "parentAgeRange",
+  "householdStructure",
+]);
+
+// Keys that are stored as dedicated columns on ChildProfile
+const CHILD_COLUMN_KEYS = new Set(["childName", "childAge", "childGender"]);
 
 /**
  * Validate a single step's response payload.
@@ -66,7 +77,11 @@ function validateStepResponse(
   return null;
 }
 
-async function ensureUserAndProfile(
+/**
+ * Ensure User + UserProfile + ChildProfile exist.
+ * For initial onboarding, creates a single child profile.
+ */
+async function ensureUserProfileAndChild(
   fastify: FastifyInstance,
   userId: string,
   email: string,
@@ -83,15 +98,72 @@ async function ensureUserAndProfile(
 
   let profile = await fastify.prisma.userProfile.findUnique({
     where: { userId },
+    include: { children: true },
   });
 
   if (!profile) {
     profile = await fastify.prisma.userProfile.create({
-      data: { userId, onboardingResponses: {} },
+      data: {
+        userId,
+        children: {
+          create: { onboardingResponses: {} },
+        },
+      },
+      include: { children: true },
     });
   }
 
-  return { user, profile };
+  // Ensure at least one child exists
+  let child = profile.children[0];
+  if (!child) {
+    child = await fastify.prisma.childProfile.create({
+      data: {
+        profileId: profile.id,
+        onboardingResponses: {},
+      },
+    });
+    profile = await fastify.prisma.userProfile.findUniqueOrThrow({
+      where: { userId },
+      include: { children: true },
+    });
+  }
+
+  return { user, profile, child };
+}
+
+/**
+ * Build the merged responses object from parent profile + child profile.
+ * Frontend expects a flat key-value map of all responses.
+ */
+function buildResponsesObject(
+  profile: {
+    parentGender: string | null;
+    parentAgeRange: string | null;
+    householdStructure: string | null;
+  },
+  child: {
+    childName: string;
+    childAge: number | null;
+    childGender: string | null;
+    onboardingResponses: unknown;
+  },
+): Record<string, unknown> {
+  const assessmentResponses =
+    (child.onboardingResponses as Record<string, unknown>) ?? {};
+
+  return {
+    ...assessmentResponses,
+    // Parent info from dedicated columns
+    ...(profile.parentGender && { parentGender: profile.parentGender }),
+    ...(profile.parentAgeRange && { parentAgeRange: profile.parentAgeRange }),
+    ...(profile.householdStructure && {
+      householdStructure: profile.householdStructure,
+    }),
+    // Child info from dedicated columns
+    ...(child.childName && { childName: child.childName }),
+    ...(child.childAge != null && { childAge: child.childAge }),
+    ...(child.childGender && { childGender: child.childGender }),
+  };
 }
 
 export default async function onboardingRoutes(fastify: FastifyInstance) {
@@ -101,13 +173,18 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id: userId, email } = request.user;
-      const { profile } = await ensureUserAndProfile(fastify, userId, email);
+      const { profile, child } = await ensureUserProfileAndChild(
+        fastify,
+        userId,
+        email,
+      );
+
+      const responses = buildResponsesObject(profile, child);
 
       return reply.send({
-        onboardingStep: profile.onboardingStep,
+        onboardingStep: child.onboardingStep,
         onboardingCompleted: profile.onboardingCompleted,
-        responses:
-          (profile.onboardingResponses as Record<string, unknown>) ?? {},
+        responses,
       });
     },
   );
@@ -137,26 +214,82 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
       }
 
       const { id: userId, email } = request.user;
-      const { profile } = await ensureUserAndProfile(fastify, userId, email);
-
-      const existingResponses =
-        (profile.onboardingResponses as Record<string, unknown>) ?? {};
-      const mergedResponses = { ...existingResponses, ...responses };
+      const { profile, child } = await ensureUserProfileAndChild(
+        fastify,
+        userId,
+        email,
+      );
 
       const nextStep = step + 1;
 
-      const updated = await fastify.prisma.userProfile.update({
-        where: { userId },
-        data: {
-          onboardingResponses: mergedResponses as Prisma.InputJsonValue,
-          onboardingStep: nextStep,
-        },
+      // Route data to the correct table based on response keys
+      const parentUpdates: Record<string, unknown> = {};
+      const childColumnUpdates: Record<string, unknown> = {};
+      const assessmentUpdates: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(responses)) {
+        if (PARENT_KEYS.has(key)) {
+          if (key === "parentGender") parentUpdates.parentGender = value;
+          if (key === "parentAgeRange") parentUpdates.parentAgeRange = value;
+          if (key === "householdStructure")
+            parentUpdates.householdStructure = value;
+        } else if (CHILD_COLUMN_KEYS.has(key)) {
+          if (key === "childName") childColumnUpdates.childName = value;
+          if (key === "childAge") childColumnUpdates.childAge = value;
+          if (key === "childGender") childColumnUpdates.childGender = value;
+        } else {
+          // Assessment (Likert) answers → JSONB
+          assessmentUpdates[key] = value;
+        }
+      }
+
+      // Update parent profile if needed
+      if (Object.keys(parentUpdates).length > 0) {
+        await fastify.prisma.userProfile.update({
+          where: { userId },
+          data: parentUpdates,
+        });
+      }
+
+      // Build child update data
+      const childData: Record<string, unknown> = {
+        onboardingStep: nextStep,
+      };
+
+      // Add child column updates
+      if (Object.keys(childColumnUpdates).length > 0) {
+        Object.assign(childData, childColumnUpdates);
+      }
+
+      // Merge assessment answers into existing JSONB
+      if (Object.keys(assessmentUpdates).length > 0) {
+        const existingResponses =
+          (child.onboardingResponses as Record<string, unknown>) ?? {};
+        childData.onboardingResponses = {
+          ...existingResponses,
+          ...assessmentUpdates,
+        } as Prisma.InputJsonValue;
+      }
+
+      const updatedChild = await fastify.prisma.childProfile.update({
+        where: { id: child.id },
+        data: childData,
       });
 
+      // Refetch parent for merged response
+      const updatedProfile =
+        await fastify.prisma.userProfile.findUniqueOrThrow({
+          where: { userId },
+        });
+
+      const mergedResponses = buildResponsesObject(
+        updatedProfile,
+        updatedChild,
+      );
+
       return reply.send({
-        onboardingStep: updated.onboardingStep,
-        responses:
-          (updated.onboardingResponses as Record<string, unknown>) ?? {},
+        onboardingStep: updatedChild.onboardingStep,
+        responses: mergedResponses,
       });
     },
   );
@@ -167,31 +300,55 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id: userId, email } = request.user;
-      const { profile } = await ensureUserAndProfile(fastify, userId, email);
+      const { profile, child } = await ensureUserProfileAndChild(
+        fastify,
+        userId,
+        email,
+      );
 
-      if (profile.onboardingCompleted) {
+      if (profile.onboardingCompleted && child.onboardingCompleted) {
         return reply.status(409).send({
           error: "Onboarding already completed",
         });
       }
 
-      // Compute trait profile from responses
-      const responses =
-        (profile.onboardingResponses as Record<string, unknown>) ?? {};
-      const traitProfile = computeTraitProfile(responses);
+      // Compute trait profile from the child's assessment responses
+      const assessmentResponses =
+        (child.onboardingResponses as Record<string, unknown>) ?? {};
+      const traitProfile = computeTraitProfile(assessmentResponses);
 
-      const updated = await fastify.prisma.userProfile.update({
-        where: { userId },
+      // Look up the full archetype info
+      const archetype = ARCHETYPES.find(
+        (a) => a.id === traitProfile.archetypeId,
+      );
+
+      // Store trait profile with archetype details on the child
+      const enrichedTraitProfile = {
+        ...traitProfile,
+        archetypeName: archetype?.animal ?? "",
+        archetypeTypeName: archetype?.typeName ?? "",
+      };
+
+      // Update child profile
+      await fastify.prisma.childProfile.update({
+        where: { id: child.id },
         data: {
           onboardingCompleted: true,
           onboardingStep: TOTAL_STEPS + 1,
-          traitProfile: traitProfile as unknown as Prisma.InputJsonValue,
+          traitProfile:
+            enrichedTraitProfile as unknown as Prisma.InputJsonValue,
         },
       });
 
+      // Mark parent onboarding as completed
+      await fastify.prisma.userProfile.update({
+        where: { userId },
+        data: { onboardingCompleted: true },
+      });
+
       return reply.send({
-        onboardingCompleted: updated.onboardingCompleted,
-        traitProfile: updated.traitProfile,
+        onboardingCompleted: true,
+        traitProfile: enrichedTraitProfile,
       });
     },
   );

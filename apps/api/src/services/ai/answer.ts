@@ -1,7 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { createChatCompletion, AI_CHAT_MODEL } from "./geminiClient.js";
-import { retrieveRelevantKnowledge, type RetrievedSource } from "./retrieval.js";
-import { buildGroundedPrompt } from "./prompt.js";
+import {
+  retrieveRelevantKnowledge,
+  type RetrievedSource,
+} from "./retrieval.js";
+import { buildGroundedPrompt, type ChildContext } from "./prompt.js";
 
 interface AnswerInput {
   fastify: FastifyInstance;
@@ -94,18 +97,36 @@ export async function generateGroundedAnswer({
     };
   }
 
+  // Fetch active child profile (first child) with trait profile
   const profile = await fastify.prisma.userProfile.findUnique({
     where: { userId },
-    select: { onboardingResponses: true },
+    include: {
+      children: {
+        take: 1,
+        select: {
+          childName: true,
+          childAge: true,
+          childGender: true,
+          traitProfile: true,
+        },
+      },
+    },
   });
 
-  const onboardingResponses =
-    (profile?.onboardingResponses as Record<string, unknown>) ?? {};
+  const activeChild = profile?.children?.[0] ?? null;
+  const childContext: ChildContext | null = activeChild
+    ? {
+        childName: activeChild.childName,
+        childAge: activeChild.childAge,
+        childGender: activeChild.childGender,
+        traitProfile: activeChild.traitProfile as ChildContext["traitProfile"],
+      }
+    : null;
 
   const messages = buildGroundedPrompt({
     question,
     sources,
-    onboardingResponses,
+    child: childContext,
     history,
   });
 
