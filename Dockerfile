@@ -61,4 +61,4 @@ COPY --from=base /app/apps/api/dist ./apps/api/dist
 ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD ["pnpm", "--filter", "@adhd-ai-assistant/api", "start"]
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && cd /app && pnpm --filter @adhd-ai-assistant/api start"]
