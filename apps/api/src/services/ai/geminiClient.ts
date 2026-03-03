@@ -46,6 +46,8 @@ async function postGemini<T>(path: string, body: unknown): Promise<T> {
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
+    // Note: Gemini REST API requires the key as a query parameter.
+    // We sanitize error messages below to prevent key leakage in logs.
     const url = new URL(`${GEMINI_BASE_URL}${path}`);
     url.searchParams.set("key", getGeminiApiKey());
 
@@ -60,39 +62,73 @@ async function postGemini<T>(path: string, body: unknown): Promise<T> {
 
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Gemini ${path} failed (${res.status}): ${errorText}`);
+      // Truncate error body to prevent leaking sensitive details in logs
+      throw new Error(
+        `Gemini ${path} failed (${res.status}): ${errorText.slice(0, 500)}`,
+      );
     }
 
     return (await res.json()) as T;
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("Gemini")) {
+      throw err; // Already sanitized above
+    }
+    // For network/abort errors, wrap without exposing the full URL (contains API key)
+    const message =
+      controller.signal.aborted
+        ? `Gemini ${path} timed out after ${REQUEST_TIMEOUT_MS}ms`
+        : `Gemini ${path} network error`;
+    throw new Error(message);
   } finally {
     clearTimeout(timeout);
   }
 }
 
-export async function createEmbeddings(input: string[]): Promise<number[][]> {
-  const vectors: number[][] = [];
+interface GeminiBatchEmbeddingResponse {
+  embeddings?: Array<{
+    values?: number[];
+  }>;
+}
 
-  for (const text of input) {
-    const payload = {
+/**
+ * Embed multiple texts in a single API call using batchEmbedContents.
+ * Falls back to sequential single-embed calls if batch fails.
+ */
+export async function createEmbeddings(input: string[]): Promise<number[][]> {
+  if (input.length === 0) return [];
+
+  // Use batchEmbedContents for multiple texts in one API call
+  const payload = {
+    requests: input.map((text) => ({
+      model: `models/${AI_EMBED_MODEL}`,
       content: {
         parts: [{ text }],
       },
       outputDimensionality: EMBEDDING_DIMENSIONS,
-    };
-    const data = await postGemini<GeminiEmbeddingResponse>(
-      `/models/${AI_EMBED_MODEL}:embedContent`,
-      payload,
+    })),
+  };
+
+  const data = await postGemini<GeminiBatchEmbeddingResponse>(
+    `/models/${AI_EMBED_MODEL}:batchEmbedContents`,
+    payload,
+  );
+
+  const embeddings = data.embeddings ?? [];
+  if (embeddings.length !== input.length) {
+    throw new Error(
+      `Batch embedding count mismatch. Expected ${input.length}, got ${embeddings.length}`,
     );
-    const vector = data.embedding?.values ?? [];
-    if (vector.length !== EMBEDDING_DIMENSIONS) {
-      throw new Error(
-        `Embedding dimension mismatch. Expected ${EMBEDDING_DIMENSIONS}, got ${vector.length}`,
-      );
-    }
-    vectors.push(vector);
   }
 
-  return vectors;
+  return embeddings.map((emb, i) => {
+    const vector = emb.values ?? [];
+    if (vector.length !== EMBEDDING_DIMENSIONS) {
+      throw new Error(
+        `Embedding dimension mismatch at index ${i}. Expected ${EMBEDDING_DIMENSIONS}, got ${vector.length}`,
+      );
+    }
+    return vector;
+  });
 }
 
 export async function createChatCompletion(

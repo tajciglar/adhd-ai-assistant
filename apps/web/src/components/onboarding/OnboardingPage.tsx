@@ -1,36 +1,36 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../hooks/useOnboarding";
-import { ONBOARDING_STEPS, TOTAL_STEPS } from "../../lib/constants";
+import { TOTAL_STEPS } from "../../lib/constants";
+import { getStepConfig } from "@adhd-ai-assistant/shared";
 import type { OnboardingResponses } from "../../types/onboarding";
 import OnboardingLayout from "./OnboardingLayout";
 import AnimationWrapper from "./AnimationWrapper";
 import StepRenderer from "./StepRenderer";
 import MicroCopy from "./MicroCopy";
-import FamilySnapshot from "./FamilySnapshot";
 
 function isStepValid(step: number, responses: OnboardingResponses): boolean {
-  const config = ONBOARDING_STEPS[step - 1];
+  const config = getStepConfig(step);
   if (!config) return false;
 
-  const val = responses[config.key];
-
-  switch (config.type) {
-    case "single-select":
-      return typeof val === "string" && val.length > 0;
-    case "multi-select":
-      return Array.isArray(val) && val.length > 0;
-    case "limited-select":
-      return Array.isArray(val) && val.length > 0;
-    case "text":
-      return typeof val === "string" && val.trim().length > 0;
-    case "number":
-      return typeof val === "number" && val >= 0;
-    case "textarea":
-      return typeof val === "string" && val.trim().length > 0;
-    default:
-      return false;
+  if (config.type === "basic-info") {
+    const val = responses[config.question.key];
+    switch (config.question.type) {
+      case "single-select":
+        return typeof val === "string" && val.length > 0;
+      case "text":
+        return typeof val === "string" && val.trim().length > 0;
+      case "number":
+        return typeof val === "number" && val >= 1;
+      default:
+        return false;
+    }
   }
+
+  // Likert step
+  const key = `${config.categoryId}_${config.questionIndex}`;
+  const val = responses[key];
+  return typeof val === "number" && val >= 0 && val <= 3;
 }
 
 export default function OnboardingPage() {
@@ -54,20 +54,29 @@ export default function OnboardingPage() {
   }, [complete, navigate]);
 
   const handleAnswer = useCallback(
-    (
-      step: number,
-      key: keyof OnboardingResponses,
-      value: unknown,
-      immediate?: boolean,
-    ) => {
+    (step: number, key: string, value: string | number | undefined, immediate?: boolean) => {
       saveAnswer(step, key, value, immediate);
 
-      const config = ONBOARDING_STEPS[step - 1];
-      if (config?.type === "single-select" && typeof value === "string") {
-        goNext();
+      const config = getStepConfig(step);
+      if (!config) return;
+
+      // Auto-advance for single-select basic info and likert
+      const shouldAutoAdvance =
+        (config.type === "basic-info" && config.question.type === "single-select") ||
+        config.type === "likert";
+
+      if (shouldAutoAdvance) {
+        // Use setTimeout to let React batch the state update before advancing
+        setTimeout(() => {
+          if (step === TOTAL_STEPS) {
+            handleComplete();
+          } else {
+            goNext();
+          }
+        }, 50);
       }
     },
-    [saveAnswer, goNext],
+    [saveAnswer, goNext, handleComplete],
   );
 
   if (loading) {
@@ -83,8 +92,10 @@ export default function OnboardingPage() {
     );
   }
 
+  // If completed, redirect to chat
   if (completed || currentStep > TOTAL_STEPS) {
-    return <FamilySnapshot responses={responses} onComplete={handleComplete} />;
+    navigate("/chat");
+    return null;
   }
 
   const canContinue = isStepValid(currentStep, responses);
@@ -95,7 +106,13 @@ export default function OnboardingPage() {
       saveStatus={saveStatus}
       canContinue={canContinue}
       onBack={goBack}
-      onContinue={goNext}
+      onContinue={() => {
+        if (currentStep === TOTAL_STEPS) {
+          handleComplete();
+        } else {
+          goNext();
+        }
+      }}
     >
       <AnimationWrapper stepKey={currentStep} direction={direction}>
         <MicroCopy step={currentStep} />

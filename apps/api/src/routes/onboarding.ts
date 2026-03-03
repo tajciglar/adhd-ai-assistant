@@ -1,62 +1,70 @@
 import type { FastifyInstance } from "fastify";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-
-const TOTAL_STEPS = 16;
-
-const stepValidators: Record<number, z.ZodSchema> = {
-  1: z.object({ gender: z.enum(["male", "female", "non-binary-other"]) }),
-  2: z.object({ ageRange: z.enum(["18-30", "31-45", "46-60", "61+"]) }),
-  3: z.object({
-    knowledgeLevel: z.enum(["beginner", "some-experience", "advanced"]),
-  }),
-  4: z.object({ childName: z.string().min(1).max(100) }),
-  5: z.object({ childAge: z.number().int().min(0).max(25) }),
-  6: z.object({
-    diagnosisStatus: z.enum([
-      "combined-type",
-      "inattentive-type",
-      "hyperactive-impulsive-type",
-      "suspected-evaluation",
-    ]),
-  }),
-  7: z.object({
-    householdStructure: z.enum([
-      "two-parent",
-      "single-parent",
-      "co-parenting",
-      "multi-generational",
-    ]),
-  }),
-  8: z.object({
-    schoolSupport: z.enum(["iep", "504-plan", "no-formal", "homeschooled"]),
-  }),
-  9: z.object({
-    currentInterventions: z.array(z.string().min(1)).min(1).max(5),
-  }),
-  10: z.object({
-    stressfulAreas: z.array(z.string().min(1)).min(1).max(3),
-  }),
-  11: z.object({
-    executiveFunctioningGaps: z.array(z.string().min(1)).min(1).max(4),
-  }),
-  12: z.object({
-    physicalActivity: z.array(z.string().min(1)).min(1).max(6),
-  }),
-  13: z.object({
-    impulseControlMarkers: z.array(z.string().min(1)).min(1).max(6),
-  }),
-  14: z.object({
-    childMotivators: z.array(z.string().min(1)).min(1).max(6),
-  }),
-  15: z.object({ theReality: z.string().min(1).max(5000) }),
-  16: z.object({ theVision: z.string().min(1).max(5000) }),
-};
+import {
+  TOTAL_STEPS,
+  getStepConfig,
+  computeTraitProfile,
+} from "@adhd-ai-assistant/shared";
 
 const patchBodySchema = z.object({
   step: z.number().int().min(1).max(TOTAL_STEPS),
   responses: z.record(z.string(), z.unknown()),
 });
+
+/**
+ * Validate a single step's response payload.
+ * Returns null if valid, or an error string if invalid.
+ */
+function validateStepResponse(
+  step: number,
+  responses: Record<string, unknown>,
+): string | null {
+  const config = getStepConfig(step);
+  if (!config) return `Unknown step ${step}`;
+
+  if (config.type === "basic-info") {
+    const val = responses[config.question.key];
+    switch (config.question.type) {
+      case "single-select":
+        if (typeof val !== "string" || val.length === 0) {
+          return `${config.question.key} must be a non-empty string`;
+        }
+        if (
+          config.question.options &&
+          !config.question.options.includes(val)
+        ) {
+          return `Invalid option for ${config.question.key}`;
+        }
+        break;
+      case "text":
+        if (typeof val !== "string" || val.trim().length === 0) {
+          return `${config.question.key} must be a non-empty string`;
+        }
+        break;
+      case "number": {
+        if (typeof val !== "number" || !Number.isInteger(val)) {
+          return `${config.question.key} must be an integer`;
+        }
+        const min = config.question.min ?? 0;
+        const max = config.question.max ?? 100;
+        if (val < min || val > max) {
+          return `${config.question.key} must be between ${min} and ${max}`;
+        }
+        break;
+      }
+    }
+    return null;
+  }
+
+  // Likert step
+  const key = `${config.categoryId}_${config.questionIndex}`;
+  const val = responses[key];
+  if (typeof val !== "number" || !Number.isInteger(val) || val < 0 || val > 3) {
+    return `${key} must be an integer 0-3`;
+  }
+  return null;
+}
 
 async function ensureUserAndProfile(
   fastify: FastifyInstance,
@@ -120,15 +128,12 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
       const { step, responses } = parsed.data;
 
       // Validate per-step responses
-      const validator = stepValidators[step];
-      if (validator) {
-        const stepParsed = validator.safeParse(responses);
-        if (!stepParsed.success) {
-          return reply.status(400).send({
-            error: "Invalid response for this step",
-            details: stepParsed.error.flatten().fieldErrors,
-          });
-        }
+      const validationError = validateStepResponse(
+        step,
+        responses as Record<string, unknown>,
+      );
+      if (validationError) {
+        return reply.status(400).send({ error: validationError });
       }
 
       const { id: userId, email } = request.user;
@@ -156,7 +161,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
     },
   );
 
-  // POST /onboarding/complete — mark onboarding as finished
+  // POST /onboarding/complete — compute trait profile + mark done
   fastify.post(
     "/onboarding/complete",
     { preHandler: [fastify.authenticate] },
@@ -170,68 +175,23 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Compute trait profile from responses
+      const responses =
+        (profile.onboardingResponses as Record<string, unknown>) ?? {};
+      const traitProfile = computeTraitProfile(responses);
+
       const updated = await fastify.prisma.userProfile.update({
         where: { userId },
         data: {
           onboardingCompleted: true,
           onboardingStep: TOTAL_STEPS + 1,
+          traitProfile: traitProfile as unknown as Prisma.InputJsonValue,
         },
       });
 
       return reply.send({
         onboardingCompleted: updated.onboardingCompleted,
-        responses:
-          (updated.onboardingResponses as Record<string, unknown>) ?? {},
-      });
-    },
-  );
-
-  // GET /onboarding/snapshot — grouped data for Family Snapshot page
-  fastify.get(
-    "/onboarding/snapshot",
-    { preHandler: [fastify.authenticate] },
-    async (request, reply) => {
-      const { id: userId } = request.user;
-
-      const profile = await fastify.prisma.userProfile.findUnique({
-        where: { userId },
-      });
-
-      if (!profile || !profile.onboardingCompleted) {
-        return reply.status(404).send({
-          error: "Onboarding not completed",
-        });
-      }
-
-      const r = (profile.onboardingResponses as Record<string, unknown>) ?? {};
-
-      return reply.send({
-        parent: {
-          gender: r.gender,
-          ageRange: r.ageRange,
-          knowledgeLevel: r.knowledgeLevel,
-        },
-        child: {
-          name: r.childName,
-          age: r.childAge,
-          diagnosisStatus: r.diagnosisStatus,
-          motivators: r.childMotivators,
-        },
-        household: {
-          structure: r.householdStructure,
-          schoolSupport: r.schoolSupport,
-          currentInterventions: r.currentInterventions,
-        },
-        challenges: {
-          stressfulAreas: r.stressfulAreas,
-          executiveFunctioningGaps: r.executiveFunctioningGaps,
-          impulseControlMarkers: r.impulseControlMarkers,
-          physicalActivity: r.physicalActivity,
-        },
-        narrative: {
-          theReality: r.theReality,
-          theVision: r.theVision,
-        },
+        traitProfile: updated.traitProfile,
       });
     },
   );

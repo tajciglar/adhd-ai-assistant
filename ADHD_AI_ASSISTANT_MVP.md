@@ -1,6 +1,6 @@
 # ADHD AI Assistant — MVP Documentation
 
-> **Last updated:** 2026-02-27
+> **Last updated:** 2026-03-03
 > **Repository:** `adhd-ai-assistant`
 > **Package manager:** pnpm 10.29.2 (monorepo workspaces)
 > **Branch strategy:** feature branches → `main` via PR
@@ -14,19 +14,28 @@
 3. [Project Structure](#3-project-structure)
 4. [Database Schema](#4-database-schema)
 5. [API Endpoints](#5-api-endpoints)
-6. [Environment Variables](#6-environment-variables)
-7. [Scripts & Commands](#7-scripts--commands)
-8. [Infrastructure Setup Guides](#8-infrastructure-setup-guides)
-9. [Branches & Feature Log](#9-branches--feature-log)
-10. [MVP Roadmap](#10-mvp-roadmap)
+6. [AI / RAG Pipeline](#6-ai--rag-pipeline)
+7. [Security](#7-security)
+8. [Environment Variables](#8-environment-variables)
+9. [Scripts & Commands](#9-scripts--commands)
+10. [Infrastructure Setup Guides](#10-infrastructure-setup-guides)
+11. [Branches & Feature Log](#11-branches--feature-log)
+12. [MVP Roadmap](#12-mvp-roadmap)
 
 ---
 
 ## 1. Project Overview
 
-An AI-powered assistant designed specifically for people with ADHD. The system provides onboarding (capturing ADHD subtype, personal struggles, sensory triggers, goals), conversational chat with an AI assistant, and a knowledge base for ADHD-related content.
+**Harbor** — "A calm space in the chaos."
 
-**Current state:** Backend API is scaffolded and functional with Supabase Auth (JWT), Supabase-hosted PostgreSQL, and Railway deployment configuration. AI chat integration is stubbed and ready for provider hookup.
+An AI-powered assistant designed specifically for parents of children with ADHD. The system provides:
+
+- **37-step onboarding** — 6 basic-info questions + 31 Likert-scale trait assessment across 6 ADHD dimensions, auto-advancing one question per screen
+- **Trait profiling** — server-side scoring computes a 6-dimension profile (0-18 per dimension) and matches one of 21 animal archetypes
+- **Grounded AI chat** — Gemini 2.5 Flash with RAG (Retrieval-Augmented Generation), strictly grounded in a curated knowledge base
+- **Admin panel** — knowledge base management with bulk import, auto-indexing via pgvector
+
+**Current state:** Fully functional end-to-end — auth, onboarding assessment, AI chat with RAG grounding, admin knowledge base management, rate limiting, and security hardening.
 
 ---
 
@@ -38,15 +47,20 @@ An AI-powered assistant designed specifically for people with ADHD. The system p
 | **Language** | TypeScript | 5.7+ |
 | **API Framework** | Fastify | 5.2 |
 | **ORM** | Prisma | 6.4 |
-| **Database** | PostgreSQL (Supabase-hosted) | 15+ |
-| **Authentication** | Supabase Auth (JWT) | 2.49 |
+| **Database** | PostgreSQL (Supabase-hosted) + pgvector | 15+ |
+| **Authentication** | Supabase Auth (JWT, email/password only) | 2.49 |
+| **AI Chat Model** | Gemini 2.5 Flash | — |
+| **AI Embedding Model** | text-embedding-004 (1536-dim) | — |
+| **Vector Search** | pgvector with IVFFlat index | — |
 | **Validation** | Zod | 3.24 |
+| **Rate Limiting** | @fastify/rate-limit | 10.3 |
 | **CORS** | @fastify/cors | 11.0 |
+| **Frontend** | React 19 + Vite 7 + Tailwind CSS v4 | — |
+| **Animations** | Framer Motion | — |
 | **Logging** | Pino (via Fastify) + pino-pretty | — |
-| **Dev runner** | tsx (watch mode) | 4.19 |
 | **Monorepo** | pnpm workspaces | 10.29 |
+| **Shared Package** | `packages/shared` (assessment data, scoring) | — |
 | **Deployment** | Railway (Docker) | — |
-| **Containerization** | Docker (multi-stage) | — |
 
 ---
 
@@ -55,360 +69,237 @@ An AI-powered assistant designed specifically for people with ADHD. The system p
 ```
 adhd-ai-assistant/
 ├── package.json                  # Root workspace config
-├── pnpm-workspace.yaml           # Declares apps/* as workspaces
+├── pnpm-workspace.yaml           # Declares apps/* + packages/* as workspaces
 ├── pnpm-lock.yaml
 ├── Dockerfile                    # Multi-stage build for Railway
-├── .dockerignore                 # Docker build exclusions
+├── .dockerignore
 ├── railway.toml                  # Railway deployment config
+├── ADHD_AI_ASSISTANT_MVP.md      # This file
 │
 ├── apps/
-│   └── api/                      # Backend API server
-│       ├── package.json          # @adhd-ai-assistant/api
-│       ├── tsconfig.json         # ES2022, strict, ESM
-│       ├── .env                  # Local env vars (git-ignored)
-│       │
-│       ├── prisma/
-│       │   ├── schema.prisma     # 6 models + MessageRole enum
-│       │   └── migrations/       # Auto-generated SQL migrations
-│       │
+│   ├── api/                      # Backend API server
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma     # 8 models + MessageRole enum + pgvector
+│   │   │   └── migrations/       # Auto-generated SQL migrations
+│   │   └── src/
+│   │       ├── server.ts         # Entry point — Fastify bootstrap + rate limiting
+│   │       ├── plugins/
+│   │       │   ├── prisma.ts     # Prisma client lifecycle plugin
+│   │       │   └── supabase.ts   # Supabase Auth + authenticate preHandler
+│   │       ├── routes/
+│   │       │   ├── health.ts     # GET /health (public)
+│   │       │   ├── onboarding.ts # GET/PATCH/POST /api/onboarding (auth)
+│   │       │   ├── chat.ts       # POST /api/chat + conversation CRUD (auth)
+│   │       │   ├── user.ts       # GET /api/user/me (auth)
+│   │       │   └── admin.ts      # Knowledge base CRUD (admin only)
+│   │       └── services/ai/
+│   │           ├── geminiClient.ts   # Gemini API wrapper (chat + batch embeddings)
+│   │           ├── answer.ts         # Grounded answer generation pipeline
+│   │           ├── prompt.ts         # System prompt + context builder
+│   │           ├── retrieval.ts      # Semantic search via pgvector
+│   │           ├── embed.ts          # Batch embedding with retry logic
+│   │           ├── chunking.ts       # Text chunking (700 tokens, 100 overlap)
+│   │           └── knowledgeIndex.ts # Entry indexing pipeline (transaction)
+│   │
+│   └── web/                      # Frontend React app
+│       ├── package.json
+│       ├── vite.config.ts
 │       └── src/
-│           ├── server.ts         # Entry point — Fastify bootstrap
-│           ├── plugins/
-│           │   ├── prisma.ts     # Prisma client lifecycle plugin
-│           │   └── supabase.ts   # Supabase Auth + authenticate preHandler
-│           └── routes/
-│               ├── health.ts     # GET /health (public)
-│               ├── onboarding.ts # POST /api/onboarding (auth required)
-│               └── chat.ts       # POST /api/chat (auth required)
+│           ├── App.tsx           # Router + auth guard
+│           ├── lib/              # supabase.ts, api.ts, constants.ts
+│           ├── hooks/            # useAuth, useOnboarding, useChat, useDebounce
+│           ├── components/
+│           │   ├── auth/         # AuthPage (custom email/password form)
+│           │   ├── onboarding/   # 37-step assessment flow
+│           │   │   ├── OnboardingPage.tsx
+│           │   │   ├── OnboardingLayout.tsx
+│           │   │   ├── StepRenderer.tsx
+│           │   │   ├── AnimationWrapper.tsx
+│           │   │   ├── MicroCopy.tsx
+│           │   │   └── questions/ (SingleSelect, TextInput, NumberInput, LikertSelect)
+│           │   ├── chat/         # ChatPage, ChatSidebar, ChatInput, ChatMessage
+│           │   ├── admin/        # AdminPage, EntryList, EntryEditor, BulkImport
+│           │   └── ui/           # Button, ProgressBar, SaveIndicator
+│           └── types/            # onboarding.ts, chat.ts
 │
-└── .claude/
-    └── launch.json               # Dev server launch config
+├── packages/
+│   └── shared/                   # Shared assessment data + scoring logic
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── src/
+│           ├── index.ts          # Public exports
+│           └── assessment.ts     # 6 categories, 31 questions, 21 archetypes, scoring
+│
+└── docs/
+    ├── architecture.md
+    ├── ui-ux.md
+    └── rag-setup.md
 ```
 
 ---
 
 ## 4. Database Schema
 
-### Entity Relationship Diagram
+### Models
 
-```
-  Supabase auth.users
-         │
-         │ id (UUID) ──────────┐
-         │                     │
-         ▼                     ▼
-┌──────────────┐       1:1       ┌──────────────────┐
-│     User     │────────────────▶│   UserProfile     │
-│              │                 │                    │
-│ id (from JWT)│                 │ id (uuid)          │
-│ email        │                 │ userId (FK)        │
-│ createdAt    │                 │ adhdType           │
-│ updatedAt    │                 │ struggles[]        │
-└──────┬───────┘                 │ sensoryTriggers[]  │
-       │                         │ goals[]            │
-       │ 1:N                     │ onboardingCompleted│
-       │                         │ createdAt          │
-       ▼                         │ updatedAt          │
-┌──────────────┐                 └──────────────────┘
-│ Conversation │
-│              │
-│ id (uuid)    │
-│ userId (FK)  │
-│ createdAt    │
-│ updatedAt    │
-└──────┬───────┘
-       │
-       │ 1:N
-       ▼
-┌──────────────┐     ┌──────────────┐     ┌──────────────────┐
-│   Message    │     │   BlogPost   │     │  KnowledgeEntry  │
-│              │     │              │     │                  │
-│ id (uuid)    │     │ id (uuid)    │     │ id (uuid)        │
-│ convId (FK)  │     │ title        │     │ title            │
-│ role (enum)  │     │ content      │     │ content          │
-│ content      │     │ tags[]       │     │ category         │
-│ createdAt    │     │ createdAt    │     │ createdAt        │
-└──────────────┘     │ updatedAt    │     │ updatedAt        │
-                     └──────────────┘     └──────────────────┘
-```
+| Model | Description |
+|-------|-------------|
+| **User** | Linked to Supabase Auth JWT, has role (user/admin) |
+| **UserProfile** | ADHD profile, 37-step onboarding responses (JSONB), trait profile (JSONB) |
+| **Conversation** | Chat conversations per user |
+| **Message** | Chat messages with role enum + AI metadata (JSONB) |
+| **BlogPost** | Blog content with tags |
+| **KnowledgeEntry** | RAG knowledge base articles with category |
+| **KnowledgeChunk** | Chunked text with 1536-dim pgvector embeddings |
 
-### Models Detail
+### Key Fields
 
-#### User
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | UUID | Primary key — **set from Supabase Auth JWT `sub` claim** (no auto-generate) |
-| `email` | String | Unique, from JWT |
-| `createdAt` | DateTime | Auto-set |
-| `updatedAt` | DateTime | Auto-updated |
-| **Relations** | `profile` (1:1 UserProfile), `conversations` (1:N) | Cascade delete |
+**UserProfile** — Assessment & Traits:
+- `onboardingResponses` (JSONB) — all 37 step responses
+- `onboardingStep` (Int) — current step for resume
+- `onboardingCompleted` (Boolean)
+- `traitProfile` (JSONB) — computed scores per dimension + matched archetype
 
-#### UserProfile
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | UUID | Primary key |
-| `userId` | UUID | FK → User, unique |
-| `adhdType` | String | "inattentive" / "hyperactive" / "combined" |
-| `struggles` | String[] | Default `[]` |
-| `sensoryTriggers` | String[] | Default `[]` |
-| `goals` | String[] | Default `[]` |
-| `onboardingCompleted` | Boolean | Default `false` |
-| `createdAt` | DateTime | Auto-set |
-| `updatedAt` | DateTime | Auto-updated |
+**Message** — AI Metadata:
+- `metadata` (JSONB) — `{ model, grounded, sources[], usage { promptTokens, completionTokens }, errorCode? }`
 
-#### Conversation
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | UUID | Primary key |
-| `userId` | UUID | FK → User, indexed |
-| `createdAt` | DateTime | Auto-set |
-| `updatedAt` | DateTime | Auto-updated |
-| **Relations** | `messages` (1:N Message) | Cascade delete |
-
-#### Message
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | UUID | Primary key |
-| `conversationId` | UUID | FK → Conversation, indexed |
-| `role` | MessageRole | Enum: `USER` or `ASSISTANT` |
-| `content` | String | Message body |
-| `createdAt` | DateTime | Auto-set |
-
-#### BlogPost
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | UUID | Primary key |
-| `title` | String | — |
-| `content` | String | — |
-| `tags` | String[] | Default `[]` |
-| `createdAt` | DateTime | Auto-set |
-| `updatedAt` | DateTime | Auto-updated |
-
-#### KnowledgeEntry
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | UUID | Primary key |
-| `title` | String | — |
-| `content` | String | — |
-| `category` | String | Indexed for fast lookups |
-| `createdAt` | DateTime | Auto-set |
-| `updatedAt` | DateTime | Auto-updated |
+**KnowledgeChunk** — Vector Search:
+- `embedding` (vector(1536)) — pgvector column with IVFFlat cosine index
+- `tokenCount` (Int) — estimated token count per chunk
 
 ---
 
 ## 5. API Endpoints
 
-**Base URL:** `http://localhost:3001` (dev) / `https://YOUR-DOMAIN.up.railway.app` (prod)
+**Base URL:** `http://localhost:3001` (dev)
 
-### Authentication
+All protected routes require `Authorization: Bearer <supabase-access-token>`.
 
-Protected routes require a Supabase JWT in the `Authorization` header:
+### Public
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check with DB connectivity |
 
-```
-Authorization: Bearer <supabase-access-token>
-```
+### Auth Required
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/onboarding` | Get current onboarding progress |
+| PATCH | `/api/onboarding` | Save a single step answer (autosave) |
+| POST | `/api/onboarding/complete` | Compute trait profile + mark done |
+| GET | `/api/user/me` | Get current user profile |
+| POST | `/api/chat` | Send message, get grounded AI response (rate limited: 20/min) |
+| GET | `/api/conversations` | List user's conversations |
+| GET | `/api/conversations/:id/messages` | Get conversation messages |
+| DELETE | `/api/conversations/:id` | Delete a conversation |
 
-Unauthenticated requests to protected routes return:
-```json
-{ "error": "Missing or invalid authorization header" }
-```
-
-Invalid/expired tokens return:
-```json
-{ "error": "Invalid or expired token" }
-```
-
----
-
-### GET /health
-
-Health check with database connectivity verification.
-
-| | |
-|---|---|
-| **Auth** | None (public) |
-| **Success** | `200` |
-| **Failure** | `503` (database unreachable) |
-
-**Response (200):**
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-02-26T13:12:52.969Z"
-}
-```
-
-**Response (503):**
-```json
-{
-  "status": "error",
-  "message": "Database connection failed"
-}
-```
+### Admin Only (role = "admin")
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/stats` | Dashboard stats |
+| GET | `/api/admin/entries` | List knowledge entries (optional ?category filter) |
+| GET | `/api/admin/entries/:id` | Get single entry |
+| POST | `/api/admin/entries` | Create + auto-index entry |
+| PUT | `/api/admin/entries/:id` | Update + re-index entry |
+| DELETE | `/api/admin/entries/:id` | Delete entry (chunks cascade) |
+| POST | `/api/admin/entries/bulk` | Bulk import up to 500 entries |
 
 ---
 
-### POST /api/onboarding
+## 6. AI / RAG Pipeline
 
-Creates a new user (linked to Supabase Auth) and their ADHD profile. User identity comes from the JWT — no email in request body.
+### Architecture
 
-| | |
-|---|---|
-| **Auth** | Bearer token required |
-| **Content-Type** | `application/json` |
-| **Success** | `201` |
-| **Errors** | `400` (validation), `401` (unauthenticated), `409` (already onboarded) |
-
-**Request Body:**
-```json
-{
-  "adhdType": "combined",
-  "struggles": ["focus", "time management"],
-  "sensoryTriggers": ["loud noises"],
-  "goals": ["better focus", "daily routine"]
-}
+```
+User Question
+    │
+    ▼
+┌─────────────────┐     ┌──────────────────────┐
+│  Embed Query     │────▶│  pgvector Similarity  │
+│  (Gemini 004)    │     │  Search (top 8)       │
+└─────────────────┘     └──────┬───────────────┘
+                               │
+                     ┌─────────▼─────────┐
+                     │  Keyword Bonus     │
+                     │  + Score Filtering │
+                     │  (min 0.35)        │
+                     └─────────┬─────────┘
+                               │
+              ┌────────────────▼────────────────┐
+              │  Build Grounded Prompt           │
+              │  • System instructions           │
+              │  • Parent profile (personalize)  │
+              │  • Knowledge sources (ground)    │
+              │  • Last 8 messages (history)     │
+              │  • Current question              │
+              └────────────────┬────────────────┘
+                               │
+                     ┌─────────▼─────────┐
+                     │  Gemini 2.5 Flash  │
+                     │  (temp 0.2)        │
+                     └─────────┬─────────┘
+                               │
+                     ┌─────────▼─────────┐
+                     │  Grounded Answer   │
+                     │  + Source Metadata  │
+                     │  + Token Usage      │
+                     └───────────────────┘
 ```
 
-| Field | Type | Required | Constraints |
-|-------|------|----------|-------------|
-| `adhdType` | string | Yes | `"inattentive"` \| `"hyperactive"` \| `"combined"` |
-| `struggles` | string[] | Yes | 1-20 items, each non-empty |
-| `sensoryTriggers` | string[] | No | 0-20 items, defaults to `[]` |
-| `goals` | string[] | Yes | 1-20 items, each non-empty |
+### Key Design Decisions
 
-**Response (201):**
-```json
-{
-  "user": {
-    "id": "fda99d35-fc86-477b-8734-11f6688330d6",
-    "email": "user@example.com",
-    "createdAt": "2026-02-26T13:12:53.044Z"
-  },
-  "profile": {
-    "id": "226e27a8-9b27-4ea8-8849-d17feb14166b",
-    "adhdType": "combined",
-    "struggles": ["focus", "time management"],
-    "sensoryTriggers": ["loud noises"],
-    "goals": ["better focus", "daily routine"],
-    "onboardingCompleted": true
-  }
-}
-```
-
-**Response (400):**
-```json
-{
-  "error": "Validation failed",
-  "details": {
-    "adhdType": ["Required"],
-    "struggles": ["Required"],
-    "goals": ["Required"]
-  }
-}
-```
-
-**Response (409):**
-```json
-{
-  "error": "User has already completed onboarding"
-}
-```
+| Aspect | Choice | Rationale |
+|--------|--------|-----------|
+| Embedding | Gemini text-embedding-004 (1536-dim) | Stable, good quality, batch API |
+| Chat | Gemini 2.5 Flash | Fast, cost-effective for grounded QA |
+| Vector Index | IVFFlat cosine distance | Fast approximate search |
+| Chunking | 700 tokens, 100 overlap | Context balance |
+| Temperature | 0.2 | Factual, deterministic |
+| Grounding | Strict (no hallucination) | Critical for parenting advice |
+| Batch Embeddings | `batchEmbedContents` API | Single API call for all chunks |
+| Chunk Storage | Transactional bulk insert | Atomic delete + insert |
 
 ---
 
-### POST /api/chat
+## 7. Security
 
-Sends a message and receives an AI assistant response. User identity comes from JWT. Creates a new conversation if `conversationId` is not provided.
-
-| | |
-|---|---|
-| **Auth** | Bearer token required |
-| **Content-Type** | `application/json` |
-| **Success** | `200` |
-| **Errors** | `400` (validation), `401` (unauthenticated), `403` (not onboarded), `404` (conversation not found) |
-
-**Request Body:**
-```json
-{
-  "message": "I need help focusing today",
-  "conversationId": "cc25162f-836e-4202-be15-a83aee2f8dcb"
-}
-```
-
-| Field | Type | Required | Constraints |
-|-------|------|----------|-------------|
-| `message` | string | Yes | 1-5000 characters |
-| `conversationId` | string | No | Valid UUID, omit to start new conversation |
-
-**Response (200):**
-```json
-{
-  "conversationId": "cc25162f-836e-4202-be15-a83aee2f8dcb",
-  "userMessage": {
-    "id": "e040607d-2be2-45a4-8f88-6870f06948e9",
-    "role": "USER",
-    "content": "I need help focusing today",
-    "createdAt": "2026-02-26T13:13:03.658Z"
-  },
-  "assistantMessage": {
-    "id": "06008712-19e5-4474-bc10-127c84b23ea2",
-    "role": "ASSISTANT",
-    "content": "I received your message. AI integration is pending.",
-    "createdAt": "2026-02-26T13:13:03.660Z"
-  }
-}
-```
-
-**Response (403):**
-```json
-{
-  "error": "User has not completed onboarding"
-}
-```
-
-> **Note:** The assistant response is currently a placeholder. AI provider integration (e.g. Anthropic Claude API, OpenAI) is the next milestone.
+### Implemented
+- **Rate limiting** — Global: 100 req/min per user. Chat endpoint: 20 req/min per user (`@fastify/rate-limit`)
+- **Max messages per conversation** — 200 message cap prevents unbounded growth
+- **Auth on all routes** — Supabase JWT verification via `authenticate` preHandler
+- **Admin role check** — `requireAdmin()` verifies `user.role === 'admin'`
+- **Onboarding gate** — Chat requires `onboardingCompleted === true`
+- **Input validation** — Zod schemas on all POST/PATCH/PUT bodies
+- **CORS** — Origin locked, configurable via `CORS_ORIGIN`
+- **API key protection** — Gemini API errors sanitized to prevent key leakage in logs
+- **Request timeout** — 20s abort on all Gemini API calls
+- **Strict grounding** — AI instructed to never invent facts
+- **Error masking** — Global error handler hides 500 details from clients
 
 ---
 
-## 6. Environment Variables
+## 8. Environment Variables
 
 Located in `apps/api/.env` (git-ignored).
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | Yes | — | PostgreSQL connection string (Supabase pooled, port 6543) |
-| `DIRECT_URL` | Yes | — | PostgreSQL direct connection (Supabase, port 5432, for migrations) |
+| `DATABASE_URL` | Yes | — | PostgreSQL connection (Supabase pooled, port 6543) |
+| `DIRECT_URL` | Yes | — | PostgreSQL direct connection (port 5432, for migrations) |
 | `SUPABASE_URL` | Yes | — | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Yes | — | Supabase anonymous/public key |
+| `GEMINI_API_KEY` | Yes | — | Google Gemini API key |
+| `GEMINI_CHAT_MODEL` | No | `gemini-2.5-flash` | Chat model |
+| `GEMINI_EMBED_MODEL` | No | `text-embedding-004` | Embedding model |
 | `NODE_ENV` | No | `development` | `development` \| `production` \| `test` |
-| `PORT` | No | `3001` | API server port (Railway auto-injects) |
+| `PORT` | No | `3001` | API server port |
 | `HOST` | No | `0.0.0.0` | API server bind address |
 | `CORS_ORIGIN` | No | `http://localhost:3000` | Allowed CORS origin |
 
-**Example `.env` (local dev):**
-```env
-DATABASE_URL="postgresql://username@localhost:5432/adhd_ai_assistant_dev"
-DIRECT_URL="postgresql://username@localhost:5432/adhd_ai_assistant_dev"
-SUPABASE_URL="https://your-project-ref.supabase.co"
-SUPABASE_ANON_KEY="eyJ..."
-NODE_ENV="development"
-PORT=3001
-CORS_ORIGIN="http://localhost:3000"
-```
-
-**Example `.env` (production / Railway):**
-```env
-DATABASE_URL="postgresql://postgres.xxxx:password@aws-0-region.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.xxxx:password@aws-0-region.pooler.supabase.com:5432/postgres"
-SUPABASE_URL="https://xxxx.supabase.co"
-SUPABASE_ANON_KEY="eyJ..."
-NODE_ENV="production"
-CORS_ORIGIN="https://your-frontend.com"
-```
-
 ---
 
-## 7. Scripts & Commands
+## 9. Scripts & Commands
 
 ### Root (from repo root)
 
@@ -423,7 +314,7 @@ CORS_ORIGIN="https://your-frontend.com"
 |---------|-------------|
 | `pnpm dev` | Start dev server with tsx watch |
 | `pnpm build` | Compile TypeScript |
-| `pnpm start` | Run compiled JS (production) |
+| `pnpm start` | Run compiled JS (runs `prisma generate` + `migrate deploy` first) |
 | `pnpm prisma:generate` | Regenerate Prisma client |
 | `pnpm prisma:migrate` | Create/apply migrations |
 | `pnpm prisma:studio` | Open Prisma Studio GUI |
@@ -432,8 +323,8 @@ CORS_ORIGIN="https://your-frontend.com"
 
 | Command | Description |
 |---------|-------------|
+| `docker compose up` | Start PostgreSQL 16 + API with hot reload |
 | `docker build -t adhd-api .` | Build production image |
-| `docker run -p 3001:3001 --env-file apps/api/.env adhd-api` | Run locally |
 
 ### First-time setup
 
@@ -446,224 +337,92 @@ pnpm install
 # 3. Run database migrations
 pnpm --filter @adhd-ai-assistant/api prisma:migrate
 
-# 4. Start dev server
-pnpm dev:api
+# 4. Start dev servers
+pnpm dev:api    # API on :3001
+pnpm dev:web    # Web on :3000
 ```
 
 ---
 
-## 8. Infrastructure Setup Guides
+## 10. Infrastructure Setup Guides
 
-### 8.1 Supabase Setup (supabase.com)
+### 10.1 Supabase Setup
 
-#### Step 1: Create account and project
-1. Go to **supabase.com** → **Sign in with GitHub**
-2. Click **"New Project"**
-3. Fill in:
-   - **Name:** `adhd-ai-assistant`
-   - **Database password:** generate a strong one — **save it somewhere safe**
-   - **Region:** pick closest to your users (e.g. `us-east-1`)
-4. Click **"Create new project"** — wait ~2 minutes for provisioning
+1. Create project at **supabase.com**
+2. Get connection strings: **Settings → Database** (pooled for `DATABASE_URL`, direct for `DIRECT_URL`)
+3. Get API keys: **Settings → API** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
+4. Configure auth: **Authentication → Providers** (email enabled by default)
+5. Apply migrations: `cd apps/api && npx prisma migrate deploy`
 
-#### Step 2: Get database connection strings
-1. Go to **Settings → Database**
-2. Under **"Connection pooling"** section:
-   - Copy the **Transaction mode URI** (port `6543`) → this is your `DATABASE_URL`
-   - **Append `?pgbouncer=true`** to the end of the URL
-3. Copy the **Direct connection URI** (port `5432`) → this is your `DIRECT_URL`
-4. In both URLs, replace `[YOUR-PASSWORD]` with the password from Step 1
+### 10.2 Railway Setup
 
-#### Step 3: Get API keys
-1. Go to **Settings → API**
-2. Copy **Project URL** → this is your `SUPABASE_URL`
-3. Copy **anon / public** key → this is your `SUPABASE_ANON_KEY`
-
-#### Step 4: Configure authentication
-1. Go to **Authentication → Providers**
-   - **Email** is enabled by default (email + password signup/login)
-   - Optionally toggle on OAuth providers (Google, GitHub, etc.)
-2. Go to **Authentication → Settings**
-   - For development: disable **"Confirm email"** (re-enable for production)
-
-#### Step 5: Set redirect URLs
-1. Go to **Authentication → URL Configuration**
-2. **Site URL:** `http://localhost:3000` (update to production URL later)
-3. **Redirect URLs:** add `http://localhost:3000/**`
-
-#### Step 6: Apply database migrations
-After configuring `.env` with Supabase connection strings:
-```bash
-cd apps/api && npx prisma migrate deploy
-```
+1. Deploy from GitHub repo at **railway.com**
+2. Set environment variables (DATABASE_URL, DIRECT_URL, SUPABASE_URL, SUPABASE_ANON_KEY, GEMINI_API_KEY, NODE_ENV=production, CORS_ORIGIN)
+3. Railway reads `railway.toml` for health checks + restart policy
+4. Generate domain under **Networking**
 
 ---
 
-### 8.2 Railway Setup (railway.com)
+## 11. Branches & Feature Log
 
-#### Step 1: Create account and project
-1. Go to **railway.com** → **Sign in with GitHub**
-2. Click **"New Project"** → **"Deploy from GitHub repo"**
-3. Select the `adhd-ai-assistant` repository
-4. Railway auto-detects the `Dockerfile`
-
-#### Step 2: Configure environment variables
-1. Click on the service → **Variables** tab
-2. Add each variable:
-
-| Variable | Where to get the value |
-|----------|----------------------|
-| `DATABASE_URL` | Supabase → Settings → Database → Pooled URI (port 6543) + `?pgbouncer=true` |
-| `DIRECT_URL` | Supabase → Settings → Database → Direct URI (port 5432) |
-| `SUPABASE_URL` | Supabase → Settings → API → Project URL |
-| `SUPABASE_ANON_KEY` | Supabase → Settings → API → anon public key |
-| `NODE_ENV` | `production` |
-| `CORS_ORIGIN` | Your frontend production URL |
-
-> `PORT` is auto-injected by Railway — do **not** set it manually.
-
-#### Step 3: Configure deployment
-1. Click on the service → **Settings** tab
-2. Railway reads `railway.toml` automatically for:
-   - Docker build path
-   - Health check at `/health`
-   - Restart policy (on failure, max 3 retries)
-3. Under **Networking** → click **"Generate Domain"** to get a public URL
-4. Copy the generated URL (e.g. `adhd-api-production.up.railway.app`)
-
-#### Step 4: Enable CI/CD auto-deploy
-1. In **Settings → Source**:
-   - **Root directory:** `/` (repo root, since Dockerfile is there)
-   - **Watch paths:** leave blank (deploys on any push)
-2. In **Settings → Triggers**:
-   - **Branch:** `main`
-3. CI/CD flow: `git push to main` → Docker build → health check → deploy
-
-#### Step 5: Verify deployment
-1. Wait for build to complete (check **Deployments** tab)
-2. Hit: `https://YOUR-DOMAIN.up.railway.app/health`
-3. Expected response:
-   ```json
-   { "status": "ok", "timestamp": "..." }
-   ```
+| Date | Branch/PR | Description |
+|------|-----------|-------------|
+| 2026-02-26 | `claude/goofy-khorana` | Backend API server setup (Fastify, Prisma, 6 models) |
+| 2026-02-26 | `supabase-railway-setup` | Supabase Auth + Railway deployment |
+| 2026-02-27 | `claude/hardcore-tharp` | Docker Prisma fixes, prestart script |
+| 2026-03-01 | `claude/hopeful-leakey` | Chat UI, Admin Panel, knowledge base management |
+| 2026-03-02 | main | Implement grounded OpenAI RAG pipeline |
+| 2026-03-02 | main | Switch RAG provider to Gemini 2.5 Flash |
+| 2026-03-03 | `claude/hopeful-leakey` | 37-step ADHD trait assessment onboarding |
+| 2026-03-03 | `security/high-priority-fixes` | Rate limiting, API key protection, batch embeddings, transactional indexing |
 
 ---
 
-## 9. Branches & Feature Log
-
-### `main`
-> Stable branch. All features merge here via PR.
-
-| Date | PR | Description |
-|------|-----|-------------|
-| 2026-02-26 | — | Initial commit (empty repo + .gitignore) |
-
----
-
-### `claude/goofy-khorana` → PR pending
-> **Feature: Backend API Server Setup**
-
-**Changes:**
-- [x] Initialized pnpm monorepo workspace (`apps/*`)
-- [x] Created `apps/api/` Fastify server (TypeScript, ESM)
-- [x] Added Prisma ORM with PostgreSQL
-  - [x] `User` model (email, timestamps)
-  - [x] `UserProfile` model (adhdType, struggles, sensoryTriggers, goals)
-  - [x] `Conversation` model (userId relation)
-  - [x] `Message` model (role enum: USER/ASSISTANT)
-  - [x] `BlogPost` model (title, content, tags)
-  - [x] `KnowledgeEntry` model (title, content, category)
-  - [x] Initial migration applied
-- [x] Added API routes with Zod validation
-  - [x] `GET /health` — DB connectivity check
-  - [x] `POST /api/onboarding` — user + profile creation
-  - [x] `POST /api/chat` — conversation + message management
-- [x] @fastify/cors configured
-- [x] Pino structured logging (pino-pretty for dev)
-- [x] Global error handler (validation vs server errors)
-- [x] Graceful shutdown (SIGINT/SIGTERM)
-
-**Files added/modified:** 14 files, +1646 lines
-
----
-
-### `supabase-railway-setup` → PR pending
-> **Feature: Supabase Auth + Supabase PostgreSQL + Railway Deployment**
-
-**Changes:**
-- [x] Added Supabase Auth (JWT) via `@supabase/supabase-js`
-  - [x] Created `plugins/supabase.ts` — authenticate preHandler
-  - [x] Bearer token verification via `supabase.auth.getUser()`
-  - [x] Type-safe `request.user` with `{ id, email }` from JWT
-- [x] Protected routes with auth middleware
-  - [x] `POST /api/onboarding` — now requires Bearer token, email from JWT
-  - [x] `POST /api/chat` — now requires Bearer token, userId from JWT
-  - [x] `GET /health` — remains public
-- [x] Updated Prisma schema for Supabase PostgreSQL
-  - [x] Added `directUrl` for pgbouncer connection pooling
-  - [x] User.id now set from Supabase auth UUID (removed auto-generate)
-- [x] Railway deployment configuration
-  - [x] Multi-stage `Dockerfile` (build + production)
-  - [x] `railway.toml` with health check + restart policy
-  - [x] `.dockerignore`
-- [x] Updated environment variables
-  - [x] Added `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`
-- [x] Updated MVP documentation with infrastructure setup guides
-
----
-
-### `<branch-name>` → PR #
-> **Feature: _______**
-
-**Changes:**
-- [ ] _Change description_
-- [ ] _Change description_
-
----
-
-## 10. MVP Roadmap
+## 12. MVP Roadmap
 
 ### Phase 1: Backend Foundation ✅
 - [x] Fastify server with TypeScript
 - [x] PostgreSQL + Prisma ORM
 - [x] User onboarding API
 - [x] Chat API (message persistence)
-- [x] Health check
-- [x] Zod validation on all routes
-- [x] Error handling + logging
+- [x] Zod validation, error handling, logging
 
-### Phase 2: AI Integration
-- [ ] Connect AI provider (Claude / OpenAI) to chat route
-- [ ] Pass user profile context (ADHD type, struggles, goals) to AI
-- [ ] Implement conversation history context window
-- [ ] Add system prompt tailored for ADHD support
-- [ ] Token/rate limiting
+### Phase 2: AI Integration ✅
+- [x] Gemini 2.5 Flash chat integration
+- [x] RAG pipeline with pgvector semantic search
+- [x] Pass user profile context for personalization
+- [x] Conversation history context (last 8 messages)
+- [x] System prompt tailored for ADHD parenting support
+- [x] Strict grounding — no hallucination policy
 
-### Phase 3: Knowledge Base & Content
-- [ ] CRUD API for `BlogPost`
-- [ ] CRUD API for `KnowledgeEntry`
-- [ ] Search/filter endpoints (by category, tags)
-- [ ] Seed initial ADHD knowledge content
+### Phase 3: Knowledge Base ✅
+- [x] CRUD API for KnowledgeEntry (admin only)
+- [x] Bulk import (up to 500 entries)
+- [x] Auto-chunking + embedding on create/update
+- [x] pgvector semantic search with keyword bonus
 
 ### Phase 4: Authentication & Security ✅
-- [x] Supabase Auth integration (JWT)
-- [x] Authentication middleware on protected routes
-- [ ] Rate limiting per user
-- [ ] Input sanitization
+- [x] Supabase Auth (email/password, JWT)
+- [x] Rate limiting (global + per-endpoint)
+- [x] Max messages per conversation
+- [x] API key leak protection
+- [x] Admin role enforcement
+- [x] Input validation on all routes
 
-### Phase 5: Frontend
-- [ ] Next.js / React app in `apps/web/`
-- [ ] Onboarding flow UI
-- [ ] Chat interface
-- [ ] Blog/knowledge base pages
-- [ ] Responsive mobile-first design
+### Phase 5: Frontend ✅
+- [x] React 19 + Vite + Tailwind CSS v4
+- [x] Custom auth form (signup/login)
+- [x] 37-step onboarding assessment with auto-advance
+- [x] Chat interface with conversation sidebar
+- [x] Admin panel with knowledge base management
 
-### Phase 6: Production Readiness (partial ✅)
+### Phase 6: Production Readiness (partial)
 - [ ] CI/CD pipeline (GitHub Actions)
-- [x] Docker containerization (multi-stage Dockerfile)
-- [x] Railway deployment config with health checks
+- [x] Docker containerization
+- [x] Railway deployment with health checks
 - [ ] Monitoring & alerting
-- [ ] Database backups
-- [ ] API documentation (Swagger/OpenAPI)
+- [ ] Database backups strategy
+- [ ] API documentation (OpenAPI)
 
 ---
 

@@ -15,6 +15,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
             select: {
               onboardingCompleted: true,
               onboardingResponses: true,
+              traitProfile: true,
             },
           },
         },
@@ -34,6 +35,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
         profile: {
           childName: (responses.childName as string) ?? "",
           onboardingCompleted: user.profile?.onboardingCompleted ?? false,
+          traitProfile: user.profile?.traitProfile ?? null,
         },
       });
     },

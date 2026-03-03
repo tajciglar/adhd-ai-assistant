@@ -21,7 +21,7 @@ type Action =
       responses: OnboardingResponses;
       completed: boolean;
     }
-  | { type: "SET_ANSWER"; key: keyof OnboardingResponses; value: unknown }
+  | { type: "SET_ANSWER"; key: string; value: string | number | undefined }
   | { type: "NEXT_STEP" }
   | { type: "PREV_STEP" }
   | { type: "SAVE_STATUS"; status: SaveStatus }
@@ -43,7 +43,7 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
         ...state,
         currentStep: action.completed
           ? TOTAL_STEPS + 1
-          : Math.max(1, Math.min(action.step, TOTAL_STEPS + 1)),
+          : Math.max(1, Math.min(action.step, TOTAL_STEPS)),
         responses: action.responses,
         completed: action.completed,
         loading: false,
@@ -56,7 +56,7 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
     case "NEXT_STEP":
       return {
         ...state,
-        currentStep: Math.min(state.currentStep + 1, TOTAL_STEPS + 1),
+        currentStep: Math.min(state.currentStep + 1, TOTAL_STEPS),
         direction: 1,
       };
     case "PREV_STEP":
@@ -134,12 +134,7 @@ export function useOnboarding() {
   );
 
   const saveAnswer = useCallback(
-    (
-      step: number,
-      key: keyof OnboardingResponses,
-      value: unknown,
-      immediate = false,
-    ) => {
+    (step: number, key: string, value: string | number | undefined, immediate = false) => {
       dispatch({ type: "SET_ANSWER", key, value });
 
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -168,7 +163,6 @@ export function useOnboarding() {
       await api.post("/api/onboarding/complete");
       dispatch({ type: "COMPLETE" });
     } catch {
-      // Already completed is fine
       dispatch({ type: "COMPLETE" });
     }
   }, []);

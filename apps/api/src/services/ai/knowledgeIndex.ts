@@ -27,47 +27,51 @@ export async function reindexKnowledgeEntry(
   const chunks = splitIntoChunks(entry.content);
   const fallback = chunks.length > 0 ? chunks : splitIntoChunks(entry.title);
 
-  await fastify.prisma.$executeRaw(
-    Prisma.sql`DELETE FROM "knowledge_chunks" WHERE "entry_id" = ${entry.id}`,
-  );
-
   if (fallback.length === 0) {
+    await fastify.prisma.$executeRaw(
+      Prisma.sql`DELETE FROM "knowledge_chunks" WHERE "entry_id" = ${entry.id}`,
+    );
     return { chunksIndexed: 0 };
   }
 
   const searchable = fallback.map((chunk) => buildSearchableText(entry, chunk.text));
   const embeddings = await embedTexts(searchable);
 
-  for (let i = 0; i < fallback.length; i += 1) {
-    const chunk = fallback[i];
+  // Build all chunk insert statements for a single transaction
+  const insertStatements = fallback.map((chunk, i) => {
     const embedding = embeddings[i];
     const vectorLiteral = toVectorLiteral(embedding);
 
-    await fastify.prisma.$executeRaw(
-      Prisma.sql`
-        INSERT INTO "knowledge_chunks" (
-          "id",
-          "entry_id",
-          "chunk_index",
-          "text",
-          "token_count",
-          "embedding",
-          "created_at",
-          "updated_at"
-        ) VALUES (
-          ${randomUUID()},
-          ${entry.id},
-          ${chunk.chunkIndex},
-          ${chunk.text},
-          ${chunk.tokenCount},
-          ${vectorLiteral}::vector,
-          NOW(),
-          NOW()
-        )
-      `,
-    );
-  }
+    return Prisma.sql`
+      INSERT INTO "knowledge_chunks" (
+        "id",
+        "entry_id",
+        "chunk_index",
+        "text",
+        "token_count",
+        "embedding",
+        "created_at",
+        "updated_at"
+      ) VALUES (
+        ${randomUUID()},
+        ${entry.id},
+        ${chunk.chunkIndex},
+        ${chunk.text},
+        ${chunk.tokenCount},
+        ${vectorLiteral}::vector,
+        NOW(),
+        NOW()
+      )
+    `;
+  });
+
+  // Delete old chunks + insert all new chunks in a single transaction
+  await fastify.prisma.$transaction([
+    fastify.prisma.$executeRaw(
+      Prisma.sql`DELETE FROM "knowledge_chunks" WHERE "entry_id" = ${entry.id}`,
+    ),
+    ...insertStatements.map((sql) => fastify.prisma.$executeRaw(sql)),
+  ]);
 
   return { chunksIndexed: fallback.length };
 }
-

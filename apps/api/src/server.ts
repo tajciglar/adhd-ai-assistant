@@ -1,5 +1,6 @@
 import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import prismaPlugin from "./plugins/prisma.js";
 import supabasePlugin from "./plugins/supabase.js";
 import healthRoutes from "./routes/health.js";
@@ -33,6 +34,16 @@ async function buildServer() {
     origin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
+  });
+
+  // Global rate limit: 100 requests/minute per IP
+  await server.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+    keyGenerator: (request) => {
+      // Use authenticated user ID if available, otherwise fall back to IP
+      return (request as any).user?.id ?? request.ip;
+    },
   });
 
   await server.register(prismaPlugin);

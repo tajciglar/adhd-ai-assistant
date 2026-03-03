@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@adhd-ai-assistant/shared": "workspace:*",
     "@supabase/supabase-js": "^2.98.0",
     "framer-motion": "^12.34.3",
     "react": "^19.2.0",

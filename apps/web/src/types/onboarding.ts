@@ -1,42 +1,19 @@
 export interface OnboardingResponses {
-  gender?: string;
-  ageRange?: string;
-  knowledgeLevel?: string;
+  // Basic info (steps 1-6)
+  parentGender?: string;
+  parentAgeRange?: string;
   childName?: string;
   childAge?: number;
-  diagnosisStatus?: string;
+  childGender?: string;
   householdStructure?: string;
-  schoolSupport?: string;
-  currentInterventions?: string[];
-  stressfulAreas?: string[];
-  executiveFunctioningGaps?: string[];
-  physicalActivity?: string[];
-  impulseControlMarkers?: string[];
-  childMotivators?: string[];
-  theReality?: string;
-  theVision?: string;
+  // Likert answers: category_questionIndex → 0-3
+  // e.g. filter_0, engine_3, social_4, etc.
+  [key: string]: string | number | undefined;
 }
 
-export type QuestionType =
-  | "single-select"
-  | "multi-select"
-  | "limited-select"
-  | "text"
-  | "number"
-  | "textarea";
+export type QuestionType = "single-select" | "text" | "number" | "likert";
 
 export interface OptionItem {
   value: string;
   label: string;
-}
-
-export interface StepConfig {
-  step: number;
-  key: keyof OnboardingResponses;
-  type: QuestionType;
-  title: string;
-  subtitle?: string;
-  options?: OptionItem[];
-  maxSelections?: number;
-  placeholder?: string;
 }

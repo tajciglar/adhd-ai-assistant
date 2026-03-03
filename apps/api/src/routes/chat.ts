@@ -10,6 +10,8 @@ const chatBodySchema = z.object({
 
 type ChatBody = z.infer<typeof chatBodySchema>;
 
+const MAX_MESSAGES_PER_CONVERSATION = 200;
+
 export default async function chatRoutes(fastify: FastifyInstance) {
   // GET /conversations — list user's conversations
   fastify.get(
@@ -90,7 +92,15 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   // POST /chat — send a message and get a response
   fastify.post<{ Body: ChatBody }>(
     "/chat",
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: [fastify.authenticate],
+      config: {
+        rateLimit: {
+          max: 20,
+          timeWindow: "1 minute",
+        },
+      },
+    },
     async (request, reply) => {
       const parsed = chatBodySchema.safeParse(request.body);
 
@@ -131,6 +141,16 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         if (!existing) {
           return reply.status(404).send({
             error: "Conversation not found",
+          });
+        }
+
+        // Enforce max messages per conversation to prevent unbounded growth
+        const messageCount = await fastify.prisma.message.count({
+          where: { conversationId },
+        });
+        if (messageCount >= MAX_MESSAGES_PER_CONVERSATION) {
+          return reply.status(429).send({
+            error: "Conversation has reached the maximum number of messages. Please start a new conversation.",
           });
         }
 

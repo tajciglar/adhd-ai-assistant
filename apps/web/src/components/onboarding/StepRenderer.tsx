@@ -1,21 +1,14 @@
-import { ONBOARDING_STEPS } from "../../lib/constants";
+import { getStepConfig } from "@adhd-ai-assistant/shared";
 import type { OnboardingResponses } from "../../types/onboarding";
 import SingleSelect from "./questions/SingleSelect";
-import MultiSelect from "./questions/MultiSelect";
-import LimitedSelect from "./questions/LimitedSelect";
 import TextInput from "./questions/TextInput";
 import NumberInput from "./questions/NumberInput";
-import TextArea from "./questions/TextArea";
+import LikertSelect from "./questions/LikertSelect";
 
 interface StepRendererProps {
   step: number;
   responses: OnboardingResponses;
-  onAnswer: (
-    step: number,
-    key: keyof OnboardingResponses,
-    value: unknown,
-    immediate?: boolean,
-  ) => void;
+  onAnswer: (step: number, key: string, value: string | number | undefined, immediate?: boolean) => void;
 }
 
 function interpolate(template: string, responses: OnboardingResponses): string {
@@ -30,83 +23,57 @@ export default function StepRenderer({
   responses,
   onAnswer,
 }: StepRendererProps) {
-  const config = ONBOARDING_STEPS[step - 1];
+  const config = getStepConfig(step);
   if (!config) return null;
 
-  const title = interpolate(config.title, responses);
-  const subtitle = config.subtitle
-    ? interpolate(config.subtitle, responses)
-    : undefined;
+  if (config.type === "basic-info") {
+    const q = config.question;
+    const title = interpolate(q.title, responses);
 
-  switch (config.type) {
-    case "single-select":
-      return (
-        <SingleSelect
-          title={title}
-          subtitle={subtitle}
-          value={(responses[config.key] as string) ?? ""}
-          onChange={(v) => onAnswer(step, config.key, v, true)}
-          options={config.options!}
-        />
-      );
+    switch (q.type) {
+      case "single-select":
+        return (
+          <SingleSelect
+            title={title}
+            value={(responses[q.key] as string) ?? ""}
+            onChange={(v) => onAnswer(step, q.key, v, true)}
+            options={q.options!.map((o) => ({ value: o, label: o }))}
+          />
+        );
 
-    case "multi-select":
-      return (
-        <MultiSelect
-          title={title}
-          subtitle={subtitle}
-          value={(responses[config.key] as string[]) ?? []}
-          onChange={(v) => onAnswer(step, config.key, v, true)}
-          options={config.options!}
-        />
-      );
+      case "text":
+        return (
+          <TextInput
+            title={title}
+            value={(responses[q.key] as string) ?? ""}
+            onChange={(v) => onAnswer(step, q.key, v)}
+            placeholder={q.placeholder}
+          />
+        );
 
-    case "limited-select":
-      return (
-        <LimitedSelect
-          title={title}
-          subtitle={subtitle}
-          value={(responses[config.key] as string[]) ?? []}
-          onChange={(v) => onAnswer(step, config.key, v, true)}
-          options={config.options!}
-          maxSelections={config.maxSelections!}
-        />
-      );
+      case "number":
+        return (
+          <NumberInput
+            title={title}
+            value={responses[q.key] as number | undefined}
+            onChange={(v) => onAnswer(step, q.key, v)}
+          />
+        );
 
-    case "text":
-      return (
-        <TextInput
-          title={title}
-          subtitle={subtitle}
-          value={(responses[config.key] as string) ?? ""}
-          onChange={(v) => onAnswer(step, config.key, v)}
-          placeholder={config.placeholder}
-        />
-      );
-
-    case "number":
-      return (
-        <NumberInput
-          title={title}
-          subtitle={subtitle}
-          value={responses[config.key] as number | undefined}
-          onChange={(v) => onAnswer(step, config.key, v)}
-          placeholder={config.placeholder}
-        />
-      );
-
-    case "textarea":
-      return (
-        <TextArea
-          title={title}
-          subtitle={subtitle}
-          value={(responses[config.key] as string) ?? ""}
-          onChange={(v) => onAnswer(step, config.key, v)}
-          placeholder={config.placeholder}
-        />
-      );
-
-    default:
-      return null;
+      default:
+        return null;
+    }
   }
+
+  // Likert question
+  const key = `${config.categoryId}_${config.questionIndex}`;
+  return (
+    <LikertSelect
+      categoryLabel={config.categoryLabel}
+      categorySubtitle={config.categorySubtitle}
+      questionText={interpolate(config.questionText, responses)}
+      value={responses[key] as number | undefined}
+      onChange={(v) => onAnswer(step, key, v, true)}
+    />
+  );
 }
