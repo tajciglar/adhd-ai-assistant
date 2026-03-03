@@ -11,7 +11,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "admin:promote": "tsx scripts/promote-admin.ts"
+    "admin:promote": "tsx scripts/promote-admin.ts",
+    "import-content": "tsx scripts/import-content.ts"
   },
   "dependencies": {
     "@adhd-ai-assistant/shared": "workspace:*",

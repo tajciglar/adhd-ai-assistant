@@ -5,7 +5,7 @@ const EMBEDDING_DIMENSIONS = 1536;
 export const AI_CHAT_MODEL =
   process.env.GEMINI_CHAT_MODEL ?? "gemini-2.5-flash";
 export const AI_EMBED_MODEL =
-  process.env.GEMINI_EMBED_MODEL ?? "text-embedding-004";
+  process.env.GEMINI_EMBED_MODEL ?? "gemini-embedding-001";
 
 interface ChatCompletionMessage {
   role: "system" | "user" | "assistant";
