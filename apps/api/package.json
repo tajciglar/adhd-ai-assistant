@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "admin:promote": "tsx scripts/promote-admin.ts"
   },
   "dependencies": {
     "@adhd-ai-assistant/shared": "workspace:*",

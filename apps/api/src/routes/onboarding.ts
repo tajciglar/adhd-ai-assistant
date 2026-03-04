@@ -101,11 +101,12 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { id: userId, email } = request.user;
-      const { profile } = await ensureUserAndProfile(fastify, userId, email);
+      const { user, profile } = await ensureUserAndProfile(fastify, userId, email);
 
       return reply.send({
         onboardingStep: profile.onboardingStep,
         onboardingCompleted: profile.onboardingCompleted,
+        role: user.role,
         responses:
           (profile.onboardingResponses as Record<string, unknown>) ?? {},
       });

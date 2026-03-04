@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { reindexKnowledgeEntry } from "../services/ai/knowledgeIndex.js";
+import { retrieveRelevantKnowledge } from "../services/ai/retrieval.js";
 
 async function requireAdmin(
   fastify: FastifyInstance,
@@ -117,7 +118,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     try {
       await reindexKnowledgeEntry(fastify, entry);
     } catch (error) {
-      fastify.log.error({ error, entryId: entry.id }, "admin.indexing_failed");
+      fastify.log.error(
+        { err: error instanceof Error ? error : new Error(String(error)), entryId: entry.id },
+        "admin.indexing_failed",
+      );
       await fastify.prisma.knowledgeEntry.delete({ where: { id: entry.id } });
       return reply.status(500).send({
         error: "Failed to index knowledge entry for retrieval",
@@ -158,7 +162,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       try {
         await reindexKnowledgeEntry(fastify, entry);
       } catch (error) {
-        fastify.log.error({ error, entryId: entry.id }, "admin.indexing_failed");
+        fastify.log.error(
+        { err: error instanceof Error ? error : new Error(String(error)), entryId: entry.id },
+        "admin.indexing_failed",
+      );
         return reply.status(500).send({
           error: "Entry updated but failed to re-index for retrieval",
         });
@@ -214,7 +221,10 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           await reindexKnowledgeEntry(fastify, entry);
         }
       } catch (error) {
-        fastify.log.error({ error }, "admin.bulk_indexing_failed");
+        fastify.log.error(
+          { err: error instanceof Error ? error : new Error(String(error)) },
+          "admin.bulk_indexing_failed",
+        );
         if (createdEntryIds.length > 0) {
           await fastify.prisma.knowledgeEntry.deleteMany({
             where: { id: { in: createdEntryIds } },
@@ -229,6 +239,44 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         imported: createdEntryIds.length,
         total: parsed.data.entries.length,
       });
+    },
+  );
+
+  // POST /admin/test-query — test retrieval without generating an answer
+  fastify.post(
+    "/admin/test-query",
+    { preHandler },
+    async (request, reply) => {
+      const schema = z.object({ query: z.string().min(1).max(1000) });
+      const parsed = schema.safeParse(request.body);
+
+      if (!parsed.success) {
+        return reply.status(400).send({ error: "query is required" });
+      }
+
+      const { query } = parsed.data;
+
+      try {
+        const sources = await retrieveRelevantKnowledge(fastify, query, 10);
+
+        fastify.log.info(
+          {
+            query: query.slice(0, 80),
+            sourcesCount: sources.length,
+            topScore: sources[0]?.score,
+            topTitle: sources[0]?.title?.slice(0, 50),
+          },
+          "admin.test_query.result",
+        );
+
+        return reply.send({ sources });
+      } catch (error) {
+        fastify.log.error(
+          { err: error instanceof Error ? error : new Error(String(error)) },
+          "admin.test_query.failed",
+        );
+        return reply.status(500).send({ error: "Test query failed" });
+      }
     },
   );
 }

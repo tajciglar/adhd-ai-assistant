@@ -5,6 +5,7 @@ import AdminSidebar from "./AdminSidebar";
 import EntryList from "./EntryList";
 import EntryEditor from "./EntryEditor";
 import BulkImportModal from "./BulkImportModal";
+import TestQueryModal from "./TestQueryModal";
 import type { KnowledgeEntry } from "../../types/admin";
 
 export default function AdminPage() {
@@ -22,11 +23,16 @@ export default function AdminPage() {
     updateEntry,
     deleteEntry,
     bulkImport,
+    testQueryResults,
+    testQuerying,
+    testQuery,
+    clearTestResults,
   } = useAdmin();
 
   const navigate = useNavigate();
   const [showEditor, setShowEditor] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showTestQuery, setShowTestQuery] = useState(false);
 
   const handleAddEntry = useCallback(() => {
     setActiveEntry(null);
@@ -108,6 +114,7 @@ export default function AdminPage() {
           onEdit={handleEditEntry}
           onDelete={deleteEntry}
           onBulkImport={() => setShowBulkImport(true)}
+          onTestQuery={() => setShowTestQuery(true)}
         />
       </div>
 
@@ -126,6 +133,19 @@ export default function AdminPage() {
           saving={saving}
           onImport={bulkImport}
           onClose={() => setShowBulkImport(false)}
+        />
+      )}
+
+      {showTestQuery && (
+        <TestQueryModal
+          sources={testQueryResults}
+          loading={testQuerying}
+          onTest={testQuery}
+          onClear={clearTestResults}
+          onClose={() => {
+            setShowTestQuery(false);
+            clearTestResults();
+          }}
         />
       )}
     </div>

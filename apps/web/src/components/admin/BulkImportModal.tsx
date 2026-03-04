@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
+import { parseDocxToEntries } from "../../lib/parseDocx";
 
 interface ParsedRow {
   category: string;
@@ -51,52 +52,68 @@ export default function BulkImportModal({
       setFileName(file.name);
       setError("");
 
+      const isDocx = file.name.toLowerCase().endsWith(".docx");
+
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         try {
-          const data = new Uint8Array(evt.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: "array" });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const json = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
+          const arrayBuffer = evt.target?.result as ArrayBuffer;
 
-          const parsed: ParsedRow[] = [];
-          let lastCategory = "";
+          let parsed: ParsedRow[];
 
-          for (const row of json) {
-            const category = pickValue(row, ["topic", "category"]) || lastCategory;
-            const title = pickValue(row, [
-              "questionissue",
-              "question",
-              "title",
-            ]);
-            const rawContent = pickValue(row, [
-              "content",
-              "answer",
-              "response",
-              "body",
-            ]);
-            const content = rawContent || title;
+          if (isDocx) {
+            parsed = await parseDocxToEntries(arrayBuffer, file.name);
+          } else {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: "array" });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
 
-            if (category && title && content) {
-              lastCategory = category;
-              parsed.push({
-                category,
-                title,
-                content,
-              });
+            parsed = [];
+            let lastCategory = "";
+
+            for (const row of json) {
+              const category = pickValue(row, ["topic", "category"]) || lastCategory;
+              const title = pickValue(row, [
+                "questionissue",
+                "question",
+                "title",
+              ]);
+              const rawContent = pickValue(row, [
+                "content",
+                "answer",
+                "response",
+                "body",
+              ]);
+              const content = rawContent || title;
+
+              if (category && title && content) {
+                lastCategory = category;
+                parsed.push({
+                  category,
+                  title,
+                  content,
+                });
+              }
             }
           }
 
           if (parsed.length === 0) {
             setError(
-              "No valid rows found. Expected columns: Topic and Question/Issue (Content optional).",
+              isDocx
+                ? "No entries found. Use H1 for categories and H2 for entry titles in your Google Doc."
+                : "No valid rows found. Expected columns: Topic and Question/Issue (Content optional).",
             );
             return;
           }
 
           setRows(parsed);
         } catch {
-          setError("Failed to parse file. Please use .xlsx or .csv format.");
+          setError(
+            isDocx
+              ? "Failed to parse .docx file. Make sure it's a valid Word document."
+              : "Failed to parse file. Please use .xlsx or .csv format.",
+          );
         }
       };
       reader.readAsArrayBuffer(file);
@@ -119,8 +136,7 @@ export default function BulkImportModal({
             Bulk Import
           </h3>
           <p className="text-xs text-harbor-text/40 mt-0.5">
-            Upload an .xlsx or .csv file with Topic, Question/Issue, and Content
-            columns
+            Upload a .docx (Google Doc export), .xlsx, or .csv file
           </p>
         </div>
 
@@ -130,7 +146,7 @@ export default function BulkImportModal({
               <input
                 ref={fileRef}
                 type="file"
-                accept=".xlsx,.xls,.csv"
+                accept=".xlsx,.xls,.csv,.docx"
                 onChange={handleFile}
                 className="hidden"
               />
@@ -142,7 +158,7 @@ export default function BulkImportModal({
                   {fileName || "Click to select a file"}
                 </div>
                 <div className="text-harbor-text/25 text-xs mt-1">
-                  .xlsx, .xls, or .csv
+                  .docx, .xlsx, .xls, or .csv
                 </div>
               </button>
 

@@ -60,7 +60,10 @@ export async function generateGroundedAnswer({
   try {
     sources = await retrieveRelevantKnowledge(fastify, question, 8);
   } catch (error) {
-    fastify.log.error({ error }, "retrieval.failed");
+    fastify.log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      "retrieval.failed",
+    );
     return {
       content: NO_CONTENT_RESPONSE,
       metadata: {
@@ -137,7 +140,10 @@ export async function generateGroundedAnswer({
       },
     };
   } catch (error) {
-    fastify.log.error({ error }, "chat.gemini.failed");
+    fastify.log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      "chat.gemini.failed",
+    );
     return {
       content:
         "Harbor is temporarily unable to generate an answer. Please try again in a moment.",

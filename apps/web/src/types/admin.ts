@@ -12,3 +12,16 @@ export interface AdminStats {
   totalUsers: number;
   entriesByCategory: Record<string, number>;
 }
+
+export interface TestQuerySource {
+  entryId: string;
+  title: string;
+  category: string;
+  chunkIndex: number;
+  text: string;
+  score: number;
+}
+
+export interface TestQueryResult {
+  sources: TestQuerySource[];
+}

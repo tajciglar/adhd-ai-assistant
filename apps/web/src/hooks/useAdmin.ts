@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { api } from "../lib/api";
-import type { KnowledgeEntry, AdminStats } from "../types/admin";
+import type {
+  KnowledgeEntry,
+  AdminStats,
+  TestQuerySource,
+  TestQueryResult,
+} from "../types/admin";
 
 interface AdminState {
   entries: KnowledgeEntry[];
@@ -173,6 +178,30 @@ export function useAdmin() {
     [fetchData],
   );
 
+  // Test query state
+  const [testQueryResults, setTestQueryResults] = useState<TestQuerySource[]>(
+    [],
+  );
+  const [testQuerying, setTestQuerying] = useState(false);
+
+  const testQuery = useCallback(async (query: string) => {
+    setTestQuerying(true);
+    try {
+      const result = (await api.post("/api/admin/test-query", {
+        query,
+      })) as TestQueryResult;
+      setTestQueryResults(result.sources);
+    } catch {
+      setTestQueryResults([]);
+    } finally {
+      setTestQuerying(false);
+    }
+  }, []);
+
+  const clearTestResults = useCallback(() => {
+    setTestQueryResults([]);
+  }, []);
+
   const filteredEntries = state.filter
     ? state.entries.filter((e) => e.category === state.filter)
     : state.entries;
@@ -191,5 +220,9 @@ export function useAdmin() {
     updateEntry,
     deleteEntry,
     bulkImport,
+    testQueryResults,
+    testQuerying,
+    testQuery,
+    clearTestResults,
   };
 }

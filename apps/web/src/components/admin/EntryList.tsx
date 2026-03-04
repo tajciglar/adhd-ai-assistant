@@ -5,6 +5,7 @@ interface EntryListProps {
   onEdit: (entry: KnowledgeEntry) => void;
   onDelete: (id: string) => void;
   onBulkImport: () => void;
+  onTestQuery: () => void;
 }
 
 export default function EntryList({
@@ -12,6 +13,7 @@ export default function EntryList({
   onEdit,
   onDelete,
   onBulkImport,
+  onTestQuery,
 }: EntryListProps) {
   return (
     <div className="flex-1 overflow-y-auto">
@@ -19,12 +21,20 @@ export default function EntryList({
         <h3 className="text-sm font-semibold text-harbor-text">
           {entries.length} {entries.length === 1 ? "entry" : "entries"}
         </h3>
-        <button
-          onClick={onBulkImport}
-          className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-text/15 text-harbor-text/70 hover:bg-harbor-bg transition-colors cursor-pointer"
-        >
-          Bulk Import
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onTestQuery}
+            className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+          >
+            Test Query
+          </button>
+          <button
+            onClick={onBulkImport}
+            className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-text/15 text-harbor-text/70 hover:bg-harbor-bg transition-colors cursor-pointer"
+          >
+            Bulk Import
+          </button>
+        </div>
       </div>
 
       {entries.length === 0 ? (
