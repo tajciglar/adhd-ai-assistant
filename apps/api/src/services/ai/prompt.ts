@@ -27,12 +27,6 @@ function toAssistantRole(role: "USER" | "ASSISTANT"): "user" | "assistant" {
   return role === "USER" ? "user" : "assistant";
 }
 
-function getIntensityLabel(score: number): string {
-  if (score <= 6) return "Low";
-  if (score <= 12) return "Moderate";
-  return "High";
-}
-
 function buildProfileContext(child: ChildContext | null): string {
   if (!child) return "No child profile available yet.";
 
@@ -44,42 +38,42 @@ function buildProfileContext(child: ChildContext | null): string {
 
   if (child.traitProfile) {
     const tp = child.traitProfile;
-    if (tp.archetypeName && tp.archetypeTypeName) {
-      lines.push(
-        `ADHD archetype: ${tp.archetypeName} — ${tp.archetypeTypeName}`,
-      );
+
+    // Only include archetype internally for context — never surface it to the parent
+    if (tp.archetypeName) {
+      lines.push(`(Internal reference — ADHD archetype: ${tp.archetypeName})`);
     }
 
+    // Convert scores to plain-language strength areas
     const scores = tp.scores;
     if (scores) {
-      const scoreLabels: Record<string, string> = {
-        filter: "Attention Filter (Inattention)",
-        engine: "Engine Speed (Hyperactivity/Impulse)",
-        sensory: "Sensory Guard (Sensory Processing)",
-        fuse: "Emotional Thermostat (Dysregulation)",
-        time: "Time Horizon (Executive Function)",
-        social: "Social Radar (Social Cues)",
+      const dimensionLabels: Record<string, string> = {
+        filter: "attention and focus",
+        engine: "energy and impulse control",
+        sensory: "sensory processing",
+        fuse: "emotional regulation",
+        time: "time management and planning",
+        social: "social cues and interactions",
       };
 
-      const traitLines = Object.entries(scores)
-        .map(([key, score]) => {
-          const label = scoreLabels[key] ?? key;
-          return `  ${label}: ${score}/18 (${getIntensityLabel(score)})`;
-        })
-        .join("\n");
+      const highAreas = Object.entries(scores)
+        .filter(([, score]) => score >= 13)
+        .map(([key]) => dimensionLabels[key] ?? key);
 
-      lines.push(`Trait scores:\n${traitLines}`);
-    }
+      const moderateAreas = Object.entries(scores)
+        .filter(([, score]) => score >= 7 && score < 13)
+        .map(([key]) => dimensionLabels[key] ?? key);
 
-    // Identify high dimensions for targeted advice
-    const highDimensions = Object.entries(scores ?? {})
-      .filter(([, score]) => score >= 13)
-      .map(([key]) => key);
-
-    if (highDimensions.length > 0) {
-      lines.push(
-        `Primary areas of support needed: ${highDimensions.join(", ")}`,
-      );
+      if (highAreas.length > 0) {
+        lines.push(
+          `Areas where this child needs the most support: ${highAreas.join(", ")}`,
+        );
+      }
+      if (moderateAreas.length > 0) {
+        lines.push(
+          `Areas with moderate challenges: ${moderateAreas.join(", ")}`,
+        );
+      }
     }
   }
 
@@ -114,6 +108,8 @@ export function buildGroundedPrompt({
   role: "system" | "user" | "assistant";
   content: string;
 }> {
+  const childNameOrFallback = child?.childName || "the child";
+
   const systemInstructions = [
     "You are Harbor, an ADHD parenting support assistant.",
     "Use ONLY the provided Knowledge Base Sources for factual claims.",
@@ -121,8 +117,12 @@ export function buildGroundedPrompt({
     "Never invent facts, references, or citations.",
     "Use a calm, practical, parent-supportive tone.",
     "Keep answers concise and actionable.",
-    "When the child's trait profile is available, tailor your advice to their specific ADHD archetype and trait scores.",
-    "Focus on the child's high-scoring dimensions when providing strategies.",
+    `Refer to the child by name (${childNameOrFallback}) — never say "your child" repeatedly.`,
+    "NEVER mention archetype names, trait scores, score numbers, or internal labels (e.g. 'Emotional Thermostat score', 'Engine Speed 14/18') to the parent. These are internal context for you only.",
+    "Instead, naturally tailor your advice to the child's challenge areas without exposing the underlying data.",
+    "Focus strategies on the areas where the child needs the most support.",
+    "Do not add sources like [Source 1], or any other source references in your answer. The sources are there for you to use, but do not mention them explicitly in the response.",
+    "If the answer containes a list, format it with bullet points for easier readability and make it bold.",
   ].join(" ");
 
   const sourceContext = buildSourceBlock(sources);

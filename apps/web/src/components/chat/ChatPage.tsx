@@ -62,7 +62,7 @@ export default function ChatPage() {
       <div className="flex-1 flex flex-col">
         {activeConversationId ? (
           <>
-            <ChatMessageList messages={messages} />
+            <ChatMessageList messages={messages} sending={sending} />
             <ChatInput
               onSend={sendMessage}
               disabled={sending}
