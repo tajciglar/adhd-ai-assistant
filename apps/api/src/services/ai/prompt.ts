@@ -86,13 +86,11 @@ function buildSourceBlock(sources: RetrievedSource[]): string {
   return sources
     .slice(0, MAX_SOURCES_IN_PROMPT)
     .map(
-      (source, i) =>
+      (source) =>
         [
-          `[Source ${i + 1}]`,
-          `Entry ID: ${source.entryId}`,
+          `---`,
           `Category: ${source.category}`,
           `Title: ${source.title}`,
-          `Chunk Index: ${source.chunkIndex}`,
           `Content: ${source.text.slice(0, MAX_SOURCE_CHARS)}`,
         ].join("\n"),
     )
