@@ -16,15 +16,16 @@ enum MessageRole {
 }
 
 model User {
-  id            String         @id
-  email         String         @unique
-  role          String         @default("user")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  profile       UserProfile?
-  conversations Conversation[]
-  adminAuditLog AdminAuditLog[]
-  importJobs    AdminImportJob[]
+  id             String         @id
+  email          String         @unique
+  role           String         @default("user")
+  hasChatAccess  Boolean        @default(false) @map("has_chat_access")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  profile        UserProfile?
+  conversations  Conversation[]
+  adminAuditLog  AdminAuditLog[]
+  importJobs     AdminImportJob[]
 
   @@map("users")
 }

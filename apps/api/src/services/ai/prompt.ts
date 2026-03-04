@@ -32,19 +32,14 @@ function buildProfileContext(child: ChildContext | null): string {
 
   const lines: string[] = [];
 
-  if (child.childName) lines.push(`Child's name: ${child.childName}`);
+  if (child.childName) lines.push(`Child's name: ${child.childName.charAt(0).toUpperCase() + child.childName.slice(1)}`);
   if (child.childAge != null) lines.push(`Child's age: ${child.childAge}`);
   if (child.childGender) lines.push(`Child's gender: ${child.childGender}`);
 
   if (child.traitProfile) {
     const tp = child.traitProfile;
 
-    // Only include archetype internally for context — never surface it to the parent
-    if (tp.archetypeName) {
-      lines.push(`(Internal reference — ADHD archetype: ${tp.archetypeName})`);
-    }
-
-    // Convert scores to plain-language strength areas
+    // Convert scores to plain-language strength areas (archetype name intentionally excluded to prevent leaking)
     const scores = tp.scores;
     if (scores) {
       const dimensionLabels: Record<string, string> = {
@@ -116,11 +111,12 @@ export function buildGroundedPrompt({
     "Use a calm, practical, parent-supportive tone.",
     "Keep answers concise and actionable.",
     `Refer to the child by name (${childNameOrFallback}) — never say "your child" repeatedly.`,
-    "NEVER mention archetype names, trait scores, score numbers, or internal labels (e.g. 'Emotional Thermostat score', 'Engine Speed 14/18') to the parent. These are internal context for you only.",
-    "Instead, naturally tailor your advice to the child's challenge areas without exposing the underlying data.",
+    "CRITICAL RULES — violating these makes the response useless:",
+    "1) NEVER cite or reference sources. No '[Source 1]', no '[Source 1, Source 2]', no 'according to Source 3', no source references of any kind. Just give the advice directly.",
+    "2) NEVER use internal/clinical terminology from the knowledge base. This includes archetype names (e.g. 'Deep Dreamer', 'Firecracker'), dimension names (e.g. 'Time Horizon', 'Engine Speed', 'Social Radar', 'Emotional Thermostat', 'Sensory Filter'), trait scores, or score numbers. The parent must NEVER see these terms.",
+    "3) Instead, describe challenges in plain parent-friendly language. Say 'struggles with staying organized' instead of 'low Time Horizon score'. Say 'has big emotions' instead of 'Emotional Thermostat'.",
     "Focus strategies on the areas where the child needs the most support.",
-    "Do not add sources like [Source 1], or any other source references in your answer. The sources are there for you to use, but do not mention them explicitly in the response.",
-    "If the answer containes a list, format it with bullet points for easier readability and make it bold.",
+    "If the answer contains a list, format it with bullet points for easier readability and make it bold.",
   ].join(" ");
 
   const sourceContext = buildSourceBlock(sources);

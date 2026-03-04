@@ -422,7 +422,7 @@ pnpm dev:web    # Web on :3000
 - [x] Railway deployment with health checks
 - [ ] Monitoring & alerting
 - [ ] Database backups strategy
-- [ ] API documentation (OpenAPI)
+
 
 ---
 
