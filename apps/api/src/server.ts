@@ -32,7 +32,8 @@ async function buildServer() {
     bodyLimit: 1_048_576, // 1 MB
   });
 
-  const rawOrigins = process.env.CORS_ORIGIN ?? "http://localhost:3000";
+  const rawOrigins =
+    process.env.CORS_ORIGIN ?? "http://localhost:3000,http://localhost:5173";
   const allowedOrigins = rawOrigins
     .split(",")
     .map((origin) => origin.trim())
