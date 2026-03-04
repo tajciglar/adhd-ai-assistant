@@ -12,6 +12,11 @@ export interface Message {
   metadata?: {
     model?: string;
     grounded?: boolean;
+    latencyMs?: number;
+    retrievalMs?: number;
+    providerMs?: number;
+    sourceCount?: number;
+    promptChars?: number;
     errorCode?: string;
     usage?: {
       promptTokens?: number;

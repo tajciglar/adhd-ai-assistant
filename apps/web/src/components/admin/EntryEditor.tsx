@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { KnowledgeEntry } from "../../types/admin";
 
 interface EntryEditorProps {
@@ -19,12 +19,6 @@ export default function EntryEditor({
   const [category, setCategory] = useState(entry?.category ?? "");
   const [title, setTitle] = useState(entry?.title ?? "");
   const [content, setContent] = useState(entry?.content ?? "");
-
-  useEffect(() => {
-    setCategory(entry?.category ?? "");
-    setTitle(entry?.title ?? "");
-    setContent(entry?.content ?? "");
-  }, [entry]);
 
   const isValid = category.trim() && title.trim() && content.trim();
 

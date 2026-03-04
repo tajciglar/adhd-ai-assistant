@@ -25,6 +25,11 @@ export interface AssistantMetadata {
   model: string;
   grounded: boolean;
   sources: SourceMetadata[];
+  latencyMs?: number;
+  retrievalMs?: number;
+  providerMs?: number;
+  sourceCount?: number;
+  promptChars?: number;
   errorCode?: string;
   usage?: {
     promptTokens?: number;
@@ -59,17 +64,27 @@ export async function generateGroundedAnswer({
 }: AnswerInput): Promise<AnswerResult> {
   const start = Date.now();
   let sources: RetrievedSource[] = [];
+  let retrievalMs = 0;
+  let retrievalCacheHit = false;
 
   try {
-    sources = await retrieveRelevantKnowledge(fastify, question, 8);
+    const retrieval = await retrieveRelevantKnowledge(fastify, question, 8);
+    sources = retrieval.sources;
+    retrievalMs = retrieval.retrievalMs;
+    retrievalCacheHit = retrieval.cacheHit;
   } catch (error) {
-    fastify.log.error({ error }, "retrieval.failed");
+    fastify.log.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      "retrieval.failed",
+    );
     return {
       content: NO_CONTENT_RESPONSE,
       metadata: {
         model: AI_CHAT_MODEL,
         grounded: true,
         sources: [],
+        retrievalMs,
+        latencyMs: Date.now() - start,
         errorCode: "retrieval_error",
       },
     };
@@ -82,6 +97,8 @@ export async function generateGroundedAnswer({
       {
         retrieval: { topK: 8, sourcesCount: 0 },
         model: AI_CHAT_MODEL,
+        cache: { retrieval: retrievalCacheHit },
+        retrievalMs,
         latencyMs: Date.now() - start,
       },
       "chat.grounded.no_sources",
@@ -93,6 +110,9 @@ export async function generateGroundedAnswer({
         model: AI_CHAT_MODEL,
         grounded: true,
         sources: [],
+        sourceCount: 0,
+        retrievalMs,
+        latencyMs: Date.now() - start,
       },
     };
   }
@@ -129,15 +149,22 @@ export async function generateGroundedAnswer({
     child: childContext,
     history,
   });
+  const promptChars = messages.reduce((sum, message) => sum + message.content.length, 0);
 
   try {
+    const providerStart = Date.now();
     const completion = await createChatCompletion(messages);
+    const providerMs = Date.now() - providerStart;
     const content = completion.content || NO_CONTENT_RESPONSE;
 
     fastify.log.info(
       {
         retrieval: { topK: 8, sourcesCount: sourceMetadata.length },
         model: AI_CHAT_MODEL,
+        cache: { retrieval: retrievalCacheHit },
+        retrievalMs,
+        providerMs,
+        promptChars,
         usage: completion.usage,
         latencyMs: Date.now() - start,
       },
@@ -150,6 +177,11 @@ export async function generateGroundedAnswer({
         model: AI_CHAT_MODEL,
         grounded: true,
         sources: sourceMetadata,
+        sourceCount: sourceMetadata.length,
+        retrievalMs,
+        providerMs,
+        promptChars,
+        latencyMs: Date.now() - start,
         usage: {
           promptTokens: completion.usage?.prompt_tokens,
           completionTokens: completion.usage?.completion_tokens,
@@ -166,6 +198,10 @@ export async function generateGroundedAnswer({
         model: AI_CHAT_MODEL,
         grounded: true,
         sources: sourceMetadata,
+        sourceCount: sourceMetadata.length,
+        retrievalMs,
+        promptChars,
+        latencyMs: Date.now() - start,
         errorCode: "gemini_error",
       },
     };

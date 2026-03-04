@@ -1,7 +1,11 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { reindexKnowledgeEntry } from "../services/ai/knowledgeIndex.js";
-import { retrieveRelevantKnowledge } from "../services/ai/retrieval.js";
+import {
+  invalidateRetrievalCaches,
+  retrieveRelevantKnowledge,
+} from "../services/ai/retrieval.js";
 
 async function requireAdmin(
   fastify: FastifyInstance,
@@ -36,59 +40,203 @@ const bulkImportSchema = z.object({
     .max(500),
 });
 
+const testQuerySchema = z.object({
+  query: z.string().min(1).max(2000),
+});
+
+const readRateLimitConfig = { rateLimit: { max: 60, timeWindow: "1 minute" } };
+const writeRateLimitConfig = { rateLimit: { max: 20, timeWindow: "1 minute" } };
+const bulkRateLimitConfig = { rateLimit: { max: 5, timeWindow: "1 minute" } };
+
+type BulkImportPayload = z.infer<typeof bulkImportSchema>;
+
 export default async function adminRoutes(fastify: FastifyInstance) {
-  // All admin routes require auth + admin role
-  const preHandler = [
+  const basePreHandler = [
     fastify.authenticate,
     async (request: FastifyRequest, reply: FastifyReply) =>
       requireAdmin(fastify, request, reply),
   ];
 
-  // GET /admin/stats — dashboard stats
-  fastify.get("/admin/stats", { preHandler }, async (_request, reply) => {
-    const [totalEntries, totalUsers, categoryCounts] = await Promise.all([
-      fastify.prisma.knowledgeEntry.count(),
-      fastify.prisma.user.count(),
-      fastify.prisma.knowledgeEntry.groupBy({
-        by: ["category"],
-        _count: { category: true },
-        orderBy: { category: "asc" },
-      }),
-    ]);
+  const queuedJobs: string[] = [];
+  let processingQueue = false;
 
-    const entriesByCategory: Record<string, number> = {};
-    for (const row of categoryCounts) {
-      entriesByCategory[row.category] = row._count.category;
+  async function audit(
+    actorUserId: string,
+    action: string,
+    targetType: string,
+    targetId?: string,
+    metadata?: Record<string, unknown>,
+  ) {
+    try {
+      await fastify.prisma.adminAuditLog.create({
+        data: {
+          actorUserId,
+          action,
+          targetType,
+          targetId,
+          metadata: metadata as Prisma.InputJsonValue | undefined,
+        },
+      });
+    } catch (error) {
+      fastify.log.error({ error, action, targetType }, "admin.audit.failed");
+    }
+  }
+
+  async function processImportJob(jobId: string) {
+    const job = await fastify.prisma.adminImportJob.findUnique({
+      where: { id: jobId },
+    });
+    if (!job || job.status !== "queued") return;
+
+    const parsedPayload = bulkImportSchema.safeParse(
+      (job.payload as BulkImportPayload) ?? {},
+    );
+    if (!parsedPayload.success) {
+      await fastify.prisma.adminImportJob.update({
+        where: { id: jobId },
+        data: {
+          status: "failed",
+          error: "Invalid bulk import payload",
+          finishedAt: new Date(),
+        },
+      });
+      return;
     }
 
-    return reply.send({ totalEntries, totalUsers, entriesByCategory });
+    const entries = parsedPayload.data.entries;
+    await fastify.prisma.adminImportJob.update({
+      where: { id: jobId },
+      data: {
+        status: "processing",
+        startedAt: new Date(),
+      },
+    });
+
+    let processed = 0;
+    let succeeded = 0;
+    let failed = 0;
+    let lastError = "";
+
+    for (const entryData of entries) {
+      try {
+        const entry = await fastify.prisma.knowledgeEntry.create({
+          data: entryData,
+        });
+        await reindexKnowledgeEntry(fastify, entry);
+        succeeded += 1;
+      } catch (error) {
+        failed += 1;
+        lastError = error instanceof Error ? error.message : "Unknown import error";
+      } finally {
+        processed += 1;
+        await fastify.prisma.adminImportJob.update({
+          where: { id: jobId },
+          data: {
+            processed,
+            succeeded,
+            failed,
+            ...(lastError ? { error: lastError.slice(0, 1000) } : {}),
+          },
+        });
+      }
+    }
+
+    const finalStatus = failed > 0 ? "completed_with_errors" : "completed";
+    await fastify.prisma.adminImportJob.update({
+      where: { id: jobId },
+      data: {
+        status: finalStatus,
+        finishedAt: new Date(),
+      },
+    });
+
+    await audit(job.createdById, "admin.bulk_import.complete", "knowledge_entry", jobId, {
+      processed,
+      succeeded,
+      failed,
+      status: finalStatus,
+    });
+  }
+
+  async function processQueue() {
+    if (processingQueue) return;
+    processingQueue = true;
+
+    try {
+      while (queuedJobs.length > 0) {
+        const jobId = queuedJobs.shift();
+        if (!jobId) continue;
+        await processImportJob(jobId);
+      }
+    } finally {
+      processingQueue = false;
+    }
+  }
+
+  function enqueueJob(jobId: string) {
+    queuedJobs.push(jobId);
+    void processQueue();
+  }
+
+  fastify.addHook("onReady", async () => {
+    await fastify.prisma.adminImportJob.updateMany({
+      where: { status: "processing" },
+      data: { status: "queued" },
+    });
+
+    const jobs = await fastify.prisma.adminImportJob.findMany({
+      where: { status: "queued" },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+    });
+    for (const job of jobs) {
+      queuedJobs.push(job.id);
+    }
+    void processQueue();
   });
 
-  // GET /admin/entries — list all knowledge entries
+  fastify.get(
+    "/admin/stats",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (_request, reply) => {
+      const [totalEntries, totalUsers, categoryCounts] = await Promise.all([
+        fastify.prisma.knowledgeEntry.count(),
+        fastify.prisma.user.count(),
+        fastify.prisma.knowledgeEntry.groupBy({
+          by: ["category"],
+          _count: { category: true },
+          orderBy: { category: "asc" },
+        }),
+      ]);
+
+      const entriesByCategory: Record<string, number> = {};
+      for (const row of categoryCounts) {
+        entriesByCategory[row.category] = row._count.category;
+      }
+
+      return reply.send({ totalEntries, totalUsers, entriesByCategory });
+    },
+  );
+
   fastify.get<{ Querystring: { category?: string } }>(
     "/admin/entries",
-    { preHandler },
+    { preHandler: basePreHandler, config: readRateLimitConfig },
     async (request, reply) => {
       const { category } = request.query as { category?: string };
-
-      const where = category ? { category } : {};
-
       const entries = await fastify.prisma.knowledgeEntry.findMany({
-        where,
+        where: category ? { category } : {},
         orderBy: [{ category: "asc" }, { title: "asc" }],
       });
-
       return reply.send({ entries });
     },
   );
 
-  // GET /admin/entries/:id — get single entry
   fastify.get<{ Params: { id: string } }>(
     "/admin/entries/:id",
-    { preHandler },
+    { preHandler: basePreHandler, config: readRateLimitConfig },
     async (request, reply) => {
       const { id } = request.params;
-
       const entry = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
       });
@@ -101,37 +249,43 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     },
   );
 
-  // POST /admin/entries — create entry
-  fastify.post("/admin/entries", { preHandler }, async (request, reply) => {
-    const parsed = entryBodySchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({
-        error: "Validation failed",
-        details: parsed.error.flatten().fieldErrors,
+  fastify.post(
+    "/admin/entries",
+    { preHandler: basePreHandler, config: writeRateLimitConfig },
+    async (request, reply) => {
+      const parsed = entryBodySchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      const entry = await fastify.prisma.knowledgeEntry.create({
+        data: parsed.data,
       });
-    }
 
-    const entry = await fastify.prisma.knowledgeEntry.create({
-      data: parsed.data,
-    });
+      try {
+        await reindexKnowledgeEntry(fastify, entry);
+      } catch (error) {
+        fastify.log.error({ error, entryId: entry.id }, "admin.indexing_failed");
+        await fastify.prisma.knowledgeEntry.delete({ where: { id: entry.id } });
+        return reply.status(500).send({
+          error: "Failed to index knowledge entry for retrieval",
+        });
+      }
 
-    try {
-      await reindexKnowledgeEntry(fastify, entry);
-    } catch (error) {
-      fastify.log.error({ error, entryId: entry.id }, "admin.indexing_failed");
-      await fastify.prisma.knowledgeEntry.delete({ where: { id: entry.id } });
-      return reply.status(500).send({
-        error: "Failed to index knowledge entry for retrieval",
+      await audit(request.user.id, "admin.entry.create", "knowledge_entry", entry.id, {
+        category: entry.category,
       });
-    }
 
-    return reply.status(201).send({ entry });
-  });
+      return reply.status(201).send({ entry });
+    },
+  );
 
-  // PUT /admin/entries/:id — update entry
   fastify.put<{ Params: { id: string } }>(
     "/admin/entries/:id",
-    { preHandler },
+    { preHandler: basePreHandler, config: writeRateLimitConfig },
     async (request, reply) => {
       const { id } = request.params;
       const parsed = entryBodySchema.safeParse(request.body);
@@ -165,17 +319,19 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         });
       }
 
+      await audit(request.user.id, "admin.entry.update", "knowledge_entry", entry.id, {
+        category: entry.category,
+      });
+
       return reply.send({ entry });
     },
   );
 
-  // DELETE /admin/entries/:id — delete entry
   fastify.delete<{ Params: { id: string } }>(
     "/admin/entries/:id",
-    { preHandler },
+    { preHandler: basePreHandler, config: writeRateLimitConfig },
     async (request, reply) => {
       const { id } = request.params;
-
       const existing = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
       });
@@ -185,18 +341,20 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       }
 
       await fastify.prisma.knowledgeEntry.delete({ where: { id } });
+      invalidateRetrievalCaches();
+      await audit(request.user.id, "admin.entry.delete", "knowledge_entry", id, {
+        category: existing.category,
+      });
 
       return reply.send({ success: true });
     },
   );
 
-  // POST /admin/entries/bulk — bulk import entries
   fastify.post(
     "/admin/entries/bulk",
-    { preHandler },
+    { preHandler: basePreHandler, config: bulkRateLimitConfig },
     async (request, reply) => {
       const parsed = bulkImportSchema.safeParse(request.body);
-
       if (!parsed.success) {
         return reply.status(400).send({
           error: "Validation failed",
@@ -204,43 +362,62 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const createdEntryIds: string[] = [];
+      const job = await fastify.prisma.adminImportJob.create({
+        data: {
+          createdById: request.user.id,
+          status: "queued",
+          total: parsed.data.entries.length,
+          payload: parsed.data as unknown as Prisma.InputJsonValue,
+        },
+      });
 
-      try {
-        for (const row of parsed.data.entries) {
-          const entry = await fastify.prisma.knowledgeEntry.create({
-            data: row,
-          });
-          createdEntryIds.push(entry.id);
-          await reindexKnowledgeEntry(fastify, entry);
-        }
-      } catch (error) {
-        fastify.log.error({ error }, "admin.bulk_indexing_failed");
-        if (createdEntryIds.length > 0) {
-          await fastify.prisma.knowledgeEntry.deleteMany({
-            where: { id: { in: createdEntryIds } },
-          });
-        }
-        return reply.status(500).send({
-          error: "Bulk import failed while indexing entries",
-        });
-      }
-
-      return reply.status(201).send({
-        imported: createdEntryIds.length,
+      enqueueJob(job.id);
+      await audit(request.user.id, "admin.bulk_import.start", "admin_import_job", job.id, {
         total: parsed.data.entries.length,
+      });
+
+      return reply.status(202).send({
+        jobId: job.id,
+        status: job.status,
+        total: job.total,
       });
     },
   );
 
-  // POST /admin/test-query — test retrieval without generating an answer
-  const testQuerySchema = z.object({
-    query: z.string().min(1).max(2000),
-  });
+  fastify.get<{ Params: { id: string } }>(
+    "/admin/jobs/:id",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (request, reply) => {
+      const { id } = request.params;
+      const job = await fastify.prisma.adminImportJob.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          status: true,
+          total: true,
+          processed: true,
+          succeeded: true,
+          failed: true,
+          error: true,
+          startedAt: true,
+          finishedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          createdById: true,
+        },
+      });
+
+      if (!job) {
+        return reply.status(404).send({ error: "Job not found" });
+      }
+
+      return reply.send({ job });
+    },
+  );
 
   fastify.post(
     "/admin/test-query",
-    { preHandler },
+    { preHandler: basePreHandler, config: readRateLimitConfig },
     async (request, reply) => {
       const parsed = testQuerySchema.safeParse(request.body);
       if (!parsed.success) {
@@ -253,11 +430,13 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       const { query } = parsed.data;
 
       try {
-        const sources = await retrieveRelevantKnowledge(fastify, query, 8);
+        const result = await retrieveRelevantKnowledge(fastify, query, 8);
         return reply.send({
           query,
-          sources,
-          totalRetrieved: sources.length,
+          sources: result.sources,
+          totalRetrieved: result.sources.length,
+          retrievalMs: result.retrievalMs,
+          cacheHit: result.cacheHit,
         });
       } catch (error) {
         fastify.log.error({ error }, "admin.test_query_failed");

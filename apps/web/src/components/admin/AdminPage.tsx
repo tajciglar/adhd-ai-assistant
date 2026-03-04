@@ -120,6 +120,7 @@ export default function AdminPage() {
 
       {showEditor && (
         <EntryEditor
+          key={activeEntry?.id ?? "new"}
           entry={activeEntry}
           categories={categories}
           saving={saving}

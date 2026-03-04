@@ -19,6 +19,10 @@ interface PromptInput {
   history: Array<{ role: "USER" | "ASSISTANT"; content: string }>;
 }
 
+const MAX_SOURCES_IN_PROMPT = 5;
+const MAX_SOURCE_CHARS = 900;
+const MAX_HISTORY_TURNS = 6;
+
 function toAssistantRole(role: "USER" | "ASSISTANT"): "user" | "assistant" {
   return role === "USER" ? "user" : "assistant";
 }
@@ -86,6 +90,7 @@ function buildProfileContext(child: ChildContext | null): string {
 
 function buildSourceBlock(sources: RetrievedSource[]): string {
   return sources
+    .slice(0, MAX_SOURCES_IN_PROMPT)
     .map(
       (source, i) =>
         [
@@ -94,7 +99,7 @@ function buildSourceBlock(sources: RetrievedSource[]): string {
           `Category: ${source.category}`,
           `Title: ${source.title}`,
           `Chunk Index: ${source.chunkIndex}`,
-          `Content: ${source.text}`,
+          `Content: ${source.text.slice(0, MAX_SOURCE_CHARS)}`,
         ].join("\n"),
     )
     .join("\n\n");
@@ -122,9 +127,9 @@ export function buildGroundedPrompt({
 
   const sourceContext = buildSourceBlock(sources);
   const profileContext = buildProfileContext(child);
-  const historyContext = history.slice(-8).map((m) => ({
+  const historyContext = history.slice(-MAX_HISTORY_TURNS).map((m) => ({
     role: toAssistantRole(m.role),
-    content: m.content,
+    content: m.content.slice(0, 1200),
   }));
 
   return [

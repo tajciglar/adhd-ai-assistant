@@ -1,6 +1,7 @@
 import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import helmet from "@fastify/helmet";
 import prismaPlugin from "./plugins/prisma.js";
 import supabasePlugin from "./plugins/supabase.js";
 import healthRoutes from "./routes/health.js";
@@ -28,20 +29,46 @@ const environment = process.env.NODE_ENV ?? "development";
 async function buildServer() {
   const server = Fastify({
     logger: envToLogger[environment] ?? true,
+    bodyLimit: 1_048_576, // 1 MB
   });
 
-  // Ensure CORS origin has a protocol prefix
-  const rawOrigin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
-  const corsOrigin = rawOrigin.startsWith("http") ? rawOrigin : `https://${rawOrigin}`;
+  const rawOrigins = process.env.CORS_ORIGIN ?? "http://localhost:3000";
+  const allowedOrigins = rawOrigins
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .map((origin) => (origin.startsWith("http") ? origin : `https://${origin}`));
+
+  await server.register(helmet, {
+    global: true,
+    contentSecurityPolicy: false, // API only
+    hsts: environment === "production",
+    hidePoweredBy: true,
+    crossOriginResourcePolicy: { policy: "same-site" },
+  });
 
   await server.register(cors, {
-    origin: corsOrigin,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Origin not allowed"), false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
     // Browsers cache preflight for 1 hour (avoids repeated OPTIONS requests)
     maxAge: 3600,
     // Handle preflight immediately, before other hooks/plugins
     strictPreflight: false,
+  });
+
+  server.addHook("onRequest", async (request, reply) => {
+    const origin = request.headers.origin;
+    if (!origin) return;
+    if (request.url.startsWith("/health")) return;
+
+    if (!allowedOrigins.includes(origin)) {
+      await reply.status(403).send({ error: "Origin not allowed" });
+    }
   });
 
   // Global rate limit: 100 requests/minute per IP

@@ -1,0 +1,70 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm run build:shared
+
+      - name: Build API + web
+        run: |
+          pnpm --filter @adhd-ai-assistant/api build
+          pnpm --filter web build
+
+      - name: Deploy API to Railway (staging)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_STAGING: ${{ secrets.RAILWAY_SERVICE_STAGING }}
+        run: |
+          pnpm dlx @railway/cli up --service "$RAILWAY_SERVICE_STAGING" --detach
+
+      - name: Deploy web to Vercel (staging)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          pnpm dlx vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          pnpm dlx vercel build --token="$VERCEL_TOKEN"
+          pnpm dlx vercel deploy --prebuilt --token="$VERCEL_TOKEN"
+
+      - name: Smoke /health
+        env:
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+        run: |
+          curl -fsS "$STAGING_API_URL/health"
+
+      - name: Smoke authenticated onboarding/chat
+        env:
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+          STAGING_TEST_BEARER: ${{ secrets.STAGING_TEST_BEARER }}
+        run: |
+          curl -fsS "$STAGING_API_URL/api/onboarding" \
+            -H "Authorization: Bearer $STAGING_TEST_BEARER"
+          curl -fsS "$STAGING_API_URL/api/chat" \
+            -H "Authorization: Bearer $STAGING_TEST_BEARER" \
+            -H "Content-Type: application/json" \
+            -d '{"message":"smoke test","conversationId":null}'

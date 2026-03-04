@@ -6,17 +6,20 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "test": "tsx --test src/**/*.test.ts",
     "prestart": "prisma generate && prisma migrate deploy",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "admin:promote": "tsx scripts/promote-admin.ts",
-    "import-content": "tsx scripts/import-content.ts"
+    "import-content": "tsx scripts/import-content.ts",
+    "security:check-logs": "tsx scripts/check-no-secret-logs.ts"
   },
   "dependencies": {
     "@adhd-ai-assistant/shared": "workspace:*",
     "@fastify/cors": "^11.0.0",
+    "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
     "@prisma/client": "^6.4.1",
     "@supabase/supabase-js": "^2.49.4",

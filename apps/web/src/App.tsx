@@ -22,18 +22,13 @@ function AppRoutes() {
     boolean | null
   >(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   useEffect(() => {
     if (!session) {
-      setOnboardingCompleted(null);
-      setUserRole(null);
-      setOnboardingLoading(false);
       return;
     }
 
     let active = true;
-    setOnboardingLoading(true);
 
     api
       .get("/api/onboarding")
@@ -50,7 +45,6 @@ function AppRoutes() {
       })
       .finally(() => {
         if (!active) return;
-        setOnboardingLoading(false);
       });
 
     return () => {
@@ -58,7 +52,9 @@ function AppRoutes() {
     };
   }, [session, location.pathname]);
 
-  const shouldWaitForOnboarding = Boolean(session) && onboardingLoading;
+  const shouldWaitForOnboarding =
+    Boolean(session) &&
+    (onboardingCompleted === null || userRole === null);
 
   if (loading || shouldWaitForOnboarding) {
     return (
@@ -73,7 +69,18 @@ function AppRoutes() {
     );
   }
 
-  const needsOnboarding = Boolean(session) && onboardingCompleted === false;
+  const effectiveOnboardingCompleted = session ? onboardingCompleted : null;
+  const effectiveUserRole = session ? userRole : null;
+  const isAdmin = effectiveUserRole === "admin";
+  // Admins skip onboarding — it's for parents, not content managers
+  const needsOnboarding =
+    Boolean(session) && effectiveOnboardingCompleted === false && !isAdmin;
+  // Where to send authenticated users by default
+  const homePath = needsOnboarding
+    ? "/onboarding"
+    : isAdmin && !onboardingCompleted
+      ? "/admin"
+      : "/chat";
 
   const pageFallback = (
     <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
@@ -90,11 +97,7 @@ function AppRoutes() {
       <Route
         path="/auth"
         element={
-          session ? (
-            <Navigate to={needsOnboarding ? "/onboarding" : "/chat"} />
-          ) : (
-            <AuthPage />
-          )
+          session ? <Navigate to={homePath} /> : <AuthPage />
         }
       />
       <Route
@@ -104,7 +107,7 @@ function AppRoutes() {
             needsOnboarding ? (
               <OnboardingPage />
             ) : (
-              <Navigate to="/chat" />
+              <Navigate to={homePath} />
             )
           ) : (
             <Navigate to="/auth" />
@@ -129,9 +132,7 @@ function AppRoutes() {
         path="/admin"
         element={
           session ? (
-            needsOnboarding ? (
-              <Navigate to="/onboarding" />
-            ) : userRole === "admin" ? (
+            isAdmin ? (
               <AdminPage />
             ) : (
               <Navigate to="/chat" />
@@ -143,13 +144,7 @@ function AppRoutes() {
       />
       <Route
         path="*"
-        element={
-          <Navigate
-            to={
-              session ? (needsOnboarding ? "/onboarding" : "/chat") : "/auth"
-            }
-          />
-        }
+        element={<Navigate to={session ? homePath : "/auth"} />}
       />
     </Routes>
     </Suspense>

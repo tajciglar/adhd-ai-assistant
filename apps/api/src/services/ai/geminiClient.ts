@@ -1,6 +1,7 @@
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 const REQUEST_TIMEOUT_MS = 20_000;
 const EMBEDDING_DIMENSIONS = 1536;
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
 export const AI_CHAT_MODEL =
   process.env.GEMINI_CHAT_MODEL ?? "gemini-2.5-flash";
@@ -42,46 +43,59 @@ function getGeminiApiKey(): string {
 }
 
 async function postGemini<T>(path: string, body: unknown): Promise<T> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  try {
-    // Note: Gemini REST API requires the key as a query parameter.
-    // We sanitize error messages below to prevent key leakage in logs.
-    const url = new URL(`${GEMINI_BASE_URL}${path}`);
-    url.searchParams.set("key", getGeminiApiKey());
+    try {
+      // Note: Gemini REST API requires the key as a query parameter.
+      const url = new URL(`${GEMINI_BASE_URL}${path}`);
+      url.searchParams.set("key", getGeminiApiKey());
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Connection: "keep-alive",
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+        keepalive: true,
+      });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      // Truncate error body to prevent leaking sensitive details in logs
-      throw new Error(
-        `Gemini ${path} failed (${res.status}): ${errorText.slice(0, 500)}`,
-      );
-    }
+      if (!res.ok) {
+        const errorText = await res.text();
+        const isRetryable = RETRYABLE_STATUS.has(res.status) && attempt === 0;
+        if (isRetryable) {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        }
+        throw new Error(
+          `Gemini ${path} failed (${res.status}): ${errorText.slice(0, 500)}`,
+        );
+      }
 
-    return (await res.json()) as T;
-  } catch (err) {
-    if (err instanceof Error && err.message.startsWith("Gemini")) {
-      throw err; // Already sanitized above
-    }
-    // For network/abort errors, wrap without exposing the full URL (contains API key)
-    const message =
-      controller.signal.aborted
+      return (await res.json()) as T;
+    } catch (err) {
+      const shouldRetry = attempt === 0 && (controller.signal.aborted || !(err instanceof Error && err.message.startsWith("Gemini")));
+      if (shouldRetry) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
+      }
+
+      if (err instanceof Error && err.message.startsWith("Gemini")) {
+        throw err;
+      }
+      const message = controller.signal.aborted
         ? `Gemini ${path} timed out after ${REQUEST_TIMEOUT_MS}ms`
         : `Gemini ${path} network error`;
-    throw new Error(message);
-  } finally {
-    clearTimeout(timeout);
+      throw new Error(message);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
+
+  throw new Error(`Gemini ${path} failed after retry`);
 }
 
 interface GeminiBatchEmbeddingResponse {

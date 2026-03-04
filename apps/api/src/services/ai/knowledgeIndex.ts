@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { splitIntoChunks } from "./chunking.js";
 import { embedTexts } from "./embed.js";
+import { invalidateRetrievalCaches } from "./retrieval.js";
 
 interface KnowledgeEntryForIndexing {
   id: string;
@@ -72,6 +73,8 @@ export async function reindexKnowledgeEntry(
     ),
     ...insertStatements.map((sql) => fastify.prisma.$executeRaw(sql)),
   ]);
+
+  invalidateRetrievalCaches();
 
   return { chunksIndexed: fallback.length };
 }

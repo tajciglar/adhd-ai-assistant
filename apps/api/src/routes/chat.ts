@@ -96,7 +96,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       preHandler: [fastify.authenticate],
       config: {
         rateLimit: {
-          max: 20,
+          max: 15,
           timeWindow: "1 minute",
         },
       },
@@ -199,11 +199,15 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Touch updatedAt on conversation
-      await fastify.prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { updatedAt: new Date() },
-      });
+      // Non-critical write; avoid blocking chat response latency.
+      void fastify.prisma.conversation
+        .update({
+          where: { id: conversation.id },
+          data: { updatedAt: new Date() },
+        })
+        .catch((error) => {
+          fastify.log.warn({ error, conversationId: conversation.id }, "chat.touch_updatedAt_failed");
+        });
 
       return reply.status(200).send({
         conversationId: conversation.id,
