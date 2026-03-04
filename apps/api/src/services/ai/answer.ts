@@ -54,7 +54,14 @@ export async function generateGroundedAnswer({
   question,
   history,
 }: AnswerInput): Promise<AnswerResult> {
-  const start = Date.now();
+  const pipelineStart = Date.now();
+
+  fastify.log.info(
+    { question: question.slice(0, 120), historyLen: history.length },
+    "chat.request",
+  );
+
+  // ── Stage 1: Retrieval (embed + vector search) ──
   let sources: RetrievedSource[] = [];
 
   try {
@@ -79,12 +86,8 @@ export async function generateGroundedAnswer({
 
   if (sources.length === 0) {
     fastify.log.info(
-      {
-        retrieval: { topK: 8, sourcesCount: 0 },
-        model: AI_CHAT_MODEL,
-        latencyMs: Date.now() - start,
-      },
-      "chat.grounded.no_sources",
+      { latencyMs: Date.now() - pipelineStart },
+      "chat.response — no sources, skipping LLM",
     );
 
     return {
@@ -97,6 +100,7 @@ export async function generateGroundedAnswer({
     };
   }
 
+  // ── Stage 2: Build prompt ──
   const profile = await fastify.prisma.userProfile.findUnique({
     where: { userId },
     select: { onboardingResponses: true },
@@ -112,18 +116,35 @@ export async function generateGroundedAnswer({
     history,
   });
 
+  fastify.log.info(
+    { sourcesUsed: sources.length, historyLen: history.length },
+    "chat.prompt",
+  );
+
+  // ── Stage 3: Gemini LLM ──
+  const llmStart = Date.now();
+
   try {
     const completion = await createChatCompletion(messages);
     const content = completion.content || NO_CONTENT_RESPONSE;
 
     fastify.log.info(
       {
-        retrieval: { topK: 8, sourcesCount: sourceMetadata.length },
         model: AI_CHAT_MODEL,
-        usage: completion.usage,
-        latencyMs: Date.now() - start,
+        promptTokens: completion.usage?.prompt_tokens,
+        completionTokens: completion.usage?.completion_tokens,
+        latencyMs: Date.now() - llmStart,
       },
-      "chat.grounded.success",
+      "chat.gemini",
+    );
+
+    fastify.log.info(
+      {
+        sources: sourceMetadata.length,
+        totalMs: Date.now() - pipelineStart,
+        grounded: true,
+      },
+      "chat.response",
     );
 
     return {

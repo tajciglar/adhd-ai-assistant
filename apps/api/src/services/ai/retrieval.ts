@@ -42,9 +42,19 @@ export async function retrieveRelevantKnowledge(
   query: string,
   topK = DEFAULT_TOP_K,
 ): Promise<RetrievedSource[]> {
+  const embedStart = Date.now();
   const [queryEmbedding] = await embedTexts([query]);
-  if (!queryEmbedding || queryEmbedding.length === 0) return [];
+  if (!queryEmbedding || queryEmbedding.length === 0) {
+    fastify.log.warn("retrieval.embed — empty embedding, returning []");
+    return [];
+  }
 
+  fastify.log.info(
+    { dim: queryEmbedding.length, latencyMs: Date.now() - embedStart },
+    "retrieval.embed",
+  );
+
+  const searchStart = Date.now();
   const vectorLiteral = toVectorLiteral(queryEmbedding);
   const sql = Prisma.sql`
     SELECT
@@ -68,6 +78,15 @@ export async function retrieveRelevantKnowledge(
     text: string;
     score: number | string;
   }>;
+
+  fastify.log.info(
+    {
+      rowCount: rows.length,
+      topScore: rows[0] ? Number(rows[0].score).toFixed(4) : null,
+      latencyMs: Date.now() - searchStart,
+    },
+    "retrieval.search",
+  );
 
   const adjusted = rows
     .map((row) => {
@@ -100,6 +119,17 @@ export async function retrieveRelevantKnowledge(
     });
   }
 
-  return deduped.slice(0, topK);
+  const result = deduped.slice(0, topK);
+
+  fastify.log.info(
+    {
+      before: rows.length,
+      afterFilter: result.length,
+      minScore: MIN_SCORE,
+    },
+    "retrieval.filter",
+  );
+
+  return result;
 }
 

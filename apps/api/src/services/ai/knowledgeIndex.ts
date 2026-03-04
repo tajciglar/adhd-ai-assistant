@@ -24,8 +24,20 @@ export async function reindexKnowledgeEntry(
   fastify: FastifyInstance,
   entry: KnowledgeEntryForIndexing,
 ): Promise<{ chunksIndexed: number }> {
+  const indexStart = Date.now();
+
   const chunks = splitIntoChunks(entry.content);
   const fallback = chunks.length > 0 ? chunks : splitIntoChunks(entry.title);
+
+  fastify.log.info(
+    {
+      entryId: entry.id,
+      title: entry.title.slice(0, 60),
+      chunks: fallback.length,
+      totalTokens: fallback.reduce((sum, c) => sum + c.tokenCount, 0),
+    },
+    "index.chunk",
+  );
 
   if (fallback.length === 0) {
     await fastify.prisma.$executeRaw(
@@ -34,8 +46,19 @@ export async function reindexKnowledgeEntry(
     return { chunksIndexed: 0 };
   }
 
+  const embedStart = Date.now();
   const searchable = fallback.map((chunk) => buildSearchableText(entry, chunk.text));
   const embeddings = await embedTexts(searchable);
+
+  fastify.log.info(
+    {
+      entryId: entry.id,
+      vectors: embeddings.length,
+      dim: embeddings[0]?.length,
+      latencyMs: Date.now() - embedStart,
+    },
+    "index.embed",
+  );
 
   // Build all chunk insert statements for a single transaction
   const insertStatements = fallback.map((chunk, i) => {
@@ -72,6 +95,15 @@ export async function reindexKnowledgeEntry(
     ),
     ...insertStatements.map((sql) => fastify.prisma.$executeRaw(sql)),
   ]);
+
+  fastify.log.info(
+    {
+      entryId: entry.id,
+      chunksIndexed: fallback.length,
+      totalMs: Date.now() - indexStart,
+    },
+    "index.complete",
+  );
 
   return { chunksIndexed: fallback.length };
 }
