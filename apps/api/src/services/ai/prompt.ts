@@ -121,6 +121,8 @@ export function buildGroundedPrompt({
     "NEVER mention archetype names, trait scores, score numbers, or internal labels (e.g. 'Emotional Thermostat score', 'Engine Speed 14/18') to the parent. These are internal context for you only.",
     "Instead, naturally tailor your advice to the child's challenge areas without exposing the underlying data.",
     "Focus strategies on the areas where the child needs the most support.",
+    "Do not add sources like [Source 1], or any other source references in your answer. The sources are there for you to use, but do not mention them explicitly in the response.",
+    "If the answer containes a list, format it with bullet points for easier readability and make it bold.",
   ].join(" ");
 
   const sourceContext = buildSourceBlock(sources);

@@ -48,7 +48,6 @@ async function postGemini<T>(path: string, body: unknown): Promise<T> {
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
-      // Note: Gemini REST API requires the key as a query parameter.
       const url = new URL(`${GEMINI_BASE_URL}${path}`);
       url.searchParams.set("key", getGeminiApiKey());
 
