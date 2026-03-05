@@ -25,6 +25,14 @@ interface AuthorizedChild {
   traitProfile: unknown;
 }
 
+function toSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function getArchetypeId(traitProfile: unknown): string | null {
   if (
     typeof traitProfile === "object" &&
@@ -155,15 +163,15 @@ export default async function reportRoutes(fastify: FastifyInstance) {
         name: child.childName || "Your child",
       });
 
-      const safeName = (child.childName || "child")
-        .replace(/[^a-zA-Z0-9-_]+/g, "-")
-        .toLowerCase();
+      const safeChildName = toSlug(child.childName || "child");
+      const safeAnimal = toSlug(report.archetypeId || "report");
+      const filename = safeChildName + "-" + safeAnimal + ".pdf";
 
       reply
         .header("Content-Type", "application/pdf")
         .header(
           "Content-Disposition",
-          `attachment; filename="${safeName}-report.pdf"`,
+          "attachment; filename=\"" + filename + "\"",
         );
 
       return reply.send(pdf);
@@ -208,7 +216,9 @@ export default async function reportRoutes(fastify: FastifyInstance) {
       });
 
       const resend = new Resend(resendApiKey);
-      const filename = `${(child.childName || "child").replace(/\s+/g, "-").toLowerCase()}-report.pdf`;
+      const safeChildName = toSlug(child.childName || "child");
+      const safeAnimal = toSlug(report.archetypeId || "report");
+      const filename = safeChildName + "-" + safeAnimal + ".pdf";
 
       const { error } = await resend.emails.send({
         from,

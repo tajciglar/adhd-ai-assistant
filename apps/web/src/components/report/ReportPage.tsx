@@ -16,6 +16,13 @@ interface ReportResponse {
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
+function parseDownloadFilename(contentDisposition: string | null): string | null {
+  if (!contentDisposition) return null;
+  const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+  if (!match?.[1]) return null;
+  return match[1].trim();
+}
+
 export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -76,10 +83,13 @@ export default function ReportPage() {
       }
 
       const blob = await res.blob();
+      const filename =
+        parseDownloadFilename(res.headers.get("content-disposition")) ??
+        "harbor-" + (reportData.report.archetypeId || "report") + ".pdf";
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "harbor-report.pdf";
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
