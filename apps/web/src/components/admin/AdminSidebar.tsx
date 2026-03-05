@@ -10,6 +10,7 @@ interface AdminSidebarProps {
   onAddEntry: () => void;
   onAddTemplate: () => void;
   onBackToChat: () => void;
+  backToLabel?: string;
 }
 
 export default function AdminSidebar({
@@ -24,6 +25,7 @@ export default function AdminSidebar({
   onAddEntry,
   onAddTemplate,
   onBackToChat,
+  backToLabel = "Back to Chat",
 }: AdminSidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-harbor-text/10 flex flex-col h-full">
@@ -126,7 +128,7 @@ export default function AdminSidebar({
           onClick={onBackToChat}
           className="w-full py-2 rounded-lg text-sm text-harbor-text/50 hover:text-harbor-text hover:bg-harbor-bg transition-colors cursor-pointer"
         >
-          Back to Chat
+          {backToLabel}
         </button>
       </div>
     </div>

@@ -15,6 +15,25 @@ interface ReportResponse {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "";
+const GUEST_MODE = import.meta.env.VITE_GUEST_MODE === "true";
+const CHAT_ENABLED =
+  import.meta.env.VITE_CHAT_ENABLED !== "false" && !GUEST_MODE;
+const GUEST_ID_STORAGE_KEY = "harbor_guest_id";
+
+function getGuestId(): string {
+  const existing = window.localStorage.getItem(GUEST_ID_STORAGE_KEY);
+  if (existing) return existing;
+  const generated = crypto.randomUUID().replace(/-/g, "");
+  window.localStorage.setItem(GUEST_ID_STORAGE_KEY, generated);
+  return generated;
+}
+
+function parseDownloadFilename(contentDisposition: string | null): string | null {
+  if (!contentDisposition) return null;
+  const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+  if (!match?.[1]) return null;
+  return match[1].trim();
+}
 
 export default function ReportPage() {
   const [loading, setLoading] = useState(true);
@@ -59,15 +78,18 @@ export default function ReportPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session) {
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      } else if (GUEST_MODE) {
+        headers["x-guest-id"] = getGuestId();
+      } else {
         throw new Error("Not authenticated");
       }
 
       const res = await fetch(`${API_URL}/api/report/${reportData.childId}/pdf`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers,
       });
 
       if (!res.ok) {
@@ -76,10 +98,13 @@ export default function ReportPage() {
       }
 
       const blob = await res.blob();
+      const filename =
+        parseDownloadFilename(res.headers.get("content-disposition")) ??
+        `harbor-${reportData.report.archetypeId || "report"}.pdf`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "harbor-report.pdf";
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -241,38 +266,49 @@ export default function ReportPage() {
             <p className="text-lg text-harbor-text italic">{report.closingLine}</p>
           </section>
 
-          {hasChatAccess ? (
-            <section className="bg-white rounded-2xl border border-harbor-text/10 p-6">
-              <h2 className="text-xl font-semibold text-harbor-primary mb-2">
-                AI Assistant Access
-              </h2>
-              <p className="text-harbor-text/80 mb-4">
-                You have full AI assistant access. Continue in chat for daily support.
-              </p>
-              <Link
-                to="/chat"
-                className="inline-flex rounded-xl border border-harbor-text/10 bg-white text-harbor-text px-5 py-3 font-medium hover:bg-harbor-primary/5 transition"
-              >
-                Open Chat
-              </Link>
-            </section>
+          {CHAT_ENABLED ? (
+            hasChatAccess ? (
+              <section className="bg-white rounded-2xl border border-harbor-text/10 p-6">
+                <h2 className="text-xl font-semibold text-harbor-primary mb-2">
+                  AI Assistant Access
+                </h2>
+                <p className="text-harbor-text/80 mb-4">
+                  You have full AI assistant access. Continue in chat for daily support.
+                </p>
+                <Link
+                  to="/chat"
+                  className="inline-flex rounded-xl border border-harbor-text/10 bg-white text-harbor-text px-5 py-3 font-medium hover:bg-harbor-primary/5 transition"
+                >
+                  Open Chat
+                </Link>
+              </section>
+            ) : (
+              <section className="bg-white rounded-2xl border border-harbor-text/10 p-6">
+                <h2 className="text-xl font-semibold text-harbor-primary mb-2">
+                  Want the AI Assistant?
+                </h2>
+                <p className="text-harbor-text/80 mb-2">
+                  Unlock personalized daily support, strategies, and guided responses for your child.
+                </p>
+                <p className="text-harbor-text/60 mb-4">
+                  Upgrade to enable AI chat access.
+                </p>
+                <button
+                  type="button"
+                  className="inline-flex rounded-xl bg-harbor-primary text-white px-5 py-3 font-medium hover:opacity-90 transition"
+                >
+                  Upgrade to AI Assistant
+                </button>
+              </section>
+            )
           ) : (
             <section className="bg-white rounded-2xl border border-harbor-text/10 p-6">
               <h2 className="text-xl font-semibold text-harbor-primary mb-2">
-                Want the AI Assistant?
+                AI Assistant Is Coming Soon
               </h2>
-              <p className="text-harbor-text/80 mb-2">
-                Unlock personalized daily support, strategies, and guided responses for your child.
+              <p className="text-harbor-text/80">
+                This MVP includes onboarding and report generation only.
               </p>
-              <p className="text-harbor-text/60 mb-4">
-                Upgrade to enable AI chat access.
-              </p>
-              <button
-                type="button"
-                className="inline-flex rounded-xl bg-harbor-primary text-white px-5 py-3 font-medium hover:opacity-90 transition"
-              >
-                Upgrade to AI Assistant
-              </button>
             </section>
           )}
 

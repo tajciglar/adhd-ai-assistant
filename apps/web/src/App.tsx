@@ -20,6 +20,8 @@ function AppRoutes() {
   const { session, loading } = useAuth();
   const location = useLocation();
   const guestModeEnabled = import.meta.env.VITE_GUEST_MODE === "true";
+  const chatEnabled =
+    import.meta.env.VITE_CHAT_ENABLED !== "false" && !guestModeEnabled;
   const canAccessUserApp = Boolean(session) || (guestModeEnabled && !session);
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
@@ -83,7 +85,7 @@ function AppRoutes() {
   const effectiveUserRole = canAccessUserApp ? userRole : null;
   const effectiveHasChatAccess = canAccessUserApp ? hasChatAccess : null;
   const isAdmin = effectiveUserRole === "admin";
-  const canUseChat = isAdmin || effectiveHasChatAccess === true;
+  const canUseChat = chatEnabled && (isAdmin || effectiveHasChatAccess === true);
   // Admins skip onboarding — it's for parents, not content managers
   const needsOnboarding =
     canAccessUserApp && effectiveOnboardingCompleted === false && !isAdmin;
@@ -148,7 +150,9 @@ function AppRoutes() {
         path="/chat"
         element={
           canAccessUserApp ? (
-            needsOnboarding ? (
+            !chatEnabled ? (
+              <Navigate to="/report" />
+            ) : needsOnboarding ? (
               <Navigate to="/onboarding" />
             ) : !canUseChat ? (
               <Navigate to="/report" />
@@ -167,7 +171,7 @@ function AppRoutes() {
             isAdmin ? (
               <AdminPage />
             ) : (
-              <Navigate to="/chat" />
+              <Navigate to={chatEnabled ? "/chat" : "/report"} />
             )
           ) : (
             <Navigate to="/auth" />

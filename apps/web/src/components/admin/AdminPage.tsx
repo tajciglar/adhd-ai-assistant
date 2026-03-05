@@ -33,6 +33,9 @@ export default function AdminPage() {
   } = useAdmin();
 
   const navigate = useNavigate();
+  const guestModeEnabled = import.meta.env.VITE_GUEST_MODE === "true";
+  const chatEnabled =
+    import.meta.env.VITE_CHAT_ENABLED !== "false" && !guestModeEnabled;
   const {
     templates,
     loading: templatesLoading,
@@ -123,7 +126,8 @@ export default function AdminPage() {
         onFilterChange={setFilter}
         onAddEntry={handleAddEntry}
         onAddTemplate={handleAddTemplate}
-        onBackToChat={() => navigate("/chat")}
+        onBackToChat={() => navigate(chatEnabled ? "/chat" : "/report")}
+        backToLabel={chatEnabled ? "Back to Chat" : "Back to Report"}
       />
 
       <div className="flex-1 flex flex-col">
