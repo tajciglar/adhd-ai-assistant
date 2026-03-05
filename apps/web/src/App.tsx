@@ -122,7 +122,7 @@ function AppRoutes() {
               <Navigate to={homePath} />
             )
           ) : (
-            <OnboardingPage />
+            <Navigate to="/auth" />
           )
         }
       />
@@ -136,7 +136,7 @@ function AppRoutes() {
               <ReportPage />
             )
           ) : (
-            <ReportPage />
+            <Navigate to="/auth" />
           )
         }
       />
@@ -152,7 +152,7 @@ function AppRoutes() {
               <ChatPage />
             )
           ) : (
-            <Navigate to="/onboarding" />
+            <Navigate to="/auth" />
           )
         }
       />
@@ -172,7 +172,7 @@ function AppRoutes() {
       />
       <Route
         path="*"
-        element={<Navigate to={session ? homePath : "/onboarding"} />}
+        element={<Navigate to={session ? homePath : "/auth"} />}
       />
     </Routes>
     </Suspense>

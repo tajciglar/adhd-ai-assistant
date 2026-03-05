@@ -181,6 +181,30 @@ export default function ReportTemplateEditor({
     setField(key, next);
   }
 
+  function removeStringListItem(
+    key: "drains" | "fuels" | "affirmations",
+    index: number,
+  ) {
+    if (form[key].length <= 1) return;
+    const next = [...form[key]];
+    next.splice(index, 1);
+    setField(key, next);
+  }
+
+  function removeBrainSection(index: number) {
+    if (form.brainSections.length <= 1) return;
+    const next = [...form.brainSections];
+    next.splice(index, 1);
+    setField("brainSections", next);
+  }
+
+  function removeDoNotSayPair(index: number) {
+    if (form.doNotSay.length <= 1) return;
+    const next = [...form.doNotSay];
+    next.splice(index, 1);
+    setField("doNotSay", next);
+  }
+
   async function handleSave() {
     setError(null);
     if (!archetypeId.trim()) {
@@ -338,6 +362,20 @@ export default function ReportTemplateEditor({
             </div>
             {form.brainSections.map((section, index) => (
               <div key={`brain-${index}`} className="border border-harbor-text/10 rounded-xl p-3 space-y-2">
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeBrainSection(index)}
+                    disabled={form.brainSections.length <= 1}
+                    className="p-1 rounded-md border border-harbor-text/15 text-harbor-text/50 hover:text-harbor-error hover:border-harbor-error/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    aria-label="Remove section"
+                    title="Remove section"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={section.title}
@@ -392,14 +430,27 @@ export default function ReportTemplateEditor({
                 </button>
               </div>
               {form[key].map((item, index) => (
-                <input
-                  key={`${key}-${index}`}
-                  type="text"
-                  value={item}
-                  onChange={(e) => updateStringList(key, index, e.target.value)}
-                  placeholder={`${key} item`}
-                  className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
-                />
+                <div key={`${key}-${index}`} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => updateStringList(key, index, e.target.value)}
+                    placeholder={`${key} item`}
+                    className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeStringListItem(key, index)}
+                    disabled={form[key].length <= 1}
+                    className="p-2 rounded-md border border-harbor-text/15 text-harbor-text/50 hover:text-harbor-error hover:border-harbor-error/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    aria-label={`Remove ${key} item`}
+                    title={`Remove ${key} item`}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               ))}
             </section>
           ))}
@@ -428,6 +479,20 @@ export default function ReportTemplateEditor({
             </div>
             {form.doNotSay.map((pair, index) => (
               <div key={`pair-${index}`} className="border border-harbor-text/10 rounded-xl p-3 space-y-2">
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeDoNotSayPair(index)}
+                    disabled={form.doNotSay.length <= 1}
+                    className="p-1 rounded-md border border-harbor-text/15 text-harbor-text/50 hover:text-harbor-error hover:border-harbor-error/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    aria-label="Remove pair"
+                    title="Remove pair"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={pair.insteadOf}
@@ -488,6 +553,51 @@ export default function ReportTemplateEditor({
                   <div key={`${s.title}-${i}`} className="border border-harbor-text/10 rounded-xl p-3">
                     <p className="font-medium text-harbor-text">{s.title}</p>
                     <p className="text-sm text-harbor-text/80 whitespace-pre-line mt-1">{s.content}</p>
+                  </div>
+                ))}
+              </section>
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-harbor-text/80">Day In Life</h3>
+                <p className="text-sm text-harbor-text/80 whitespace-pre-line"><span className="font-medium">Morning:</span> {form.dayInLife.morning}</p>
+                <p className="text-sm text-harbor-text/80 whitespace-pre-line"><span className="font-medium">School:</span> {form.dayInLife.school}</p>
+                <p className="text-sm text-harbor-text/80 whitespace-pre-line"><span className="font-medium">After School:</span> {form.dayInLife.afterSchool}</p>
+                <p className="text-sm text-harbor-text/80 whitespace-pre-line"><span className="font-medium">Bedtime:</span> {form.dayInLife.bedtime}</p>
+              </section>
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-harbor-text/80">Drains / Fuels</h3>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-harbor-text/60 mb-1">Drains</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {form.drains.map((item, i) => <li key={`d-${i}`} className="text-sm text-harbor-text/80">{item}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs text-harbor-text/60 mb-1">Fuels</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {form.fuels.map((item, i) => <li key={`f-${i}`} className="text-sm text-harbor-text/80">{item}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </section>
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-harbor-text/80">When Overwhelmed</h3>
+                <p className="text-sm text-harbor-text/80 whitespace-pre-line">{form.overwhelm}</p>
+              </section>
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-harbor-text/80">Needs To Hear</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  {form.affirmations.map((item, i) => <li key={`a-${i}`} className="text-sm text-harbor-text/80">{item}</li>)}
+                </ul>
+              </section>
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-harbor-text/80">Do Not Say</h3>
+                {form.doNotSay.map((pair, i) => (
+                  <div key={`p-${i}`} className="border border-harbor-text/10 rounded-xl p-3">
+                    <p className="text-xs text-harbor-text/60">Instead of</p>
+                    <p className="text-sm text-harbor-text/80">{pair.insteadOf}</p>
+                    <p className="text-xs text-harbor-text/60 mt-2">Try</p>
+                    <p className="text-sm text-harbor-text/80">{pair.tryThis}</p>
                   </div>
                 ))}
               </section>

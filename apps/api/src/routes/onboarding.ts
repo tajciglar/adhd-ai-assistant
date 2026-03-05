@@ -23,34 +23,6 @@ const PARENT_KEYS = new Set([
 // Keys that are stored as dedicated columns on ChildProfile
 const CHILD_COLUMN_KEYS = new Set(["childName", "childAge", "childGender"]);
 
-function resolveIdentity(request: {
-  user?: { id: string; email: string } | null;
-  headers: Record<string, unknown>;
-  ip?: string;
-}) {
-  const authUser = request.user;
-  if (authUser?.id && authUser?.email) {
-    return {
-      userId: authUser.id,
-      email: authUser.email,
-      isGuest: false,
-    };
-  }
-
-  const guestHeader = request.headers["x-guest-id"];
-  const guestRaw =
-    typeof guestHeader === "string" && guestHeader.trim().length > 0
-      ? guestHeader.trim().toLowerCase()
-      : (request.ip ?? "anonymous").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
-
-  const guestId = `guest_${guestRaw}`;
-  return {
-    userId: guestId,
-    email: `${guestId}@guest.local`,
-    isGuest: true,
-  };
-}
-
 /**
  * Validate a single step's response payload.
  * Returns null if valid, or an error string if invalid.
@@ -202,16 +174,15 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
   // GET /onboarding — fetch current progress for resume
   fastify.get(
     "/onboarding",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const { userId, email, isGuest } = resolveIdentity(request as any);
+      const { id: userId, email } = request.user;
       const [{ profile, child }, user] = await Promise.all([
         getOrCreateProfileWithChild(fastify, userId, email),
-        isGuest
-          ? Promise.resolve({ role: "user", hasChatAccess: false })
-          : fastify.prisma.user.findUnique({
-              where: { id: userId },
-              select: { role: true, hasChatAccess: true },
-            }),
+        fastify.prisma.user.findUnique({
+          where: { id: userId },
+          select: { role: true, hasChatAccess: true },
+        }),
       ]);
 
       const responses = buildResponsesObject(profile, child);
@@ -230,6 +201,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
   // PATCH /onboarding — save a single step answer (autosave)
   fastify.patch(
     "/onboarding",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const parsed = patchBodySchema.safeParse(request.body);
       if (!parsed.success) {
@@ -250,7 +222,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: validationError });
       }
 
-      const { userId, email } = resolveIdentity(request as any);
+      const { id: userId, email } = request.user;
       const { profile, child } = await getOrCreateProfileWithChild(
         fastify,
         userId,
@@ -327,8 +299,9 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
   // POST /onboarding/complete — compute trait profile + mark done
   fastify.post(
     "/onboarding/complete",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const { userId, email } = resolveIdentity(request as any);
+      const { id: userId, email } = request.user;
       const { profile, child } = await getOrCreateProfileWithChild(
         fastify,
         userId,

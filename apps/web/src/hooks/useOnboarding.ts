@@ -82,7 +82,7 @@ export function useOnboarding() {
   // Fetch existing progress on mount
   useEffect(() => {
     api
-      .get("/api/onboarding", { auth: "optional" })
+      .get("/api/onboarding")
       .then((data) => {
         const d = data as {
           onboardingStep: number;
@@ -122,7 +122,7 @@ export function useOnboarding() {
     (step: number, responses: Record<string, unknown>) => {
       dispatch({ type: "SAVE_STATUS", status: "saving" });
       api
-        .patch("/api/onboarding", { step, responses }, { auth: "optional" })
+        .patch("/api/onboarding", { step, responses })
         .then(() => {
           dispatch({ type: "SAVE_STATUS", status: "saved" });
         })
@@ -160,9 +160,7 @@ export function useOnboarding() {
 
   const complete = useCallback(async () => {
     try {
-      await api.post("/api/onboarding/complete", undefined, {
-        auth: "optional",
-      });
+      await api.post("/api/onboarding/complete");
       dispatch({ type: "COMPLETE" });
     } catch {
       dispatch({ type: "COMPLETE" });

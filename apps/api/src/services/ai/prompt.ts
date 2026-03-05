@@ -43,20 +43,20 @@ function buildProfileContext(child: ChildContext | null): string {
     const scores = tp.scores;
     if (scores) {
       const dimensionLabels: Record<string, string> = {
-        filter: "attention and focus",
-        engine: "energy and impulse control",
+        inattentive: "attention and focus",
+        hyperactive: "energy and impulse control",
         sensory: "sensory processing",
-        fuse: "emotional regulation",
-        time: "time management and planning",
+        emotional: "emotional regulation",
+        executive_function: "time management and planning",
         social: "social cues and interactions",
       };
 
       const highAreas = Object.entries(scores)
-        .filter(([, score]) => score >= 13)
+        .filter(([, score]) => score >= 2.25)
         .map(([key]) => dimensionLabels[key] ?? key);
 
       const moderateAreas = Object.entries(scores)
-        .filter(([, score]) => score >= 7 && score < 13)
+        .filter(([, score]) => score >= 1.25 && score < 2.25)
         .map(([key]) => dimensionLabels[key] ?? key);
 
       if (highAreas.length > 0) {

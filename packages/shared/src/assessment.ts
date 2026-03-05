@@ -10,19 +10,19 @@ export const LIKERT_OPTIONS = [
 // ─── Category IDs ───────────────────────────────────────────────────────────
 
 export type CategoryId =
-  | "filter"
-  | "engine"
+  | "inattentive"
+  | "hyperactive"
   | "sensory"
-  | "fuse"
-  | "time"
+  | "emotional"
+  | "executive_function"
   | "social";
 
 export const CATEGORY_IDS: CategoryId[] = [
-  "filter",
-  "engine",
+  "inattentive",
+  "hyperactive",
   "sensory",
-  "fuse",
-  "time",
+  "emotional",
+  "executive_function",
   "social",
 ];
 
@@ -87,15 +87,13 @@ export const BASIC_INFO_QUESTIONS: BasicInfoQuestion[] = [
 
 export interface AssessmentCategory {
   id: CategoryId;
-  label: string;
   subtitle: string;
   questions: string[];
 }
 
 export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
   {
-    id: "filter",
-    label: "The Attention Filter",
+    id: "inattentive",
     subtitle: "Inattentive Traits",
     questions: [
       "Makes careless mistakes in schoolwork or chores.",
@@ -107,8 +105,7 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     ],
   },
   {
-    id: "engine",
-    label: "The Engine Speed",
+    id: "hyperactive",
     subtitle: "Hyperactive/Impulsive Traits",
     questions: [
       "Fidgets with hands/feet or squirms constantly in their seat.",
@@ -121,7 +118,6 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
   },
   {
     id: "sensory",
-    label: "The Sensory Guard",
     subtitle: "Sensory Processing",
     questions: [
       "Gets upset by clothing tags, seams in socks, or messy play (mud/glue).",
@@ -132,8 +128,7 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     ],
   },
   {
-    id: "fuse",
-    label: "The Emotional Thermostat",
+    id: "emotional",
     subtitle: "Dysregulation",
     questions: [
       'Has a very "low fuse" or low frustration tolerance.',
@@ -144,8 +139,7 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     ],
   },
   {
-    id: "time",
-    label: "The Time Horizon",
+    id: "executive_function",
     subtitle: "Executive Function",
     questions: [
       'Struggles to "get started" on a task even when they know how.',
@@ -156,7 +150,6 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
   },
   {
     id: "social",
-    label: "The Social Radar",
     subtitle: "Social Cues",
     questions: [
       "Interrupts others' conversations or games frequently.",
@@ -174,8 +167,7 @@ export interface Archetype {
   id: string;
   animal: string;
   typeName: string;
-  highDimensions: CategoryId[];
-  priority: number;
+  primaryTrait: CategoryId[];
   explanation: string;
   traits: string;
   solution: string;
@@ -187,8 +179,7 @@ export const ARCHETYPES: Archetype[] = [
     id: "koala",
     animal: "The Koala",
     typeName: "The Dreamy Koala",
-    highDimensions: ["filter", "time"],
-    priority: 85,
+    primaryTrait: ["inattentive", "executive_function"],
     explanation: "Inattentive + Executive Function profile.",
     traits: "Reflective, imaginative, loses track of steps and time.",
     solution: "Use visual structure and one-step instructions.",
@@ -198,8 +189,7 @@ export const ARCHETYPES: Archetype[] = [
     id: "hummingbird",
     animal: "The Hummingbird",
     typeName: "The Flash Hummingbird",
-    highDimensions: ["filter", "engine"],
-    priority: 71,
+    primaryTrait: ["inattentive", "hyperactive"],
     explanation: "Inattentive + Hyperactive profile.",
     traits: "Fast shifts in attention, very active, impulsive starts.",
     solution: "Short task cycles, movement breaks, rapid feedback.",
@@ -209,8 +199,7 @@ export const ARCHETYPES: Archetype[] = [
     id: "tiger",
     animal: "The Tiger",
     typeName: "The Fierce Tiger",
-    highDimensions: ["filter", "fuse"],
-    priority: 70,
+    primaryTrait: ["inattentive", "emotional"],
     explanation: "Inattentive + Emotional profile.",
     traits: "Fluctuating focus with big emotional reactions.",
     solution: "Co-regulation first, then task re-entry.",
@@ -220,8 +209,7 @@ export const ARCHETYPES: Archetype[] = [
     id: "meerkat",
     animal: "The Meerkat",
     typeName: "The Observing Meerkat",
-    highDimensions: ["filter", "sensory"],
-    priority: 55,
+    primaryTrait: ["inattentive", "sensory"],
     explanation: "Inattentive + Sensory profile.",
     traits: "Easily overloaded, scanning environment, variable focus.",
     solution: "Lower sensory load and add predictable routines.",
@@ -231,8 +219,7 @@ export const ARCHETYPES: Archetype[] = [
     id: "stallion",
     animal: "The Stallion",
     typeName: "The Bold Stallion",
-    highDimensions: ["fuse", "time"],
-    priority: 60,
+    primaryTrait: ["emotional", "executive_function"],
     explanation: "Emotional + Executive Function profile.",
     traits: "Strong feelings and friction around transitions/planning.",
     solution: "External time supports plus calm transition rituals.",
@@ -242,8 +229,7 @@ export const ARCHETYPES: Archetype[] = [
     id: "fox",
     animal: "The Fox",
     typeName: "The Clever Fox",
-    highDimensions: ["time", "social"],
-    priority: 55,
+    primaryTrait: ["executive_function", "social"],
     explanation: "Executive Function + Social profile.",
     traits: "Socially agile with timing/planning weak points.",
     solution: "First/Then flows and clear social boundaries.",
@@ -253,209 +239,10 @@ export const ARCHETYPES: Archetype[] = [
     id: "owl",
     animal: "The Owl",
     typeName: "The Keen Owl",
-    highDimensions: ["filter", "social"],
-    priority: 65,
+    primaryTrait: ["inattentive", "social"],
     explanation: "Inattentive + Social profile.",
     traits: "Deep attention pockets, misses cues in fast exchanges.",
     solution: "Practice turn-taking and cue labeling.",
-    childPerspective: "",
-  },
-  {
-    id: "jackrabbit",
-    animal: "The Jackrabbit",
-    typeName: "The Bolt Jackrabbit",
-    highDimensions: ["engine", "time"],
-    priority: 65,
-    explanation: "Hyperactive + Executive Function profile.",
-    traits: "Fast action with trouble sequencing and finishing.",
-    solution: "Short sprints with explicit stop checkpoints.",
-    childPerspective: "",
-  },
-  {
-    id: "eagle",
-    animal: "The Eagle",
-    typeName: "The Sky Eagle",
-    highDimensions: ["filter", "engine", "time"],
-    priority: 60,
-    explanation: "Inattentive + Hyperactive + Executive profile.",
-    traits: "High-speed shifting attention with planning drag.",
-    solution: "Externalize priorities and chunk tasks tightly.",
-    childPerspective: "",
-  },
-  {
-    id: "elephant",
-    animal: "The Elephant",
-    typeName: "The Justice Elephant",
-    highDimensions: ["fuse", "social"],
-    priority: 50,
-    explanation: "Emotional + Social profile.",
-    traits: "Justice-driven, relationally intense, sensitive to fairness.",
-    solution: "Collaborative problem-solving with explicit social framing.",
-    childPerspective: "",
-  },
-  {
-    id: "dolphin",
-    animal: "The Dolphin",
-    typeName: "The Leap Dolphin",
-    highDimensions: ["engine", "social"],
-    priority: 55,
-    explanation: "Hyperactive + Social profile.",
-    traits: "Energetic social initiator, fast conversational jumps.",
-    solution: "Movement before social-demand tasks and pause cues.",
-    childPerspective: "",
-  },
-  {
-    id: "octopus",
-    animal: "The Octopus",
-    typeName: "The Vivid Octopus",
-    highDimensions: ["filter", "engine", "sensory", "fuse", "time", "social"],
-    priority: 15,
-    explanation: "High complexity across all six dimensions.",
-    traits: "Highly variable regulation across settings and demands.",
-    solution: "Reduce cognitive load and support multiple systems at once.",
-    childPerspective: "",
-  },
-  {
-    id: "hedgehog",
-    animal: "The Hedgehog",
-    typeName: "The Storm Hedgehog",
-    highDimensions: ["sensory", "fuse"],
-    priority: 45,
-    explanation: "Sensory + Emotional profile.",
-    traits: "Sensory-triggered emotional spikes and rapid escalation.",
-    solution: "Pre-empt overload and build recovery routines.",
-    childPerspective: "",
-  },
-  {
-    id: "bull",
-    animal: "The Bull",
-    typeName: "The Fearless Bull",
-    highDimensions: ["engine", "fuse"],
-    priority: 50,
-    explanation: "Hyperactive + Emotional profile.",
-    traits: "High-drive behavior with hot emotional reactivity.",
-    solution: "Movement channels with strong co-regulation anchors.",
-    childPerspective: "",
-  },
-  {
-    id: "cheetah",
-    animal: "The Cheetah",
-    typeName: "The Blaze Cheetah",
-    highDimensions: ["engine", "fuse", "time"],
-    priority: 45,
-    explanation: "Hyperactive + Emotional + Executive profile.",
-    traits: "Rapid action, stress spikes, late-stage panic completion.",
-    solution: "Time visuals and micro-deadlines before escalation.",
-    childPerspective: "",
-  },
-  {
-    id: "rhino",
-    animal: "The Rhino",
-    typeName: "The Thunder Rhino",
-    highDimensions: ["engine", "sensory"],
-    priority: 40,
-    explanation: "Hyperactive + Sensory profile.",
-    traits: "Seeks strong input, forceful pace, hard stops/transitions.",
-    solution: "Heavy-work routines and structured sensory outlets.",
-    childPerspective: "",
-  },
-  {
-    id: "deer",
-    animal: "The Deer",
-    typeName: "The Still Deer",
-    highDimensions: ["sensory", "time"],
-    priority: 40,
-    explanation: "Sensory + Executive Function profile.",
-    traits: "Cautious pacing, overload around transitions/unknowns.",
-    solution: "Preview changes early with consistent sequence cues.",
-    childPerspective: "",
-  },
-  {
-    id: "red-panda",
-    animal: "The Red Panda",
-    typeName: "The Red Panda",
-    highDimensions: ["sensory", "social"],
-    priority: 35,
-    explanation: "Sensory + Social profile.",
-    traits: "Social interest with fast fatigue in noisy environments.",
-    solution: "Low-stim social scaffolding and planned breaks.",
-    childPerspective: "",
-  },
-  {
-    id: "bison",
-    animal: "The Bison",
-    typeName: "The Storm Bison",
-    highDimensions: ["engine", "sensory", "fuse"],
-    priority: 35,
-    explanation: "Hyperactive + Sensory + Emotional profile.",
-    traits: "Large energy with sensory/emotional volatility.",
-    solution: "Rhythmic movement and early downshift rituals.",
-    childPerspective: "",
-  },
-  {
-    id: "firefly",
-    animal: "The Firefly",
-    typeName: "The Spark Firefly",
-    highDimensions: ["filter", "time", "social"],
-    priority: 40,
-    explanation: "Inattentive + Executive + Social profile.",
-    traits: "Imaginative, socially bright, loses thread under demands.",
-    solution: "Visual anchors and conversational pacing supports.",
-    childPerspective: "",
-  },
-  {
-    id: "turtle",
-    animal: "The Turtle",
-    typeName: "The Deep Turtle",
-    highDimensions: ["filter", "sensory", "time"],
-    priority: 30,
-    explanation: "Inattentive + Sensory + Executive profile.",
-    traits: "Deliberate pace, overload vulnerability, transition friction.",
-    solution: "Calm workspace + visible task sequencing.",
-    childPerspective: "",
-  },
-  {
-    id: "macaw",
-    animal: "The Macaw",
-    typeName: "The Bold Macaw",
-    highDimensions: ["engine", "fuse", "social"],
-    priority: 30,
-    explanation: "Hyperactive + Emotional + Social profile.",
-    traits: "Expressive intensity in relationships and group settings.",
-    solution: "Channel social energy into defined helper/leader roles.",
-    childPerspective: "",
-  },
-  {
-    id: "whale",
-    animal: "The Whale",
-    typeName: "The Gentle Whale",
-    highDimensions: ["sensory", "fuse", "social"],
-    priority: 25,
-    explanation: "Sensory + Emotional + Social profile.",
-    traits: "Deeply affected by environments and interpersonal tone.",
-    solution: "Protective sensory boundaries and relational safety cues.",
-    childPerspective: "",
-  },
-  {
-    id: "beaver",
-    animal: "The Beaver",
-    typeName: "The Architect Beaver",
-    highDimensions: ["filter", "social", "time", "sensory"],
-    priority: 20,
-    explanation: "Inattentive + Sensory + Executive + Social profile.",
-    traits: "Needs high structure to feel safe and effective.",
-    solution: "Consistent routines and transition previews.",
-    childPerspective: "",
-  },
-  {
-    id: "hawk",
-    animal: "The Hawk",
-    typeName: "The Guardian Hawk",
-    highDimensions: ["social", "fuse", "sensory", "engine"],
-    priority: 25,
-    explanation: "Social + Emotional + Sensory + Hyperactive profile.",
-    traits: "Protective, alert, and highly reactive under social stress.",
-    solution: "Shared rules, predictable social scripts, and decompression.",
     childPerspective: "",
   },
 ];
@@ -469,7 +256,6 @@ const BASIC_INFO_COUNT = BASIC_INFO_QUESTIONS.length; // 6
 export interface LikertStepConfig {
   type: "likert";
   categoryId: CategoryId;
-  categoryLabel: string;
   categorySubtitle: string;
   questionIndex: number;
   questionText: string;
@@ -488,7 +274,6 @@ const LIKERT_STEPS: LikertStepConfig[] = ASSESSMENT_CATEGORIES.flatMap(
     cat.questions.map((q, i) => ({
       type: "likert" as const,
       categoryId: cat.id,
-      categoryLabel: cat.label,
       categorySubtitle: cat.subtitle,
       questionIndex: i,
       questionText: q,
@@ -521,7 +306,9 @@ export function getStepKey(step: number): string {
 export type Intensity = "low" | "moderate" | "high";
 
 export function scoreCategory(answers: number[]): number {
-  return answers.reduce((sum, a) => sum + a, 0);
+  if (answers.length === 0) return 0;
+  const total = answers.reduce((sum, a) => sum + a, 0);
+  return Number((total / answers.length).toFixed(2));
 }
 
 export function normalizeScore(rawScore: number, maxRaw: number): number {
@@ -530,17 +317,18 @@ export function normalizeScore(rawScore: number, maxRaw: number): number {
 }
 
 export function getIntensity(normalized: number): Intensity {
-  if (normalized <= 6) return "low";
-  if (normalized <= 12) return "moderate";
+  // Scales for section averages on a 0..3 Likert scale.
+  if (normalized < 1.25) return "low";
+  if (normalized < 2.25) return "moderate";
   return "high";
 }
 
 export interface TraitScores {
-  filter: number;
-  engine: number;
+  inattentive: number;
+  hyperactive: number;
   sensory: number;
-  fuse: number;
-  time: number;
+  emotional: number;
+  executive_function: number;
   social: number;
 }
 
@@ -571,8 +359,25 @@ export function extractCategoryAnswers(
   return result;
 }
 
+function sortCategoriesByScore(scores: TraitScores): CategoryId[] {
+  const rankOrder: Record<CategoryId, number> = {
+    inattentive: 0,
+    hyperactive: 1,
+    sensory: 2,
+    emotional: 3,
+    executive_function: 4,
+    social: 5,
+  };
+
+  return [...CATEGORY_IDS].sort((a, b) => {
+    const diff = scores[b] - scores[a];
+    if (diff !== 0) return diff;
+    return rankOrder[a] - rankOrder[b];
+  });
+}
+
 /**
- * Compute normalized scores (0-18) for each category.
+ * Compute section averages (0..3) for each category.
  */
 export function computeScores(
   responses: Record<string, unknown>,
@@ -582,59 +387,44 @@ export function computeScores(
 
   for (const cat of ASSESSMENT_CATEGORIES) {
     const answers = categoryAnswers[cat.id];
-    const raw = scoreCategory(answers);
-    const maxRaw = cat.questions.length * 3;
-    scores[cat.id] = normalizeScore(raw, maxRaw);
+    scores[cat.id] = scoreCategory(answers);
   }
 
   return scores;
 }
 
 /**
- * Match the best archetype using weighted-fit scoring:
- * - Primary signal: average score across an archetype's required dimensions
- * - Secondary signal: configured priority weight (from product ranking)
+ * Match archetype by top-2 ranking:
+ * 1) Rank all six categories by section average.
+ * 2) Take top two.
+ * 3) Find archetype with exact 2-dimension combination (order-insensitive).
+ * 4) If no exact pair exists, fallback to the first archetype containing both dimensions.
  */
 export function matchArchetype(scores: TraitScores): Archetype {
-  let bestArchetype = ARCHETYPES[0];
-  let bestFinalScore = Number.NEGATIVE_INFINITY;
-  let bestAverageScore = Number.NEGATIVE_INFINITY;
+  const ranked = sortCategoriesByScore(scores);
+  const topA = ranked[0];
+  const topB = ranked[1];
+  const topTwo = new Set<CategoryId>([topA, topB]);
 
-  for (const arch of ARCHETYPES) {
-    const dimensionScores = arch.highDimensions.map((d) => scores[d]);
-    const avgScore =
-      dimensionScores.reduce((sum, value) => sum + value, 0) /
-      arch.highDimensions.length;
+  const exactCandidates = ARCHETYPES.filter(
+    (arch) =>
+      arch.primaryTrait.length === 2 &&
+      arch.primaryTrait.every((d) => topTwo.has(d)),
+  );
 
-    // Main signal = avgScore; priority is used as a stable tie-break helper.
-    const finalScore = avgScore * 10 + arch.priority;
-
-    if (finalScore > bestFinalScore) {
-      bestFinalScore = finalScore;
-      bestAverageScore = avgScore;
-      bestArchetype = arch;
-      continue;
-    }
-
-    if (finalScore === bestFinalScore) {
-      // Tie-break #1: prefer stronger direct score fit.
-      if (avgScore > bestAverageScore) {
-        bestAverageScore = avgScore;
-        bestArchetype = arch;
-        continue;
-      }
-
-      // Tie-break #2: prefer more specific (fewer required dimensions).
-      if (
-        avgScore === bestAverageScore &&
-        arch.highDimensions.length < bestArchetype.highDimensions.length
-      ) {
-        bestArchetype = arch;
-      }
-    }
+  if (exactCandidates.length > 0) {
+    return exactCandidates[0];
   }
 
-  return bestArchetype;
+  const inclusiveCandidates = ARCHETYPES.filter((arch) =>
+    arch.primaryTrait.includes(topA) && arch.primaryTrait.includes(topB),
+  );
+
+  if (inclusiveCandidates.length > 0) {
+    return inclusiveCandidates[0];
+  }
+
+  return ARCHETYPES[0];
 }
 
 /**
