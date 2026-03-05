@@ -1,6 +1,6 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import { generateGroundedAnswer } from "../services/ai/answer.js";
 
 const chatBodySchema = z.object({
@@ -13,11 +13,22 @@ type ChatBody = z.infer<typeof chatBodySchema>;
 const MAX_MESSAGES_PER_CONVERSATION = 200;
 
 export default async function chatRoutes(fastify: FastifyInstance) {
+  async function requireChatAccess(request: FastifyRequest, reply: FastifyReply) {
+    const user = await fastify.prisma.user.findUnique({
+      where: { id: request.user.id },
+      select: { hasChatAccess: true },
+    });
+
+    if (!user?.hasChatAccess) {
+      return reply.status(403).send({ error: "Chat access not enabled" });
+    }
+  }
+
   // GET /conversations — list user's conversations
   fastify.get(
     "/conversations",
-    { preHandler: [fastify.authenticate] },
-    async (request, reply) => {
+    { preHandler: [fastify.authenticate, requireChatAccess] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const userId = request.user.id;
 
       const conversations = await fastify.prisma.conversation.findMany({
@@ -38,8 +49,8 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   // GET /conversations/:id/messages — get all messages for a conversation
   fastify.get<{ Params: { id: string } }>(
     "/conversations/:id/messages",
-    { preHandler: [fastify.authenticate] },
-    async (request, reply) => {
+    { preHandler: [fastify.authenticate, requireChatAccess] },
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const userId = request.user.id;
       const { id } = request.params;
 
@@ -70,8 +81,8 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   // DELETE /conversations/:id — delete a conversation
   fastify.delete<{ Params: { id: string } }>(
     "/conversations/:id",
-    { preHandler: [fastify.authenticate] },
-    async (request, reply) => {
+    { preHandler: [fastify.authenticate, requireChatAccess] },
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const userId = request.user.id;
       const { id } = request.params;
 
@@ -93,7 +104,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: ChatBody }>(
     "/chat",
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticate, requireChatAccess],
       config: {
         rateLimit: {
           max: 15,
@@ -101,7 +112,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = chatBodySchema.safeParse(request.body);
 
       if (!parsed.success) {
@@ -205,7 +216,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           where: { id: conversation.id },
           data: { updatedAt: new Date() },
         })
-        .catch((error) => {
+        .catch((error: any) => {
           fastify.log.warn({ error, conversationId: conversation.id }, "chat.touch_updatedAt_failed");
         });
 

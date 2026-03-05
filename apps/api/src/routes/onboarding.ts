@@ -181,15 +181,17 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
         getOrCreateProfileWithChild(fastify, userId, email),
         fastify.prisma.user.findUnique({
           where: { id: userId },
-          select: { role: true },
+          select: { role: true, hasChatAccess: true },
         }),
       ]);
 
       const responses = buildResponsesObject(profile, child);
 
       return reply.send({
+        childId: child.id,
         onboardingStep: child.onboardingStep,
         onboardingCompleted: profile.onboardingCompleted,
+        hasChatAccess: user?.hasChatAccess ?? false,
         responses,
         role: user?.role ?? "user",
       });
@@ -347,6 +349,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
       ]);
 
       return reply.send({
+        childId: child.id,
         onboardingCompleted: true,
         traitProfile: enrichedTraitProfile,
       });

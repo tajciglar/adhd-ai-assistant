@@ -214,7 +214,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/admin/stats",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (_request, reply) => {
+    async (_request: FastifyRequest, reply: FastifyReply) => {
       const [totalEntries, totalUsers, categoryCounts] = await Promise.all([
         fastify.prisma.knowledgeEntry.count(),
         fastify.prisma.user.count(),
@@ -237,7 +237,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get<{ Querystring: { category?: string } }>(
     "/admin/entries",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const { category } = request.query as { category?: string };
       const entries = await fastify.prisma.knowledgeEntry.findMany({
         where: category ? { category } : {},
@@ -250,7 +250,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params;
       const entry = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
@@ -267,7 +267,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/admin/entries",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = entryBodySchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -301,7 +301,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.put<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params;
       const parsed = entryBodySchema.safeParse(request.body);
 
@@ -345,7 +345,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.delete<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params;
       const existing = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
@@ -368,7 +368,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/admin/entries/bulk",
     { preHandler: basePreHandler, config: bulkRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = bulkImportSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -402,7 +402,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/admin/jobs/:id",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params;
       const job = await fastify.prisma.adminImportJob.findUnique({
         where: { id },
@@ -433,7 +433,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/admin/test-query",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request, reply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = testQuerySchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({

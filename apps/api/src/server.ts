@@ -9,6 +9,7 @@ import onboardingRoutes from "./routes/onboarding.js";
 import chatRoutes from "./routes/chat.js";
 import userRoutes from "./routes/user.js";
 import adminRoutes from "./routes/admin.js";
+import reportRoutes from "./routes/report.js";
 
 const envToLogger: Record<string, object | boolean> = {
   development: {
@@ -91,6 +92,7 @@ async function buildServer() {
   await server.register(chatRoutes, { prefix: "/api" });
   await server.register(userRoutes, { prefix: "/api" });
   await server.register(adminRoutes, { prefix: "/api" });
+  await server.register(reportRoutes, { prefix: "/api" });
 
   server.setErrorHandler((error: FastifyError, _request, reply) => {
     server.log.error(error);

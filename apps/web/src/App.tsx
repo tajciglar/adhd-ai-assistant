@@ -12,6 +12,7 @@ import AuthPage from "./components/auth/AuthPage";
 
 // Lazy-load heavy route components for faster initial page load
 const OnboardingPage = lazy(() => import("./components/onboarding/OnboardingPage"));
+const ReportPage = lazy(() => import("./components/report/ReportPage"));
 const ChatPage = lazy(() => import("./components/chat/ChatPage"));
 const AdminPage = lazy(() => import("./components/admin/AdminPage"));
 
@@ -80,7 +81,7 @@ function AppRoutes() {
     ? "/onboarding"
     : isAdmin && !onboardingCompleted
       ? "/admin"
-      : "/chat";
+      : "/report";
 
   const pageFallback = (
     <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
@@ -108,6 +109,20 @@ function AppRoutes() {
               <OnboardingPage />
             ) : (
               <Navigate to={homePath} />
+            )
+          ) : (
+            <Navigate to="/auth" />
+          )
+        }
+      />
+      <Route
+        path="/report"
+        element={
+          session ? (
+            needsOnboarding ? (
+              <Navigate to="/onboarding" />
+            ) : (
+              <ReportPage />
             )
           ) : (
             <Navigate to="/auth" />

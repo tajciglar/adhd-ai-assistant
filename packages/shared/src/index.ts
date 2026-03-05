@@ -31,3 +31,8 @@ export type {
   TraitScores,
   TraitProfile,
 } from "./assessment.js";
+
+
+export type { ArchetypeReportTemplate } from "./reportTemplates.js";
+export { getReportTemplate } from "./reportTemplates.js";
+export { renderReportTemplate, buildPlaceholderMap } from "./templateRenderer.js";

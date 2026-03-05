@@ -1,7 +1,7 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 export default async function healthRoutes(fastify: FastifyInstance) {
-  fastify.get("/health", async (_request, reply) => {
+  fastify.get("/health", async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       await fastify.prisma.$queryRaw`SELECT 1`;
     } catch {
@@ -17,7 +17,7 @@ export default async function healthRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get("/health/deep", async (_request, reply) => {
+  fastify.get("/health/deep", async (_request: FastifyRequest, reply: FastifyReply) => {
     if (process.env.ENABLE_DEEP_HEALTHCHECK !== "true") {
       return reply.status(404).send({ error: "Not found" });
     }

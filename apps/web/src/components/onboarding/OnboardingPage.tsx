@@ -50,7 +50,7 @@ export default function OnboardingPage() {
 
   const handleComplete = useCallback(async () => {
     await complete();
-    navigate("/chat");
+    navigate("/report");
   }, [complete, navigate]);
 
   const handleAnswer = useCallback(
@@ -92,9 +92,9 @@ export default function OnboardingPage() {
     );
   }
 
-  // If completed, redirect to chat
+  // If completed, redirect to report
   if (completed || currentStep > TOTAL_STEPS) {
-    navigate("/chat");
+    navigate("/report");
     return null;
   }
 
