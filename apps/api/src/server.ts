@@ -32,6 +32,9 @@ async function buildServer() {
     logger: envToLogger[environment] ?? true,
     bodyLimit: 1_048_576, // 1 MB
   });
+  const chatEnabled =
+    process.env.CHAT_ENABLED !== "false" &&
+    process.env.GUEST_MODE_ENABLED !== "true";
 
   const rawOrigins =
     process.env.CORS_ORIGIN ?? "http://localhost:3000,http://localhost:5173";
@@ -89,7 +92,9 @@ async function buildServer() {
 
   await server.register(healthRoutes);
   await server.register(onboardingRoutes, { prefix: "/api" });
-  await server.register(chatRoutes, { prefix: "/api" });
+  if (chatEnabled) {
+    await server.register(chatRoutes, { prefix: "/api" });
+  }
   await server.register(userRoutes, { prefix: "/api" });
   await server.register(adminRoutes, { prefix: "/api" });
   await server.register(reportRoutes, { prefix: "/api" });

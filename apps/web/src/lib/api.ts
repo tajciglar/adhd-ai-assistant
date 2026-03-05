@@ -1,6 +1,8 @@
 import { supabase } from "./supabase";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
+const GUEST_MODE = import.meta.env.VITE_GUEST_MODE === "true";
+const GUEST_ID_STORAGE_KEY = "harbor_guest_id";
 
 // Cache the token to avoid calling getSession() on every request.
 // Supabase sessions are long-lived; we cache for 30s and refresh on auth changes.
@@ -30,15 +32,38 @@ async function getToken(): Promise<string> {
   return session.access_token;
 }
 
+function getGuestId(): string {
+  const existing = window.localStorage.getItem(GUEST_ID_STORAGE_KEY);
+  if (existing) return existing;
+
+  const generated = crypto.randomUUID().replace(/-/g, "");
+  window.localStorage.setItem(GUEST_ID_STORAGE_KEY, generated);
+  return generated;
+}
+
 async function request(
   method: string,
   path: string,
   body?: unknown,
 ): Promise<unknown> {
-  const token = await getToken();
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
-  };
+  const headers: Record<string, string> = {};
+
+  if (GUEST_MODE) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.access_token) {
+      const token = await getToken();
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      headers["x-guest-id"] = getGuestId();
+    }
+  } else {
+    const token = await getToken();
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
   }

@@ -65,6 +65,23 @@ function getClientIp(request: FastifyRequest): string {
   return request.ip;
 }
 
+function isGuestModeEnabled(): boolean {
+  return process.env.GUEST_MODE_ENABLED === "true";
+}
+
+function getGuestHeaderId(request: FastifyRequest): string | null {
+  const raw = request.headers["x-guest-id"];
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!/^[a-zA-Z0-9_-]{8,64}$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+function canUseGuestAuth(request: FastifyRequest): boolean {
+  if (!isGuestModeEnabled()) return false;
+  return !request.url.startsWith("/api/admin");
+}
+
 function registerInvalidAttempt(ip: string, now: number) {
   const existing = invalidAuthAttempts.get(ip);
   if (!existing || now - existing.firstAttemptAt > INVALID_ATTEMPT_WINDOW_MS) {
@@ -138,6 +155,17 @@ export default fp(
         }
 
         if (!authHeader?.startsWith("Bearer ")) {
+          if (canUseGuestAuth(request)) {
+            const guestId = getGuestHeaderId(request);
+            if (guestId) {
+              request.user = {
+                id: `guest_${guestId}`,
+                email: `guest_${guestId}@guest.local`,
+              };
+              return;
+            }
+          }
+
           registerInvalidAttempt(ip, now);
           return reply.status(401).send({
             error: "Missing or invalid authorization header",
