@@ -35,7 +35,7 @@ const koalaTemplate: ArchetypeReportTemplate = {
   title: "The Dreamy Koala",
 
   innerVoiceQuote:
-    "I didn't mean to forget. I was just... somewhere else for a minute.",
+    `"I didn't mean to forget. I was just... somewhere else for a minute." - [NAME]`,
 
   animalDescription:
     "In the eucalyptus forests of eastern Australia, the Koala moves through the world at its own unhurried pace. While other animals rush and compete and react, the Koala is still — not because it lacks awareness, but because its inner world is simply more absorbing than the noise outside. It sleeps up to twenty hours a day, not out of laziness, but because its brain requires extraordinary amounts of rest to process everything it takes in. This particular Koala is the Dreamy one — the one whose inner world is so rich, so vivid, and so endlessly absorbing that the outside world can barely compete. Where others see a child who is absent, we see a mind that is simply elsewhere. And elsewhere, for [NAME], is a very interesting place.",

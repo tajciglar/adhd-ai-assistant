@@ -27,3 +27,39 @@ export interface TestQueryResult {
   sources: TestQuerySource[];
   totalRetrieved: number;
 }
+
+export interface ReportTemplateData {
+  archetypeId: string;
+  title: string;
+  innerVoiceQuote: string;
+  animalDescription: string;
+  aboutChild: string;
+  hiddenSuperpower: string;
+  brainSections: Array<{
+    title: string;
+    content: string;
+  }>;
+  dayInLife: {
+    morning: string;
+    school: string;
+    afterSchool: string;
+    bedtime: string;
+  };
+  drains: string[];
+  fuels: string[];
+  overwhelm: string;
+  affirmations: string[];
+  doNotSay: Array<{
+    insteadOf: string;
+    tryThis: string;
+  }>;
+  closingLine: string;
+}
+
+export interface ReportTemplateRecord {
+  id: string;
+  archetypeId: string;
+  template: ReportTemplateData;
+  createdAt: string;
+  updatedAt: string;
+}

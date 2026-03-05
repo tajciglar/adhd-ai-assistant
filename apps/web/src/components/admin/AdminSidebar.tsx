@@ -1,20 +1,28 @@
 interface AdminSidebarProps {
+  activeSection: "knowledge" | "templates";
+  onSectionChange: (section: "knowledge" | "templates") => void;
   categories: string[];
   entriesByCategory: Record<string, number>;
   activeFilter: string | null;
   totalEntries: number;
+  totalTemplates: number;
   onFilterChange: (filter: string | null) => void;
   onAddEntry: () => void;
+  onAddTemplate: () => void;
   onBackToChat: () => void;
 }
 
 export default function AdminSidebar({
+  activeSection,
+  onSectionChange,
   categories,
   entriesByCategory,
   activeFilter,
   totalEntries,
+  totalTemplates,
   onFilterChange,
   onAddEntry,
+  onAddTemplate,
   onBackToChat,
 }: AdminSidebarProps) {
   return (
@@ -26,46 +34,91 @@ export default function AdminSidebar({
         <p className="text-xs text-harbor-text/40">Knowledge Base</p>
       </div>
 
-      <div className="p-3">
+      <div className="p-3 pt-2 space-y-2">
         <button
-          onClick={onAddEntry}
-          className="w-full py-2.5 rounded-xl bg-harbor-accent text-white text-sm font-medium hover:bg-harbor-accent-light transition-colors cursor-pointer"
-        >
-          + Add Entry
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto py-1">
-        <button
-          onClick={() => onFilterChange(null)}
-          className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-            activeFilter === null
+          onClick={() => onSectionChange("knowledge")}
+          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
+            activeSection === "knowledge"
               ? "bg-harbor-accent/10 text-harbor-accent font-medium"
               : "text-harbor-text/70 hover:bg-harbor-bg"
           }`}
         >
-          All Categories
+          Knowledge Entries
+        </button>
+        <button
+          onClick={() => onSectionChange("templates")}
+          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
+            activeSection === "templates"
+              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+              : "text-harbor-text/70 hover:bg-harbor-bg"
+          }`}
+        >
+          Report Templates
           <span className="float-right text-xs text-harbor-text/30">
-            {totalEntries}
+            {totalTemplates}
           </span>
         </button>
+      </div>
 
-        {categories.map((cat) => (
+      <div className="p-3">
+        {activeSection === "knowledge" ? (
           <button
-            key={cat}
-            onClick={() => onFilterChange(cat)}
-            className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-              activeFilter === cat
-                ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-                : "text-harbor-text/70 hover:bg-harbor-bg"
-            }`}
+            onClick={onAddEntry}
+            className="w-full py-2.5 rounded-xl bg-harbor-accent text-white text-sm font-medium hover:bg-harbor-accent-light transition-colors cursor-pointer"
           >
-            <span className="truncate block pr-8">{cat}</span>
-            <span className="float-right text-xs text-harbor-text/30 -mt-5">
-              {entriesByCategory[cat] || 0}
-            </span>
+            + Add Entry
           </button>
-        ))}
+        ) : (
+          <button
+            onClick={onAddTemplate}
+            className="w-full py-2.5 rounded-xl bg-harbor-accent text-white text-sm font-medium hover:bg-harbor-accent-light transition-colors cursor-pointer"
+          >
+            + Add Template
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-1">
+        {activeSection === "knowledge" ? (
+          <>
+            <button
+              onClick={() => onFilterChange(null)}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+                activeFilter === null
+                  ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+                  : "text-harbor-text/70 hover:bg-harbor-bg"
+              }`}
+            >
+              All Categories
+              <span className="float-right text-xs text-harbor-text/30">
+                {totalEntries}
+              </span>
+            </button>
+
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => onFilterChange(cat)}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+                  activeFilter === cat
+                    ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+                    : "text-harbor-text/70 hover:bg-harbor-bg"
+                }`}
+              >
+                <span className="truncate block pr-8">{cat}</span>
+                <span className="float-right text-xs text-harbor-text/30 -mt-5">
+                  {entriesByCategory[cat] || 0}
+                </span>
+              </button>
+            ))}
+          </>
+        ) : (
+          <div className="px-4 py-2">
+            <p className="text-xs text-harbor-text/50 leading-relaxed">
+              Edit archetype report templates used by the report page and PDF/email generation.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="p-4 border-t border-harbor-text/10">

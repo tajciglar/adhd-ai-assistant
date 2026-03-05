@@ -18,6 +18,7 @@ interface ChatSidebarProps {
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onReportClick: () => void;
   onAdminClick?: () => void;
   isAdmin: boolean;
   onSignOut: () => void;
@@ -29,6 +30,7 @@ export default function ChatSidebar({
   onSelect,
   onNew,
   onDelete,
+  onReportClick,
   onAdminClick,
   isAdmin,
   onSignOut,
@@ -96,6 +98,12 @@ export default function ChatSidebar({
 
       {/* Footer — aligned with ChatInput bar */}
       <div className="px-4 py-3 border-t border-harbor-text/10 space-y-2 flex flex-col justify-center min-h-[75px]">
+        <button
+          onClick={onReportClick}
+          className="w-full py-2 rounded-lg text-sm text-harbor-text/50 hover:text-harbor-text hover:bg-harbor-bg transition-colors cursor-pointer"
+        >
+          View Report
+        </button>
         {isAdmin && onAdminClick && (
           <button
             onClick={onAdminClick}

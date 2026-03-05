@@ -54,6 +54,7 @@ export default function ChatPage() {
         onSelect={selectConversation}
         onNew={newConversation}
         onDelete={deleteConversation}
+        onReportClick={() => navigate("/report")}
         isAdmin={isAdmin}
         onAdminClick={() => navigate("/admin")}
         onSignOut={signOut}

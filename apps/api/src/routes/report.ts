@@ -38,11 +38,21 @@ function getArchetypeId(traitProfile: unknown): string | null {
   return null;
 }
 
-function buildRenderedReport(child: AuthorizedChild): ArchetypeReportTemplate | null {
+async function buildRenderedReport(
+  fastify: FastifyInstance,
+  child: AuthorizedChild,
+): Promise<ArchetypeReportTemplate | null> {
   const archetypeId = getArchetypeId(child.traitProfile);
   if (!archetypeId) return null;
 
-  const template = getReportTemplate(archetypeId);
+  const dbTemplate = await fastify.prisma.reportTemplate.findUnique({
+    where: { archetypeId },
+    select: { template: true },
+  });
+
+  const template =
+    (dbTemplate?.template as ArchetypeReportTemplate | null) ??
+    getReportTemplate(archetypeId);
   if (!template) return null;
 
   return renderReportTemplate(template, {
@@ -112,7 +122,7 @@ export default async function reportRoutes(fastify: FastifyInstance) {
       const child = await getAuthorizedChild(fastify, request, reply);
       if (!child) return;
 
-      const report = buildRenderedReport(child);
+      const report = await buildRenderedReport(fastify, child);
       if (!report) {
         return reply.status(422).send({
           error:
@@ -136,7 +146,7 @@ export default async function reportRoutes(fastify: FastifyInstance) {
       const child = await getAuthorizedChild(fastify, request, reply);
       if (!child) return;
 
-      const report = buildRenderedReport(child);
+      const report = await buildRenderedReport(fastify, child);
       if (!report) {
         return reply.status(422).send({
           error:
@@ -179,7 +189,7 @@ export default async function reportRoutes(fastify: FastifyInstance) {
       const child = await getAuthorizedChild(fastify, request, reply);
       if (!child) return;
 
-      const report = buildRenderedReport(child);
+      const report = await buildRenderedReport(fastify, child);
       if (!report) {
         return reply.status(422).send({
           error:

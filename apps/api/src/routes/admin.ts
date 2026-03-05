@@ -44,6 +44,44 @@ const testQuerySchema = z.object({
   query: z.string().min(1).max(2000),
 });
 
+const reportTemplateSchema = z.object({
+  archetypeId: z.string().min(1).max(120),
+  title: z.string().min(1).max(500),
+  innerVoiceQuote: z.string().min(1).max(2000),
+  animalDescription: z.string().min(1).max(50000),
+  aboutChild: z.string().min(1).max(50000),
+  hiddenSuperpower: z.string().min(1).max(50000),
+  brainSections: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(300),
+        content: z.string().min(1).max(50000),
+      }),
+    )
+    .min(1)
+    .max(20),
+  dayInLife: z.object({
+    morning: z.string().min(1).max(50000),
+    school: z.string().min(1).max(50000),
+    afterSchool: z.string().min(1).max(50000),
+    bedtime: z.string().min(1).max(50000),
+  }),
+  drains: z.array(z.string().min(1).max(2000)).min(1).max(40),
+  fuels: z.array(z.string().min(1).max(2000)).min(1).max(40),
+  overwhelm: z.string().min(1).max(50000),
+  affirmations: z.array(z.string().min(1).max(2000)).min(1).max(40),
+  doNotSay: z
+    .array(
+      z.object({
+        insteadOf: z.string().min(1).max(2000),
+        tryThis: z.string().min(1).max(2000),
+      }),
+    )
+    .min(1)
+    .max(40),
+  closingLine: z.string().min(1).max(2000),
+});
+
 const readRateLimitConfig = { rateLimit: { max: 60, timeWindow: "1 minute" } };
 const writeRateLimitConfig = { rateLimit: { max: 20, timeWindow: "1 minute" } };
 const bulkRateLimitConfig = { rateLimit: { max: 5, timeWindow: "1 minute" } };
@@ -459,6 +497,127 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           error: "Failed to run test query. Make sure the vector extension is enabled.",
         });
       }
+    },
+  );
+
+  fastify.get(
+    "/admin/report-templates",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (_request: FastifyRequest, reply: FastifyReply) => {
+      const templates = await fastify.prisma.reportTemplate.findMany({
+        orderBy: { archetypeId: "asc" },
+        select: {
+          id: true,
+          archetypeId: true,
+          template: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return reply.send({ templates });
+    },
+  );
+
+  fastify.post(
+    "/admin/report-templates",
+    { preHandler: basePreHandler, config: writeRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = reportTemplateSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      const existing = await fastify.prisma.reportTemplate.findUnique({
+        where: { archetypeId: parsed.data.archetypeId },
+        select: { id: true },
+      });
+      if (existing) {
+        return reply.status(409).send({
+          error: "Template for this archetype already exists",
+        });
+      }
+
+      const template = await fastify.prisma.reportTemplate.create({
+        data: {
+          archetypeId: parsed.data.archetypeId,
+          template: parsed.data as unknown as Prisma.InputJsonValue,
+        },
+        select: {
+          id: true,
+          archetypeId: true,
+          template: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      await audit(request.user.id, "admin.report_template.create", "report_template", template.id, {
+        archetypeId: template.archetypeId,
+      });
+
+      return reply.status(201).send({ template });
+    },
+  );
+
+  fastify.put<{ Params: { id: string } }>(
+    "/admin/report-templates/:id",
+    { preHandler: basePreHandler, config: writeRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params;
+      const parsed = reportTemplateSchema.safeParse(request.body);
+
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      const existing = await fastify.prisma.reportTemplate.findUnique({
+        where: { id },
+        select: { id: true, archetypeId: true },
+      });
+      if (!existing) {
+        return reply.status(404).send({ error: "Report template not found" });
+      }
+
+      const conflict = await fastify.prisma.reportTemplate.findFirst({
+        where: {
+          archetypeId: parsed.data.archetypeId,
+          NOT: { id },
+        },
+        select: { id: true },
+      });
+      if (conflict) {
+        return reply.status(409).send({
+          error: "Template for this archetype already exists",
+        });
+      }
+
+      const template = await fastify.prisma.reportTemplate.update({
+        where: { id },
+        data: {
+          archetypeId: parsed.data.archetypeId,
+          template: parsed.data as unknown as Prisma.InputJsonValue,
+        },
+        select: {
+          id: true,
+          archetypeId: true,
+          template: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      await audit(request.user.id, "admin.report_template.update", "report_template", template.id, {
+        archetypeId: template.archetypeId,
+      });
+
+      return reply.send({ template });
     },
   );
 }

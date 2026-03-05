@@ -163,3 +163,13 @@ model AdminImportJob {
   @@index([status, createdAt])
   @@map("admin_import_jobs")
 }
+
+model ReportTemplate {
+  id         String   @id @default(uuid())
+  archetypeId String  @unique @map("archetype_id")
+  template   Json
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("report_templates")
+}
