@@ -120,6 +120,7 @@ async function getAuthorizedChild(
 
 // renders report data for the child. Returns 422 if report can't be generated (e.g. missing archetypeId from trait profile)
 export default async function reportRoutes(fastify: FastifyInstance) {
+  const guestModeEnabled = process.env.GUEST_MODE_ENABLED === "true";
   fastify.get<{ Params: ChildParams }>(
     "/report/:childId",
     { preHandler: [fastify.authenticate] },
@@ -178,7 +179,8 @@ export default async function reportRoutes(fastify: FastifyInstance) {
     },
   );
 
-  fastify.post<{ Params: ChildParams }>(
+  if (!guestModeEnabled) {
+    fastify.post<{ Params: ChildParams }>(
     "/report/:childId/email",
     {
       preHandler: [fastify.authenticate],
@@ -240,5 +242,7 @@ export default async function reportRoutes(fastify: FastifyInstance) {
 
       return reply.send({ success: true });
     },
-  );
+    );
+  }
 }
+

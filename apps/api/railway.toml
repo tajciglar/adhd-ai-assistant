@@ -1,0 +1,9 @@
+[build]
+builder = "nixpacks"
+buildCommand = "cd ../.. && pnpm --filter @adhd-ai-assistant/shared build && pnpm --filter @adhd-ai-assistant/api build"
+
+[deploy]
+startCommand = "node apps/api/dist/server.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"

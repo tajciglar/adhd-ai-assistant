@@ -2,14 +2,8 @@ import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
-import prismaPlugin from "./plugins/prisma.js";
-import supabasePlugin from "./plugins/supabase.js";
 import healthRoutes from "./routes/health.js";
-import onboardingRoutes from "./routes/onboarding.js";
-import chatRoutes from "./routes/chat.js";
-import userRoutes from "./routes/user.js";
-import adminRoutes from "./routes/admin.js";
-import reportRoutes from "./routes/report.js";
+import guestRoutes from "./routes/guest.js";
 
 const envToLogger: Record<string, object | boolean> = {
   development: {
@@ -30,11 +24,8 @@ const environment = process.env.NODE_ENV ?? "development";
 async function buildServer() {
   const server = Fastify({
     logger: envToLogger[environment] ?? true,
-    bodyLimit: 1_048_576, // 1 MB
+    bodyLimit: 2_097_152, // 2 MB (PDF responses can be larger)
   });
-  const chatEnabled =
-    process.env.CHAT_ENABLED !== "false" &&
-    process.env.GUEST_MODE_ENABLED !== "true";
 
   const rawOrigins =
     process.env.CORS_ORIGIN ?? "http://localhost:3000,http://localhost:5173";
@@ -58,7 +49,7 @@ async function buildServer() {
       if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error("Origin not allowed"), false);
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    methods: ["GET", "POST"],
     credentials: true,
     // Browsers cache preflight for 1 hour (avoids repeated OPTIONS requests)
     maxAge: 3600,
@@ -76,28 +67,15 @@ async function buildServer() {
     }
   });
 
-  // Global rate limit: 100 requests/minute per IP
-  // Skip OPTIONS preflight requests — they don't need rate limiting
   await server.register(rateLimit, {
     max: 100,
     timeWindow: "1 minute",
-    keyGenerator: (request) => {
-      return (request as any).user?.id ?? request.ip;
-    },
+    keyGenerator: (request) => request.ip,
     allowList: (request) => request.method === "OPTIONS",
   });
 
-  await server.register(prismaPlugin);
-  await server.register(supabasePlugin);
-
   await server.register(healthRoutes);
-  await server.register(onboardingRoutes, { prefix: "/api" });
-  if (chatEnabled) {
-    await server.register(chatRoutes, { prefix: "/api" });
-  }
-  await server.register(userRoutes, { prefix: "/api" });
-  await server.register(adminRoutes, { prefix: "/api" });
-  await server.register(reportRoutes, { prefix: "/api" });
+  await server.register(guestRoutes, { prefix: "/api" });
 
   server.setErrorHandler((error: FastifyError, _request, reply) => {
     server.log.error(error);
@@ -125,7 +103,7 @@ async function main() {
   const server = await buildServer();
 
   const host = process.env.HOST ?? "0.0.0.0";
-  const port = Number(process.env.PORT) || 3001;
+  const port = Number(process.env.PORT) || 3000;
 
   try {
     await server.listen({ host, port });

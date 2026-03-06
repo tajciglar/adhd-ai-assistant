@@ -1,53 +1,48 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
-import { api } from "../lib/api";
+import { useCallback, useReducer, useEffect } from "react";
 import { TOTAL_STEPS } from "../lib/constants";
 import type { OnboardingResponses } from "../types/onboarding";
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+const STORAGE_KEY = "harbor_onboarding";
 
 interface OnboardingState {
   currentStep: number;
   responses: OnboardingResponses;
-  saveStatus: SaveStatus;
-  loading: boolean;
-  completed: boolean;
   direction: 1 | -1;
 }
 
 type Action =
-  | {
-      type: "RESUME";
-      step: number;
-      responses: OnboardingResponses;
-      completed: boolean;
-    }
   | { type: "SET_ANSWER"; key: string; value: string | number | undefined }
   | { type: "NEXT_STEP" }
-  | { type: "PREV_STEP" }
-  | { type: "SAVE_STATUS"; status: SaveStatus }
-  | { type: "COMPLETE" };
+  | { type: "PREV_STEP" };
 
-const initialState: OnboardingState = {
-  currentStep: 1,
-  responses: {},
-  saveStatus: "idle",
-  loading: true,
-  completed: false,
-  direction: 1,
-};
+function loadFromStorage(): OnboardingState {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return { currentStep: 1, responses: {}, direction: 1 };
+    const parsed = JSON.parse(raw) as Partial<OnboardingState>;
+    return {
+      currentStep: typeof parsed.currentStep === "number" ? parsed.currentStep : 1,
+      responses: parsed.responses ?? {},
+      direction: 1,
+    };
+  } catch {
+    return { currentStep: 1, responses: {}, direction: 1 };
+  }
+}
+
+function saveToStorage(state: OnboardingState) {
+  try {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ currentStep: state.currentStep, responses: state.responses }),
+    );
+  } catch {
+    // quota exceeded or private browsing — silently ignore
+  }
+}
 
 function reducer(state: OnboardingState, action: Action): OnboardingState {
   switch (action.type) {
-    case "RESUME":
-      return {
-        ...state,
-        currentStep: action.completed
-          ? TOTAL_STEPS + 1
-          : Math.max(1, Math.min(action.step, TOTAL_STEPS)),
-        responses: action.responses,
-        completed: action.completed,
-        loading: false,
-      };
     case "SET_ANSWER":
       return {
         ...state,
@@ -65,89 +60,29 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
         currentStep: Math.max(state.currentStep - 1, 1),
         direction: -1,
       };
-    case "SAVE_STATUS":
-      return { ...state, saveStatus: action.status };
-    case "COMPLETE":
-      return { ...state, completed: true };
     default:
       return state;
   }
 }
 
 export function useOnboarding() {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const savedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [state, dispatch] = useReducer(reducer, undefined, loadFromStorage);
 
-  // Fetch existing progress on mount
+  // Persist on every state change
   useEffect(() => {
-    api
-      .get("/api/onboarding")
-      .then((data) => {
-        const d = data as {
-          onboardingStep: number;
-          onboardingCompleted: boolean;
-          responses: OnboardingResponses;
-        };
-        dispatch({
-          type: "RESUME",
-          step: d.onboardingStep || 1,
-          responses: d.responses || {},
-          completed: d.onboardingCompleted,
-        });
-      })
-      .catch(() => {
-        dispatch({
-          type: "RESUME",
-          step: 1,
-          responses: {},
-          completed: false,
-        });
-      });
-  }, []);
-
-  // Clear saved indicator after 2s
-  useEffect(() => {
-    if (state.saveStatus === "saved") {
-      savedTimerRef.current = setTimeout(() => {
-        dispatch({ type: "SAVE_STATUS", status: "idle" });
-      }, 2000);
-    }
-    return () => {
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    };
-  }, [state.saveStatus]);
-
-  const saveToServer = useCallback(
-    (step: number, responses: Record<string, unknown>) => {
-      dispatch({ type: "SAVE_STATUS", status: "saving" });
-      api
-        .patch("/api/onboarding", { step, responses })
-        .then(() => {
-          dispatch({ type: "SAVE_STATUS", status: "saved" });
-        })
-        .catch(() => {
-          dispatch({ type: "SAVE_STATUS", status: "error" });
-        });
-    },
-    [],
-  );
+    saveToStorage(state);
+  }, [state]);
 
   const saveAnswer = useCallback(
-    (step: number, key: string, value: string | number | undefined, immediate = false) => {
+    (
+      _step: number,
+      key: string,
+      value: string | number | undefined,
+      _immediate?: boolean,
+    ) => {
       dispatch({ type: "SET_ANSWER", key, value });
-
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-      if (immediate) {
-        saveToServer(step, { [key]: value });
-      } else {
-        saveTimeoutRef.current = setTimeout(() => {
-          saveToServer(step, { [key]: value });
-        }, 800);
-      }
     },
-    [saveToServer],
+    [],
   );
 
   const goNext = useCallback(() => {
@@ -158,20 +93,20 @@ export function useOnboarding() {
     dispatch({ type: "PREV_STEP" });
   }, []);
 
-  const complete = useCallback(async () => {
-    try {
-      await api.post("/api/onboarding/complete");
-      dispatch({ type: "COMPLETE" });
-    } catch {
-      dispatch({ type: "COMPLETE" });
-    }
-  }, []);
-
   return {
     ...state,
+    loading: false,
     saveAnswer,
     goNext,
     goBack,
-    complete,
   };
+}
+
+/** Call this after a successful submit to clear saved progress */
+export function clearOnboardingStorage() {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 }

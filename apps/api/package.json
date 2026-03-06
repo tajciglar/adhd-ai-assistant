@@ -7,7 +7,6 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "test": "tsx --test src/**/*.test.ts",
-    "prestart": "prisma generate && prisma migrate deploy",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -26,12 +25,14 @@
     "@supabase/supabase-js": "^2.49.4",
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",
+    "nodemailer": "^8.0.1",
     "react": "^19.2.4",
     "resend": "^6.9.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^19.2.2",
     "pino-pretty": "^13.0.0",
     "prisma": "^6.4.1",

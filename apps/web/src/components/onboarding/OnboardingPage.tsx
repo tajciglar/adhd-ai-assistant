@@ -1,13 +1,16 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOnboarding } from "../../hooks/useOnboarding";
+import { useOnboarding, clearOnboardingStorage } from "../../hooks/useOnboarding";
 import { TOTAL_STEPS } from "../../lib/constants";
 import { getStepConfig } from "@adhd-ai-assistant/shared";
 import type { OnboardingResponses } from "../../types/onboarding";
+import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
+import { api } from "../../lib/api";
 import OnboardingLayout from "./OnboardingLayout";
 import AnimationWrapper from "./AnimationWrapper";
 import StepRenderer from "./StepRenderer";
 import MicroCopy from "./MicroCopy";
+import CalculatingScreen from "./CalculatingScreen";
 
 function isStepValid(step: number, responses: OnboardingResponses): boolean {
   const config = getStepConfig(step);
@@ -27,75 +30,186 @@ function isStepValid(step: number, responses: OnboardingResponses): boolean {
     }
   }
 
-  // Likert step
   const key = `${config.categoryId}_${config.questionIndex}`;
   const val = responses[key];
   return typeof val === "number" && val >= 0 && val <= 3;
+}
+
+function EmailStep({
+  responses,
+  onSubmit,
+  submitting,
+  submitError,
+}: {
+  responses: OnboardingResponses;
+  onSubmit: (email: string) => void;
+  submitting: boolean;
+  submitError: string | null;
+}) {
+  const [email, setEmail] = useState("");
+  const childName = responses.childName ?? "your child";
+  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  return (
+    <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6">
+      <div className="max-w-md w-full">
+        <div className="bg-white rounded-2xl border border-harbor-text/10 shadow-sm p-8">
+          <div className="mb-6 text-center">
+            <div className="text-4xl mb-3">🎉</div>
+            <h1 className="text-2xl font-bold text-harbor-primary mb-2">
+              Almost there!
+            </h1>
+            <p className="text-harbor-text/70">
+              Where should we send {childName}'s personalised ADHD guide?
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-harbor-text mb-1.5"
+              >
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && isValid && !submitting) {
+                    onSubmit(email);
+                  }
+                }}
+                placeholder="you@example.com"
+                autoFocus
+                className="w-full rounded-xl border border-harbor-text/20 bg-harbor-bg px-4 py-3 text-harbor-text placeholder:text-harbor-text/30 focus:outline-none focus:ring-2 focus:ring-harbor-primary/30 focus:border-harbor-primary transition"
+              />
+            </div>
+
+            {submitError ? (
+              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">
+                {submitError}
+              </p>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => onSubmit(email)}
+              disabled={!isValid || submitting}
+              className="w-full rounded-xl bg-harbor-primary text-white px-5 py-3 font-medium hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {submitting ? "Preparing your guide..." : "Send my results →"}
+            </button>
+
+            <p className="text-xs text-center text-harbor-text/40">
+              We'll email you the PDF guide and show your results here.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function OnboardingPage() {
   const {
     currentStep,
     responses,
-    saveStatus,
-    loading,
-    completed,
     direction,
     saveAnswer,
     goNext,
     goBack,
-    complete,
   } = useOnboarding();
   const navigate = useNavigate();
 
-  const handleComplete = useCallback(async () => {
-    await complete();
-    navigate("/report");
-  }, [complete, navigate]);
+  const [showCalculating, setShowCalculating] = useState(false);
+  const [showEmailStep, setShowEmailStep] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleShowEmailStep = useCallback(() => {
+    setShowCalculating(true);
+  }, []);
 
   const handleAnswer = useCallback(
-    (step: number, key: string, value: string | number | undefined, immediate?: boolean) => {
+    (
+      step: number,
+      key: string,
+      value: string | number | undefined,
+      immediate?: boolean,
+    ) => {
       saveAnswer(step, key, value, immediate);
 
       const config = getStepConfig(step);
       if (!config) return;
 
-      // Auto-advance for single-select basic info and likert
       const shouldAutoAdvance =
-        (config.type === "basic-info" && config.question.type === "single-select") ||
+        (config.type === "basic-info" &&
+          config.question.type === "single-select") ||
         config.type === "likert";
 
       if (shouldAutoAdvance) {
-        // Use setTimeout to let React batch the state update before advancing
         setTimeout(() => {
           if (step === TOTAL_STEPS) {
-            handleComplete();
+            handleShowEmailStep();
           } else {
             goNext();
           }
         }, 50);
       }
     },
-    [saveAnswer, goNext, handleComplete],
+    [saveAnswer, goNext, handleShowEmailStep],
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-harbor-primary mb-2">
-            Harbor
-          </h1>
-          <p className="text-harbor-text/40">Loading your progress...</p>
-        </div>
-      </div>
-    );
+  const handleSubmit = useCallback(
+    async (email: string) => {
+      setSubmitting(true);
+      setSubmitError(null);
+
+      try {
+        const result = (await api.post("/api/guest/submit", {
+          email,
+          responses,
+          childName: responses.childName ?? "Your child",
+          childGender: responses.childGender,
+        })) as { report: ArchetypeReportTemplate };
+
+        clearOnboardingStorage();
+        navigate("/report", {
+          state: { report: result.report, email },
+          replace: true,
+        });
+      } catch (err) {
+        setSubmitError(
+          err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again.",
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [responses, navigate],
+  );
+
+  // PDF download directly using the raw report JSON returned from submit
+  // (only used if user navigates back — normally goes to /report)
+
+  if (showCalculating && !showEmailStep) {
+    return <CalculatingScreen onDone={() => setShowEmailStep(true)} />;
   }
 
-  // If completed, redirect to chat
-  if (completed || currentStep > TOTAL_STEPS) {
-    navigate("/report");
-    return null;
+  if (showEmailStep) {
+    return (
+      <EmailStep
+        responses={responses}
+        onSubmit={(email) => void handleSubmit(email)}
+        submitting={submitting}
+        submitError={submitError}
+      />
+    );
   }
 
   const canContinue = isStepValid(currentStep, responses);
@@ -103,12 +217,12 @@ export default function OnboardingPage() {
   return (
     <OnboardingLayout
       currentStep={currentStep}
-      saveStatus={saveStatus}
+      saveStatus="idle"
       canContinue={canContinue}
       onBack={goBack}
       onContinue={() => {
         if (currentStep === TOTAL_STEPS) {
-          handleComplete();
+          handleShowEmailStep();
         } else {
           goNext();
         }
