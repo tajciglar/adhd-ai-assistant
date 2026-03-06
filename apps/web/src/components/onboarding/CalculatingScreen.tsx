@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { clearOnboardingStorage } from "../../hooks/useOnboarding";
+import { getFbp, getFbc, generateEventId, trackPixelEvent } from "../../lib/fbq";
 import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
 import type { OnboardingResponses } from "../../types/onboarding";
 
@@ -68,12 +69,20 @@ export default function CalculatingScreen({
     setSubmitError(null);
 
     try {
+      const eventId = generateEventId();
+
       const result = (await api.post("/api/guest/submit", {
         email,
         responses,
         childName,
         childGender,
+        fbc: getFbc(),
+        fbp: getFbp(),
+        eventSourceUrl: window.location.href,
       })) as { report: ArchetypeReportTemplate };
+
+      // Client-side Lead event (deduped with CAPI via eventId)
+      trackPixelEvent("Lead", {}, eventId);
 
       clearOnboardingStorage();
       navigate("/results", {

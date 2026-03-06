@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { useLocation, Navigate } from "react-router-dom";
 import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
+import { trackPixelEvent, generateEventId } from "../lib/fbq";
 
 interface LocationState {
   report?: ArchetypeReportTemplate;
@@ -28,6 +30,17 @@ export default function SalesPage() {
   const location = useLocation();
   const { report, email, childName, childGender } =
     (location.state ?? {}) as LocationState;
+
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (!report || firedRef.current) return;
+    firedRef.current = true;
+    trackPixelEvent(
+      "ViewContent",
+      { content_type: "quiz_result", content_category: "adhd_profile" },
+      generateEventId(),
+    );
+  }, [report]);
 
   if (!report) return <Navigate to="/" replace />;
 

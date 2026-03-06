@@ -175,7 +175,21 @@ async function syncToActiveCampaign(opts: {
       }
     }
 
-    // 4. Apply tags: "onboarding-completed" + archetype ID + archetype animal
+    // 4. Subscribe contact to master list so automations can fire
+    const listId = process.env.AC_LIST_ID;
+    if (listId) {
+      await fetch(`${apiUrl}/api/3/contactLists`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          contactList: { list: Number(listId), contact: contactId, status: 1 },
+        }),
+      }).catch((err: unknown) => {
+        opts.logger.error({ err }, "guest.submit.ac_list_subscription_failed");
+      });
+    }
+
+    // 5. Apply tags: "onboarding-completed" + archetype ID + archetype animal
     const tagNames = [
       "onboarding-completed",
       opts.archetypeId,
@@ -224,11 +238,80 @@ async function syncToActiveCampaign(opts: {
   }
 }
 
+// Send server-side event to Meta Conversions API
+async function sendMetaEvent(opts: {
+  eventName: string;
+  eventId: string;
+  email: string;
+  sourceUrl: string;
+  clientIp: string;
+  userAgent: string;
+  fbc?: string;
+  fbp?: string;
+  logger: AcLogger;
+}): Promise<void> {
+  const accessToken = process.env.META_ACCESS_TOKEN;
+  const pixelId = process.env.META_PIXEL_ID;
+  if (!accessToken || !pixelId) return;
+
+  try {
+    // SHA-256 hash the email (required by Meta)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(opts.email.toLowerCase().trim());
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashedEmail = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const userData: Record<string, unknown> = {
+      em: [hashedEmail],
+      client_ip_address: opts.clientIp,
+      client_user_agent: opts.userAgent,
+    };
+    if (opts.fbc) userData.fbc = opts.fbc;
+    if (opts.fbp) userData.fbp = opts.fbp;
+
+    const res = await fetch(
+      `https://graph.facebook.com/v18.0/${pixelId}/events`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          data: [
+            {
+              event_name: opts.eventName,
+              event_time: Math.floor(Date.now() / 1000),
+              event_id: opts.eventId,
+              event_source_url: opts.sourceUrl,
+              action_source: "website",
+              user_data: userData,
+            },
+          ],
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      opts.logger.warn(`Meta CAPI failed: ${JSON.stringify(err)}`);
+    }
+  } catch (err) {
+    opts.logger.error({ err }, "guest.submit.meta_capi_failed");
+  }
+}
+
 const submitBodySchema = z.object({
   email: z.string().email(),
   responses: z.record(z.string(), z.unknown()),
   childName: z.string().min(1).max(100),
   childGender: z.string().optional(),
+  // Meta pixel data from client
+  fbc: z.string().optional(),
+  fbp: z.string().optional(),
+  eventSourceUrl: z.string().optional(),
 });
 
 const pdfBodySchema = z.object({
@@ -257,7 +340,7 @@ export default async function guestRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { email, responses, childName, childGender } = parsed.data;
+      const { email, responses, childName, childGender, fbc, fbp, eventSourceUrl } = parsed.data;
 
       // 1. Compute trait profile
       const traitProfile = computeTraitProfile(responses);
@@ -290,7 +373,20 @@ export default async function guestRoutes(fastify: FastifyInstance) {
         return reply.status(500).send({ error: "Failed to generate report PDF" });
       }
 
-      // 5. Upload PDF to AC + sync contact + set PDF_URL field + apply tags (fire and forget)
+      // 5a. Meta CAPI — Lead event (fire and forget, deduped with client-side fbq via event_id)
+      void sendMetaEvent({
+        eventName: "Lead",
+        eventId: `lead_${email}_${Date.now()}`,
+        email,
+        sourceUrl: eventSourceUrl ?? "",
+        clientIp: request.ip ?? "",
+        userAgent: request.headers["user-agent"] ?? "",
+        fbc,
+        fbp,
+        logger: request.log,
+      });
+
+      // 5b. Upload PDF to AC + sync contact + set PDF_URL field + apply tags (fire and forget)
       //    AC automation reads %PDF_URL% and sends the email after purchase
       void syncToActiveCampaign({
         email,
