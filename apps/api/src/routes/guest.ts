@@ -294,8 +294,9 @@ async function checkAlreadySubmitted(email: string): Promise<boolean> {
     const tagId = String(quizTag.id);
 
     // 2. Check whether this specific contact has the quiz tag
+    // Must use the nested resource — contactTags?contact= does not filter correctly
     const contactTagsRes = await fetch(
-      `${apiUrl}/api/3/contactTags?contact=${contactId}`,
+      `${apiUrl}/api/3/contacts/${contactId}/contactTags`,
       { headers },
     );
     if (!contactTagsRes.ok) return false;
