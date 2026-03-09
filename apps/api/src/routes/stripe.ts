@@ -57,8 +57,8 @@ const createSessionSchema = z.object({
   email: z.string().email(),
   childName: z.string().min(1),
   archetypeId: z.string().min(1),
-  childGender: z.string().optional(),
-  submissionId: z.string().optional(),
+  childGender: z.string().nullish(),
+  submissionId: z.string().nullish(),
 });
 
 export default async function stripeRoutes(fastify: FastifyInstance) {
