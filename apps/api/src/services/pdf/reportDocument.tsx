@@ -147,19 +147,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   section: {
-    marginBottom: 10,
+    marginBottom: 18,
   },
   sectionTitle: {
     fontSize: 13.5,
     fontWeight: 700,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   paragraph: {
     fontSize: 10.6,
-    lineHeight: 1.5,
+    lineHeight: 1.7,
+  },
+  paragraphSpaced: {
+    fontSize: 10.6,
+    lineHeight: 1.7,
+    marginTop: 8,
   },
   dayBlock: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   dayTitle: {
     fontSize: 11.2,
@@ -258,6 +263,20 @@ function BulletList({ items }: { items: string[] }) {
   );
 }
 
+// Splits text by \n and renders each paragraph with spacing between them
+function ParagraphText({ text }: { text: string }) {
+  const paragraphs = text.split("\n").filter((p) => p.trim().length > 0);
+  return (
+    <View>
+      {paragraphs.map((para, i) => (
+        <Text key={i} style={i === 0 ? styles.paragraph : styles.paragraphSpaced}>
+          {para}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 export function ReportDocument({ report, childName }: ReportDocumentProps) {
   const theme = getTheme(report.archetypeId);
 
@@ -271,25 +290,21 @@ export function ReportDocument({ report, childName }: ReportDocumentProps) {
             "{report.innerVoiceQuote}" - {childName}
           </Text>
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
-
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.accent }]}>The Animal</Text>
-          <Text style={styles.paragraph}>{report.animalDescription}</Text>
+          <ParagraphText text={report.animalDescription} />
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.accent }]}>About {childName}</Text>
-          <Text style={styles.paragraph}>{report.aboutChild}</Text>
+          <ParagraphText text={report.aboutChild} />
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.accent }]}>
             {childName}'s Hidden Superpower
           </Text>
-          <Text style={styles.paragraph}>{report.hiddenSuperpower}</Text>
+          <ParagraphText text={report.hiddenSuperpower} />
         </View>
       </Page>
 
@@ -302,11 +317,10 @@ export function ReportDocument({ report, childName }: ReportDocumentProps) {
           {report.brainSections.map((brainSection) => (
             <View key={brainSection.title} style={styles.dayBlock}>
               <Text style={[styles.dayTitle, { color: theme.accent }]}>{brainSection.title}</Text>
-              <Text style={styles.paragraph}>{brainSection.content}</Text>
+              <ParagraphText text={brainSection.content} />
             </View>
           ))}
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.accent }]}>
@@ -314,19 +328,19 @@ export function ReportDocument({ report, childName }: ReportDocumentProps) {
           </Text>
           <View style={styles.dayBlock}>
             <Text style={[styles.dayTitle, { color: theme.accent }]}>Morning</Text>
-            <Text style={styles.paragraph}>{report.dayInLife.morning}</Text>
+            <ParagraphText text={report.dayInLife.morning} />
           </View>
           <View style={styles.dayBlock}>
             <Text style={[styles.dayTitle, { color: theme.accent }]}>School</Text>
-            <Text style={styles.paragraph}>{report.dayInLife.school}</Text>
+            <ParagraphText text={report.dayInLife.school} />
           </View>
           <View style={styles.dayBlock}>
             <Text style={[styles.dayTitle, { color: theme.accent }]}>After School</Text>
-            <Text style={styles.paragraph}>{report.dayInLife.afterSchool}</Text>
+            <ParagraphText text={report.dayInLife.afterSchool} />
           </View>
           <View style={styles.dayBlock}>
             <Text style={[styles.dayTitle, { color: theme.accent }]}>Bedtime</Text>
-            <Text style={styles.paragraph}>{report.dayInLife.bedtime}</Text>
+            <ParagraphText text={report.dayInLife.bedtime} />
           </View>
         </View>
       </Page>
@@ -362,15 +376,13 @@ export function ReportDocument({ report, childName }: ReportDocumentProps) {
             </View>
           ))}
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.accent }]}>
             When {childName} Gets Overwhelmed
           </Text>
-          <Text style={styles.paragraph}>{report.overwhelm}</Text>
+          <ParagraphText text={report.overwhelm} />
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.accent }]}>
@@ -378,7 +390,6 @@ export function ReportDocument({ report, childName }: ReportDocumentProps) {
           </Text>
           <BulletList items={report.affirmations} />
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.accent }]}>
@@ -403,7 +414,6 @@ export function ReportDocument({ report, childName }: ReportDocumentProps) {
             </View>
           ))}
         </View>
-        <View style={[styles.divider, { borderBottomColor: theme.accent }]} />
 
         <Text style={[styles.closing, { color: theme.accent }]}>{report.closingLine}</Text>
       </Page>
