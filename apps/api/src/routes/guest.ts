@@ -261,20 +261,50 @@ async function sendMetaEvent(opts: {
   }
 }
 
-// Check if email has already completed the quiz (exists in AC)
+// Check if email has already completed THIS quiz.
+// A contact may exist on other AC lists — we only block if they also have
+// the "adhd quiz wildprint" tag, which is applied exclusively on quiz submission.
 async function checkAlreadySubmitted(email: string): Promise<boolean> {
   const apiUrl = process.env.AC_API_URL?.replace(/\/$/, "");
   const apiKey = process.env.AC_API_KEY;
   if (!apiUrl || !apiKey) return false;
 
   try {
-    const res = await fetch(
-      `${apiUrl}/api/3/contacts?email=${encodeURIComponent(email)}&limit=1`,
-      { headers: { "Content-Type": "application/json", "Api-Token": apiKey } },
+    const headers = { "Content-Type": "application/json", "Api-Token": apiKey };
+
+    // 1. Contact lookup + tag ID lookup run in parallel
+    const [contactRes, tagRes] = await Promise.all([
+      fetch(`${apiUrl}/api/3/contacts?email=${encodeURIComponent(email)}&limit=1`, { headers }),
+      fetch(`${apiUrl}/api/3/tags?search=${encodeURIComponent("adhd quiz wildprint")}`, { headers }),
+    ]);
+
+    if (!contactRes.ok) return false;
+
+    const contactData = (await contactRes.json()) as { contacts: Array<{ id: string }> };
+    if (!contactData.contacts?.length) return false; // email not in AC at all
+
+    const contactId = String(contactData.contacts[0].id);
+
+    // If the quiz tag doesn't exist yet, nobody has ever completed it
+    if (!tagRes.ok) return false;
+    const tagData = (await tagRes.json()) as { tags: Array<{ id: string; tag: string }> };
+    const quizTag = tagData.tags.find((t) => t.tag === "adhd quiz wildprint");
+    if (!quizTag) return false;
+
+    const tagId = String(quizTag.id);
+
+    // 2. Check whether this specific contact has the quiz tag
+    const contactTagsRes = await fetch(
+      `${apiUrl}/api/3/contactTags?contact=${contactId}`,
+      { headers },
     );
-    if (!res.ok) return false;
-    const data = (await res.json()) as { contacts: unknown[] };
-    return (data.contacts?.length ?? 0) > 0;
+    if (!contactTagsRes.ok) return false;
+
+    const contactTagsData = (await contactTagsRes.json()) as {
+      contactTags: Array<{ tag: string }>;
+    };
+
+    return contactTagsData.contactTags.some((ct) => String(ct.tag) === tagId);
   } catch {
     return false; // fail open — don't block submissions if AC is unreachable
   }

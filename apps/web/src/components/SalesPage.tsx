@@ -55,7 +55,23 @@ export default function SalesPage() {
       .replace(/\[THEIR\]/g, pos),
   );
 
-  const checkoutUrl = import.meta.env.VITE_CHECKOUT_URL as string | undefined;
+  // Build checkout URL with pre-filled params for FunnelKit.
+  // billing_email  → pre-fills the email field on checkout (FunnelKit native)
+  // _childName     → stored as WooCommerce order meta (captured via WP snippet)
+  // _archetypeId   → stored as WooCommerce order meta (captured via WP snippet)
+  const baseCheckoutUrl = import.meta.env.VITE_CHECKOUT_URL as string | undefined;
+  const checkoutUrl = (() => {
+    if (!baseCheckoutUrl) return undefined;
+    try {
+      const url = new URL(baseCheckoutUrl);
+      if (email) url.searchParams.set("billing_email", email);
+      if (childName) url.searchParams.set("_childName", childName);
+      if (report.archetypeId) url.searchParams.set("_archetypeId", report.archetypeId);
+      return url.toString();
+    } catch {
+      return baseCheckoutUrl;
+    }
+  })();
 
   return (
     <div className="min-h-screen bg-harbor-bg flex flex-col items-center justify-center px-6 py-16">
