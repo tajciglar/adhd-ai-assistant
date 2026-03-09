@@ -5,6 +5,7 @@ import SingleSelect from "./questions/SingleSelect";
 import TextInput from "./questions/TextInput";
 import NumberInput from "./questions/NumberInput";
 import LikertSelect from "./questions/LikertSelect";
+import { TrustPilotReview } from "./TrustPilotReview";
 
 interface StepRendererProps {
   step: number;
@@ -77,6 +78,7 @@ export default function StepRenderer({
       <div>
         {step === 1 && (
           <div className="mb-6 space-y-2">
+            <TrustPilotReview />
             <h1 className="text-2xl font-bold text-harbor-primary leading-snug">
               Discover Your Child's ADHD Wildprint
             </h1>
