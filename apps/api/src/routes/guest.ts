@@ -90,7 +90,9 @@ async function syncToActiveCampaign(opts: {
       fields: Array<{ id: number | string; perstag: string }>;
     };
 
-    let fieldId = String(searchData.fields.find((f) => f.perstag === "PDF_URL")?.id ?? "");
+    let fieldId = String(
+      searchData.fields.find((f) => f.perstag.replace(/%/g, "") === "PDF_URL")?.id ?? "",
+    );
 
     if (!fieldId || fieldId === "undefined") {
       const createRes = await fetch(`${apiUrl}/api/3/fields`, {
