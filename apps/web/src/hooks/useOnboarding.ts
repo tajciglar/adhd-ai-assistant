@@ -1,6 +1,7 @@
-import { useCallback, useReducer, useEffect } from "react";
+import { useCallback, useReducer, useEffect, useRef } from "react";
 import { TOTAL_STEPS } from "../lib/constants";
 import type { OnboardingResponses } from "../types/onboarding";
+import { trackFunnelEvent } from "../lib/analytics";
 
 const STORAGE_KEY = "harbor_onboarding";
 
@@ -72,6 +73,15 @@ export function useOnboarding() {
   useEffect(() => {
     saveToStorage(state);
   }, [state]);
+
+  // Track step views (fire once per step change)
+  const lastTrackedStep = useRef(0);
+  useEffect(() => {
+    if (state.currentStep !== lastTrackedStep.current) {
+      lastTrackedStep.current = state.currentStep;
+      trackFunnelEvent("step_viewed", state.currentStep);
+    }
+  }, [state.currentStep]);
 
   const saveAnswer = useCallback(
     (

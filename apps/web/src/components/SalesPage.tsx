@@ -1,13 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation, Navigate } from "react-router-dom";
 import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
 import { trackPixelEvent, generateEventId } from "../lib/fbq";
+import { trackFunnelEvent } from "../lib/analytics";
+import { api } from "../lib/api";
 
 interface LocationState {
   report?: ArchetypeReportTemplate;
   email?: string;
   childName?: string;
   childGender?: string;
+  submissionId?: string;
 }
 
 function getPronouns(gender?: string) {
@@ -28,8 +31,11 @@ const WHATS_INSIDE = [
 
 export default function SalesPage() {
   const location = useLocation();
-  const { report, email, childName, childGender } =
+  const { report, email, childName, childGender, submissionId } =
     (location.state ?? {}) as LocationState;
+
+  const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const firedRef = useRef(false);
   useEffect(() => {
@@ -41,6 +47,37 @@ export default function SalesPage() {
       generateEventId(),
     );
   }, [report]);
+
+  const handleCheckout = useCallback(async () => {
+    if (loading) return;
+    setLoading(true);
+    setCheckoutError(null);
+
+    // Track checkout_started event
+    trackFunnelEvent("checkout_started");
+
+    try {
+      const result = (await api.post("/api/stripe/create-checkout-session", {
+        email,
+        childName,
+        archetypeId: report?.archetypeId,
+        childGender,
+        submissionId,
+      })) as { url: string };
+
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        setCheckoutError("Failed to create checkout session. Please try again.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setCheckoutError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      );
+      setLoading(false);
+    }
+  }, [loading, email, childName, childGender, report, submissionId]);
 
   if (!report) return <Navigate to="/" replace />;
 
@@ -54,24 +91,6 @@ export default function SalesPage() {
       .replace(/\[THEM\]/g, obj)
       .replace(/\[THEIR\]/g, pos),
   );
-
-  // Build checkout URL with pre-filled params for FunnelKit.
-  // billing_email  → pre-fills the email field on checkout (FunnelKit native)
-  // _childName     → stored as WooCommerce order meta (captured via WP snippet)
-  // _archetypeId   → stored as WooCommerce order meta (captured via WP snippet)
-  const baseCheckoutUrl = import.meta.env.VITE_CHECKOUT_URL as string | undefined;
-  const checkoutUrl = (() => {
-    if (!baseCheckoutUrl) return undefined;
-    try {
-      const url = new URL(baseCheckoutUrl);
-      if (email) url.searchParams.set("billing_email", email);
-      if (childName) url.searchParams.set("_childName", childName);
-      if (report.archetypeId) url.searchParams.set("_archetypeId", report.archetypeId);
-      return url.toString();
-    } catch {
-      return baseCheckoutUrl;
-    }
-  })();
 
   return (
     <div className="min-h-screen bg-harbor-bg flex flex-col items-center justify-center px-6 py-16">
@@ -141,22 +160,22 @@ export default function SalesPage() {
 
         {/* CTA */}
         <div className="space-y-3">
-          {checkoutUrl ? (
-            <a
-              href={checkoutUrl}
-              className="block w-full text-center rounded-xl bg-harbor-primary text-white px-5 py-4 font-semibold text-base hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
-            >
-              Unlock {name}'s Full Wildprint Report — $17 →
-            </a>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="w-full rounded-xl bg-harbor-primary/40 text-white px-5 py-4 font-semibold text-base cursor-not-allowed"
-            >
-              Unlock {name}'s Full Wildprint Report — $17 →
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => void handleCheckout()}
+            disabled={loading}
+            className="w-full rounded-xl bg-harbor-primary text-white px-5 py-4 font-semibold text-base hover:opacity-90 active:scale-[0.98] transition-all shadow-sm disabled:opacity-60 disabled:cursor-wait"
+          >
+            {loading
+              ? "Redirecting to checkout..."
+              : `Unlock ${name}'s Full Wildprint Report — $17 →`}
+          </button>
+
+          {checkoutError ? (
+            <p className="text-sm text-center text-red-600 bg-red-50 rounded-lg px-4 py-2">
+              {checkoutError}
+            </p>
+          ) : null}
 
           {email ? (
             <p className="text-xs text-center text-harbor-text/40">

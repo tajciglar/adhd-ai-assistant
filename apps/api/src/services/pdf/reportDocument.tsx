@@ -47,12 +47,12 @@ interface ReportTheme {
 }
 
 const DEFAULT_THEME: ReportTheme = {
-  bg: "#F7F5F2",
-  text: "#24323A",
-  muted: "#4F6D7A",
-  border: "#D8D5CF",
-  accent: "#4F6D7A",
-  softAccent: "#E9F4F1",
+  bg: "#FAF7FC",
+  text: "#2D1B4E",
+  muted: "#6B4D7A",
+  border: "#D8CDE0",
+  accent: "#7B2D8E",
+  softAccent: "#F0E6F6",
   dangerSoft: "#FEF2F2",
   successSoft: "#F0F9F6",
 };

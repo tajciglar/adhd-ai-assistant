@@ -49,7 +49,7 @@ export default function StepRenderer({
             title={title}
             value={(responses[q.key] as string) ?? ""}
             onChange={(v) => onAnswer(step, q.key, v, true)}
-            options={q.options!.map((o) => ({ value: o, label: o }))}
+            options={q.options!.map((o, i) => ({ value: o, label: o, emoji: q.optionEmojis?.[i] }))}
           />
         );
         break;
@@ -81,7 +81,7 @@ export default function StepRenderer({
         {step === 1 && (
           <div className="mb-6 space-y-2">
             <TrustPilotReview />
-            <h1 className="text-2xl font-bold text-harbor-primary leading-snug">
+            <h1 className="text-2xl font-bold text-harbor-primary leading-snug text-center">
               Discover Your Child's ADHD Wildprint
             </h1>
             <p className="text-sm text-harbor-text/60 leading-relaxed">

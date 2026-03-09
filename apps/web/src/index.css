@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-harbor-primary: #4F6D7A;
-  --color-harbor-bg: #F7F5F2;
-  --color-harbor-accent: #6FB1A0;
-  --color-harbor-text: #2F3E46;
+  --color-harbor-primary: #7B2D8E;
+  --color-harbor-bg: #FAF7FC;
+  --color-harbor-accent: #9B59B6;
+  --color-harbor-text: #2D1B4E;
   --color-harbor-error: #C97B63;
-  --color-harbor-primary-light: #6B8A97;
-  --color-harbor-accent-light: #8FC4B5;
+  --color-harbor-primary-light: #9B59B6;
+  --color-harbor-accent-light: #C39BD3;
   --font-family-sans: "Inter", system-ui, sans-serif;
 }
 

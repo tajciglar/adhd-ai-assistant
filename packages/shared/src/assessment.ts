@@ -1,10 +1,10 @@
 // ─── Likert Scale ───────────────────────────────────────────────────────────
 
 export const LIKERT_OPTIONS = [
-  { label: "Never / Not at all", value: 0 },
-  { label: "Occasionally / A little", value: 1 },
-  { label: "Often / A lot", value: 2 },
-  { label: "Very Often / Always", value: 3 },
+  { label: "Not really", value: 0 },
+  { label: "Sometimes", value: 1 },
+  { label: "Often", value: 2 },
+  { label: "Always", value: 3 },
 ] as const;
 
 // ─── Category IDs ───────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ export interface BasicInfoQuestion {
   title: string;
   emoji?: string;
   options?: string[];
+  optionEmojis?: string[];
   placeholder?: string;
   min?: number;
   max?: number;
@@ -46,6 +47,7 @@ export const BASIC_INFO_QUESTIONS: BasicInfoQuestion[] = [
     title: "You are",
     emoji: "🧑",
     options: ["Mom", "Dad", "Grandma / Grandpa", "Other Caregiver"],
+    optionEmojis: ["👩", "👨", "👴", "🧑"],
   },
   {
     type: "single-select",
@@ -53,6 +55,7 @@ export const BASIC_INFO_QUESTIONS: BasicInfoQuestion[] = [
     title: "How old is your child?",
     emoji: "🎂",
     options: ["3-5", "6-8", "9-11", "12-14", "15+"],
+    optionEmojis: ["👶", "🧒", "👦", "🧑‍🎓", "🎓"],
   },
   {
     type: "single-select",
@@ -60,6 +63,7 @@ export const BASIC_INFO_QUESTIONS: BasicInfoQuestion[] = [
     title: "You are raising:",
     emoji: "🌈",
     options: ["A Boy", "A Girl", "A Non-binary/Other"],
+    optionEmojis: ["👦", "👧", "🌈"],
   },
   {
     type: "single-select",
@@ -67,6 +71,7 @@ export const BASIC_INFO_QUESTIONS: BasicInfoQuestion[] = [
     title: "Where are you on the ADHD journey?",
     emoji: "🧩",
     options: ["Formally diagnosed", "Self-diagnosed", "Suspected — figuring it out"],
+    optionEmojis: ["📋", "🔍", "🤔"],
   },
   {
     type: "text",

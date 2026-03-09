@@ -10,12 +10,22 @@ import StepRenderer from "./StepRenderer";
 import MicroCopy from "./MicroCopy";
 import CalculatingScreen from "./CalculatingScreen";
 import InterstitialScreen from "./InterstitialScreen";
+import HalfwayScreen from "./HalfwayScreen";
 
 // Derived from shared package so it stays in sync automatically
 const BASIC_INFO_COUNT = BASIC_INFO_QUESTIONS.length;
 
+// Total assessment (Likert) questions across all categories
+const TOTAL_ASSESSMENT_QUESTIONS = ASSESSMENT_CATEGORIES.reduce(
+  (sum, cat) => sum + cat.questions.length,
+  0,
+);
+
+// Halfway step: basic info count + half of assessment questions
+const HALFWAY_STEP = BASIC_INFO_COUNT + Math.floor(TOTAL_ASSESSMENT_QUESTIONS / 2);
+
 // Last step of each category except the last → triggers an interstitial card
-// e.g. with 7+7+7+6+6+6 questions: steps 13, 20, 27, 33, 39
+// e.g. with 7+7+7+6+6+6 questions: steps 12, 19, 26, 32, 38
 const INTERSTITIAL_TRIGGER_STEPS = new Map<number, CategoryId>();
 {
   let offset = BASIC_INFO_COUNT;
@@ -101,9 +111,12 @@ export default function OnboardingPage() {
 
   const [showIntro, setShowIntro] = useState(false);
   const [showCalculating, setShowCalculating] = useState(false);
+  const [showHalfway, setShowHalfway] = useState(false);
   const [interstitialCategory, setInterstitialCategory] = useState<CategoryId | null>(null);
 
   const childName = (responses.childName as string | undefined) ?? "your child";
+  const gender = ((responses.childGender as string) ?? "").toLowerCase();
+  const objPronoun = gender.includes("boy") ? "him" : gender.includes("girl") ? "her" : "them";
 
   const handleShowCalculating = useCallback(() => {
     setShowCalculating(true);
@@ -132,6 +145,8 @@ export default function OnboardingPage() {
             handleShowCalculating();
           } else if (step === BASIC_INFO_COUNT) {
             setShowIntro(true);
+          } else if (step === HALFWAY_STEP) {
+            setShowHalfway(true);
           } else if (INTERSTITIAL_TRIGGER_STEPS.has(step)) {
             setInterstitialCategory(INTERSTITIAL_TRIGGER_STEPS.get(step)!);
           } else {
@@ -145,6 +160,19 @@ export default function OnboardingPage() {
 
   if (showCalculating) {
     return <CalculatingScreen responses={responses} />;
+  }
+
+  if (showHalfway) {
+    return (
+      <HalfwayScreen
+        childName={childName}
+        pronoun={objPronoun}
+        onContinue={() => {
+          setShowHalfway(false);
+          goNext();
+        }}
+      />
+    );
   }
 
   if (interstitialCategory) {
@@ -184,6 +212,8 @@ export default function OnboardingPage() {
           handleShowCalculating();
         } else if (currentStep === BASIC_INFO_COUNT) {
           setShowIntro(true);
+        } else if (currentStep === HALFWAY_STEP) {
+          setShowHalfway(true);
         } else if (INTERSTITIAL_TRIGGER_STEPS.has(currentStep)) {
           setInterstitialCategory(INTERSTITIAL_TRIGGER_STEPS.get(currentStep)!);
         } else {

@@ -16,4 +16,5 @@ export type QuestionType = "single-select" | "text" | "number" | "likert";
 export interface OptionItem {
   value: string;
   label: string;
+  emoji?: string;
 }

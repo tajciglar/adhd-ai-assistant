@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { clearOnboardingStorage } from "../../hooks/useOnboarding";
 import { getFbp, getFbc, generateEventId, trackPixelEvent } from "../../lib/fbq";
+import { trackFunnelEvent } from "../../lib/analytics";
 import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
 import type { OnboardingResponses } from "../../types/onboarding";
 
@@ -79,14 +80,25 @@ export default function CalculatingScreen({
         fbc: getFbc(),
         fbp: getFbp(),
         eventSourceUrl: window.location.href,
-      })) as { report: ArchetypeReportTemplate };
+      })) as { report: ArchetypeReportTemplate; submissionId?: string };
 
       // Client-side Lead event (deduped with CAPI via eventId)
       trackPixelEvent("Lead", {}, eventId);
 
+      // Track quiz completion in funnel analytics
+      trackFunnelEvent("quiz_completed", undefined, {
+        archetypeId: result.report?.archetypeId,
+      });
+
       clearOnboardingStorage();
       navigate("/results", {
-        state: { report: result.report, email, childName, childGender },
+        state: {
+          report: result.report,
+          email,
+          childName,
+          childGender,
+          submissionId: result.submissionId,
+        },
         replace: true,
       });
     } catch (err) {

@@ -2,8 +2,11 @@ import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
+import rawBody from "fastify-raw-body";
 import healthRoutes from "./routes/health.js";
 import guestRoutes from "./routes/guest.js";
+import stripeRoutes from "./routes/stripe.js";
+import adminRoutes from "./routes/admin.js";
 
 const envToLogger: Record<string, object | boolean> = {
   development: {
@@ -59,8 +62,9 @@ async function buildServer() {
 
   server.addHook("onRequest", async (request, reply) => {
     const origin = request.headers.origin;
-    if (!origin) return;
+    if (!origin) return; // no origin = server-to-server (Stripe webhooks, health checks)
     if (request.url.startsWith("/health")) return;
+    if (request.url.startsWith("/api/stripe/webhook")) return; // Stripe sends webhooks without origin
 
     if (!allowedOrigins.includes(origin)) {
       await reply.status(403).send({ error: "Origin not allowed" });
@@ -74,8 +78,18 @@ async function buildServer() {
     allowList: (request) => request.method === "OPTIONS",
   });
 
+  // Raw body for Stripe webhook signature verification
+  await server.register(rawBody, {
+    field: "rawBody",
+    global: false, // only parse when route opts rawBody=true
+    encoding: false, // return Buffer, not string
+    runFirst: true,
+  });
+
   await server.register(healthRoutes);
   await server.register(guestRoutes, { prefix: "/api" });
+  await server.register(stripeRoutes, { prefix: "/api" });
+  await server.register(adminRoutes, { prefix: "/api" });
 
   server.setErrorHandler((error: FastifyError, _request, reply) => {
     server.log.error(error);

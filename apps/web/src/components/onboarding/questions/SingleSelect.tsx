@@ -32,7 +32,7 @@ export default function SingleSelect({
                 : "border-harbor-primary/15 hover:border-harbor-primary/30 bg-white"
             }`}
           >
-            <span className="font-medium">{opt.label}</span>
+            <span className="font-medium">{opt.emoji ? `${opt.emoji}  ${opt.label}` : opt.label}</span>
           </button>
         ))}
       </div>

@@ -9,6 +9,7 @@ import {
   type ArchetypeReportTemplate,
 } from "@adhd-ai-assistant/shared";
 import { generateReportPdf } from "../services/pdf/generateReportPdf.js";
+import { insertQuizSubmission, insertFunnelEvent } from "../services/supabaseAdmin.js";
 
 function toSlug(value: string): string {
   return value
@@ -414,7 +415,26 @@ export default async function guestRoutes(fastify: FastifyInstance) {
         logger: request.log,
       });
 
-      return reply.send({ report: rendered });
+      // 6. Save to Supabase (fire and forget — don't block response)
+      let submissionId: string | null = null;
+      try {
+        submissionId = await insertQuizSubmission({
+          email,
+          child_name: childName,
+          child_gender: childGender ?? "Other",
+          caregiver_type: (responses.caregiverType as string) ?? null,
+          child_age_range: (responses.childAgeRange as string) ?? null,
+          adhd_journey: (responses.adhdJourney as string) ?? null,
+          archetype_id: traitProfile.archetypeId,
+          trait_scores: traitProfile.scores as unknown as Record<string, number>,
+          responses,
+          pdf_url: pdfUrl,
+        });
+      } catch (err) {
+        request.log.error({ err }, "guest.submit.supabase_insert_failed");
+      }
+
+      return reply.send({ report: rendered, submissionId });
     },
   );
 
@@ -473,4 +493,39 @@ export default async function guestRoutes(fastify: FastifyInstance) {
 
     return reply.send(pdfBuffer);
   });
+
+  // ── POST /api/guest/track ──────────────────────────────────────────────────
+  // Anonymous funnel event tracking for analytics dashboard
+  const trackBodySchema = z.object({
+    sessionId: z.string().min(1).max(128),
+    eventType: z.enum(["step_viewed", "quiz_completed", "checkout_started", "purchase_completed"]),
+    stepNumber: z.number().int().min(1).max(100).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  });
+
+  fastify.post(
+    "/guest/track",
+    {
+      config: {
+        rateLimit: {
+          max: 100,
+          timeWindow: "1 minute",
+          keyGenerator: (req) => req.ip,
+        },
+      },
+    },
+    async (request, reply) => {
+      const parsed = trackBodySchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: "Validation failed" });
+      }
+
+      const { sessionId, eventType, stepNumber, metadata } = parsed.data;
+
+      // Fire and forget — don't block response
+      void insertFunnelEvent(sessionId, eventType, stepNumber, metadata);
+
+      return reply.status(204).send();
+    },
+  );
 }

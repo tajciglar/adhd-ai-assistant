@@ -6,6 +6,8 @@ interface LikertSelectProps {
   onChange: (value: number) => void;
 }
 
+const LIKERT_EMOJIS = ["🙂", "🤔", "😬", "😩"];
+
 export default function LikertSelect({
   questionText,
   value,
@@ -17,7 +19,7 @@ export default function LikertSelect({
         {questionText}
       </h2>
       <div className="space-y-3">
-        {LIKERT_OPTIONS.map((opt) => (
+        {LIKERT_OPTIONS.map((opt, i) => (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
@@ -27,7 +29,7 @@ export default function LikertSelect({
                 : "border-harbor-primary/15 hover:border-harbor-primary/30 bg-white"
             }`}
           >
-            <span className="font-medium">{opt.label}</span>
+            <span className="font-medium">{LIKERT_EMOJIS[i]}  {opt.label}</span>
           </button>
         ))}
       </div>
