@@ -114,7 +114,7 @@ async function syncToActiveCampaign(opts: {
     }
 
     if (fieldId && fieldId !== "undefined") {
-      await fetch(`${apiUrl}/api/3/fieldValues`, {
+      const fvRes = await fetch(`${apiUrl}/api/3/fieldValues`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -122,7 +122,17 @@ async function syncToActiveCampaign(opts: {
         }),
       }).catch((err: unknown) => {
         opts.logger.error({ err }, "guest.submit.ac_field_value_failed");
+        return null;
       });
+      if (fvRes && !fvRes.ok) {
+        const body = await fvRes.json().catch(() => null);
+        opts.logger.error(
+          { status: fvRes.status, body, fieldId, contactId },
+          "guest.submit.ac_field_value_http_error",
+        );
+      }
+    } else {
+      opts.logger.warn("guest.submit.ac_field_id_missing — could not find or create PDF_URL field");
     }
 
     // 3. Subscribe contact to list so automations fire
@@ -142,7 +152,7 @@ async function syncToActiveCampaign(opts: {
     // 4. Apply tags — deduplicated and lowercased to prevent AC duplicate key errors
     const tagNames = [
       ...new Set(
-        ["onboarding-completed", opts.archetypeId, opts.archetypeName]
+        ["onboarding-completed", opts.archetypeId]
           .filter(Boolean)
           .map((t) => t.toLowerCase()),
       ),
