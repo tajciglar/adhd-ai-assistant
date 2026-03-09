@@ -98,44 +98,49 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     questions: [
       "Makes careless mistakes in schoolwork or chores.",
       "Has trouble sustaining attention during play or tasks.",
-      'Seems not to listen when spoken to directly (the "in a fog" look).',
+      "Zones out when spoken to directly, even in a quiet setting.",
       'Fails to finish instructions or complete "boring" tasks.',
       "Frequently loses things necessary for tasks (shoes, pencils, toys).",
       "Is easily distracted by unrelated noises or thoughts.",
+      "Gets so lost in {pos} own thoughts they don't notice time passing.",
     ],
   },
   {
     id: "hyperactive",
     subtitle: "Hyperactive/Impulsive Traits",
     questions: [
-      "Fidgets with hands/feet or squirms constantly in their seat.",
-      "Leaves their seat in situations where staying seated is expected.",
+      "Fidgets with hands/feet or squirms constantly in {pos} seat.",
+      "Leaves {pos} seat in situations where staying seated is expected.",
       "Runs or climbs excessively in inappropriate situations.",
       'Talks excessively or "blurts out" answers before a question is finished.',
-      'Acts as if "driven by a motor" (hard to slow down).',
-      "Has extreme difficulty waiting for their turn.",
+      "Has energy that seems impossible to switch off, even at bedtime.",
+      "Has extreme difficulty waiting for {pos} turn.",
+      "Does physically dangerous things without stopping to think first.",
     ],
   },
   {
     id: "sensory",
     subtitle: "Sensory Processing",
     questions: [
-      "Gets upset by clothing tags, seams in socks, or messy play (mud/glue).",
+      "Gets upset by clothing tags, sock seams, or messy textures (mud, glue).",
       'Craves "crashing," jumping, or roughhousing to feel "centered."',
       "Is distressed by loud, sudden noises (vacuums, hand dryers, crowds).",
-      'Gets overwhelmed in "busy" places like toy stores or cluttered rooms.',
-      "Appears clumsy or uses too much force (e.g., slamming doors unintentionally).",
+      "Gets overwhelmed in busy or cluttered places (toy stores, busy classrooms).",
+      "Uses more force than needed (slams doors, breaks toys, hugs too hard).",
+      "Chews on clothing, pencils, or non-food objects.",
+      "Constantly needs to touch things.",
     ],
   },
   {
     id: "emotional",
     subtitle: "Dysregulation",
     questions: [
-      'Has a very "low fuse" or low frustration tolerance.',
-      "Experiences rapid mood changes based on small changes in the environment.",
+      "Has a very low frustration tolerance — gets upset quickly over small obstacles.",
+      "Can go from happy to devastated over something that seems very small to others.",
       'Is hypersensitive to criticism or perceived "rejection."',
       'Has "explosive" meltdowns that seem out of proportion to the trigger.',
       "Has trouble calming down once they are already upset.",
+      "Holds onto feelings from an argument or disappointment, long after others have moved on.",
     ],
   },
   {
@@ -143,9 +148,11 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     subtitle: "Executive Function",
     questions: [
       'Struggles to "get started" on a task even when they know how.',
-      "Forgets what they were doing mid-task (e.g., goes to get a coat, ends up playing with a toy).",
+      "Forgets what they were doing mid-task (e.g., sent to get shoes, found playing instead).",
       'Seems to have no concept of "5 minutes" vs "30 minutes."',
-      'Struggles with multi-step directions (e.g., "Get your bag, put on shoes, and meet me at the car").',
+      "Struggles with multi-step directions (e.g., 'Get your bag, put on shoes, and come downstairs').",
+      "Gets so absorbed in a favourite activity they are shocked when told how much time has passed.",
+      "Can't seem to start a task without someone sitting with {obj}, even when they know what to do.",
     ],
   },
   {
@@ -154,9 +161,10 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     questions: [
       "Interrupts others' conversations or games frequently.",
       'Struggles to "read the room" (noticing when a friend is annoyed or bored).',
-      'Plays too "roughly" or gets too close to people\'s personal space.',
+      "Struggles to understand why a friendship ended or why a peer is upset with {obj}.",
       'Gets "stuck" on a topic they love, even if no one else is interested.',
-      'Struggles with "give and take" in imaginative play.',
+      "Insists on controlling the rules of games and gets upset if others change {obj}.",
+      "Shares very personal thoughts or information with strangers — seems to have no 'filter'.",
     ],
   },
 ];
@@ -249,7 +257,7 @@ export const ARCHETYPES: Archetype[] = [
 
 // ─── Step Configuration ─────────────────────────────────────────────────────
 
-export const TOTAL_STEPS = 37;
+export const TOTAL_STEPS = 45;
 const BASIC_INFO_COUNT = BASIC_INFO_QUESTIONS.length; // 6
 
 /** Flat list of all Likert questions with their category info */

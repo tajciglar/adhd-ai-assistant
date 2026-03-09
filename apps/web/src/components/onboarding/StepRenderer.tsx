@@ -12,10 +12,17 @@ interface StepRendererProps {
 }
 
 function interpolate(template: string, responses: OnboardingResponses): string {
-  return template.replace(
-    /\{childName\}/g,
-    (responses.childName as string) || "your child",
-  );
+  const childName = (responses.childName as string) || "your child";
+  const gender = ((responses.childGender as string) ?? "").toLowerCase();
+  const pos = gender === "male" ? "his" : gender === "female" ? "her" : "their";
+  const obj = gender === "male" ? "him" : gender === "female" ? "her" : "them";
+  const sub = gender === "male" ? "he" : gender === "female" ? "she" : "they";
+
+  return template
+    .replace(/\{childName\}/g, childName)
+    .replace(/\{pos\}/g, pos)
+    .replace(/\{obj\}/g, obj)
+    .replace(/\{sub\}/g, sub);
 }
 
 export default function StepRenderer({

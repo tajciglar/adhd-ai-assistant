@@ -152,14 +152,8 @@ async function syncToActiveCampaign(opts: {
       });
     }
 
-    // 4. Apply tags — deduplicated and lowercased to prevent AC duplicate key errors
-    const tagNames = [
-      ...new Set(
-        ["onboarding-completed", opts.archetypeId]
-          .filter(Boolean)
-          .map((t) => t.toLowerCase()),
-      ),
-    ];
+    // 4. Apply tags
+    const tagNames = ["adhd quiz wildprint"];
 
     for (const tagName of tagNames) {
       const tagSearchRes = await fetch(
@@ -267,6 +261,25 @@ async function sendMetaEvent(opts: {
   }
 }
 
+// Check if email has already completed the quiz (exists in AC)
+async function checkAlreadySubmitted(email: string): Promise<boolean> {
+  const apiUrl = process.env.AC_API_URL?.replace(/\/$/, "");
+  const apiKey = process.env.AC_API_KEY;
+  if (!apiUrl || !apiKey) return false;
+
+  try {
+    const res = await fetch(
+      `${apiUrl}/api/3/contacts?email=${encodeURIComponent(email)}&limit=1`,
+      { headers: { "Content-Type": "application/json", "Api-Token": apiKey } },
+    );
+    if (!res.ok) return false;
+    const data = (await res.json()) as { contacts: unknown[] };
+    return (data.contacts?.length ?? 0) > 0;
+  } catch {
+    return false; // fail open — don't block submissions if AC is unreachable
+  }
+}
+
 const submitBodySchema = z.object({
   email: z.string().email(),
   responses: z.record(z.string(), z.unknown()),
@@ -306,9 +319,22 @@ export default async function guestRoutes(fastify: FastifyInstance) {
 
       const { email, responses, childName, childGender, fbc, fbp, eventSourceUrl } = parsed.data;
 
+      // 0. Duplicate email check
+      const alreadySubmitted = await checkAlreadySubmitted(email);
+      if (alreadySubmitted) {
+        return reply.status(409).send({ error: "already_submitted" });
+      }
+
       // 1. Compute trait profile
       const traitProfile = computeTraitProfile(responses);
       const archetype = ARCHETYPES.find((a) => a.id === traitProfile.archetypeId);
+
+      // Log scores for analytics (visible in Railway logs)
+      request.log.info({
+        event: "quiz_submission",
+        archetypeId: traitProfile.archetypeId,
+        scores: traitProfile.scores,
+      }, "guest.submit.scores");
 
       // 2. Load and render report template
       const rawTemplate = getReportTemplate(traitProfile.archetypeId);

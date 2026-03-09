@@ -15,7 +15,7 @@ const LINES = [
   "Finding [NAME]'s Wildprint...",
 ];
 
-type Phase = "analyzing" | "email" | "submitting";
+type Phase = "analyzing" | "email" | "submitting" | "duplicate";
 
 export default function CalculatingScreen({
   responses,
@@ -90,12 +90,45 @@ export default function CalculatingScreen({
         replace: true,
       });
     } catch (err) {
+      if (err instanceof Error && err.message === "already_submitted") {
+        setPhase("duplicate");
+        return;
+      }
       setSubmitError(
         err instanceof Error ? err.message : "Something went wrong. Please try again.",
       );
       setPhase("email");
     }
   }, [isValid, phase, email, responses, childName, childGender, navigate]);
+
+  // ─── Duplicate email phase ────────────────────────────────────────────────
+  if (phase === "duplicate") {
+    return (
+      <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6 py-12">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-harbor-text/10 shadow-sm p-7 space-y-5 text-center">
+          <div className="text-4xl">👋</div>
+          <h2 className="text-xl font-bold text-harbor-primary leading-snug">
+            It looks like you've already discovered your child's Wildprint.
+          </h2>
+          <p className="text-harbor-text/70 leading-relaxed">
+            We've sent your child's report to this email before. If you can't
+            find it, check your spam folder — or reach out to us directly at{" "}
+            <a
+              href="mailto:info@adhdparenting.com"
+              className="text-harbor-accent underline"
+            >
+              info@adhdparenting.com
+            </a>{" "}
+            and we'll resend it right away.
+          </p>
+          <p className="text-harbor-text/70 leading-relaxed">
+            If you're here for a different child, just use a different email
+            address and we'll create a brand new profile for them.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Analyzing phase ──────────────────────────────────────────────────────
   if (phase === "analyzing") {

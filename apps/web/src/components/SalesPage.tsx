@@ -130,7 +130,7 @@ export default function SalesPage() {
               href={checkoutUrl}
               className="block w-full text-center rounded-xl bg-harbor-primary text-white px-5 py-4 font-semibold text-base hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
             >
-              Get {name}'s Full Report →
+              Unlock {name}'s Full Wildprint Report — $17 →
             </a>
           ) : (
             <button
@@ -138,7 +138,7 @@ export default function SalesPage() {
               disabled
               className="w-full rounded-xl bg-harbor-primary/40 text-white px-5 py-4 font-semibold text-base cursor-not-allowed"
             >
-              Get {name}'s Full Report →
+              Unlock {name}'s Full Wildprint Report — $17 →
             </button>
           )}
 
