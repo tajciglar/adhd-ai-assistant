@@ -13,7 +13,7 @@ export default function LikertSelect({
 }: LikertSelectProps) {
   return (
     <div>
-      <h2 className="text-2xl font-semibold text-harbor-text mb-8">
+      <h2 className="text-2xl font-semibold text-harbor-text mb-8 text-center">
         {questionText}
       </h2>
       <div className="space-y-3">
