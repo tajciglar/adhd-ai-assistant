@@ -91,7 +91,7 @@ export default function SalesPage() {
             {name} is {typeName}.
           </h1>
           <p className="text-harbor-text italic text-base leading-relaxed">
-            &ldquo;{report.innerVoiceQuote?.trim()}&rdquo;
+            &ldquo;{report.innerVoiceQuote?.trim()}&rdquo; &mdash; {name}
           </p>
         </div>
 
