@@ -162,7 +162,7 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
       'Struggles to "read the room" (noticing when a friend is annoyed or bored).',
       "Struggles to understand why a friendship ended or why a peer is upset with {obj}.",
       'Gets "stuck" on a topic they love, even if no one else is interested.',
-      "Insists on controlling the rules of games and gets upset if others change {obj}.",
+      "Insists on controlling the rules of games and gets upset if others change them.",
       "Shares very personal thoughts or information with strangers, seems to have no 'filter'.",
     ],
   },
