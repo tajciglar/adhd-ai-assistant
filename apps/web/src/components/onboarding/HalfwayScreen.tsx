@@ -13,11 +13,11 @@ export default function HalfwayScreen({
           <h2 className="text-xl font-bold text-harbor-primary leading-snug">
             You're halfway there.
           </h2>
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             Most parents never take the time to look this closely at how their
             child's brain actually works. {childName} is lucky to have you.
           </p>
-          <p className="text-harbor-text/60 text-sm leading-relaxed">
+          <p className="text-harbor-text text-sm leading-relaxed">
             Join 12,000+ parents who've already discovered their child's
             Wildprint.
           </p>

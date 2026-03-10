@@ -84,13 +84,13 @@ function IntroScreen({
             </h2>
           </div>
 
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             You're about to discover your child's unique brain profile, their
             strengths, their struggles, and the hidden superpower most people
             around {objPronoun} completely miss.
           </p>
 
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             Answer based on what you see at home, not what you hope for or what
             happens on a good day. The more honest you are, the more accurate{" "}
             {childName}'s profile will be.
@@ -205,6 +205,7 @@ export default function OnboardingPage() {
     return (
       <InterstitialScreen
         categoryId={interstitialCategory}
+        childName={childName}
         onContinue={() => {
           setInterstitialCategory(null);
           goNext();

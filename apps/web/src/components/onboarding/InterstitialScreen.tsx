@@ -9,11 +9,11 @@ interface InterstitialCard {
 const CARDS: Record<CategoryId, InterstitialCard> = {
   inattentive: {
     emoji: "🧩",
-    headline: "Did you know?",
+    headline: "The gap is real.",
     body: [
       "Children with ADHD are up to 3 years behind their peers in reading, writing, and math. Not because they lack intelligence, but because their attention system works differently.",
       "Source: Barkley, 2015; Journal of Abnormal Child Psychology",
-      "Understanding your child's attention patterns is the first step to closing that gap.",
+      "Understanding {childName}'s attention patterns is the first step to closing that gap.",
     ],
   },
   hyperactive: {
@@ -57,13 +57,16 @@ const CARDS: Record<CategoryId, InterstitialCard> = {
 
 export default function InterstitialScreen({
   categoryId,
+  childName,
   onContinue,
 }: {
   categoryId: CategoryId;
+  childName?: string;
   onContinue: () => void;
 }) {
   const card = CARDS[categoryId];
   if (!card) return null;
+  const name = childName || "your child";
 
   return (
     <div className="h-[100dvh] bg-harbor-bg flex items-center justify-center px-6 py-12 overflow-hidden">
@@ -75,6 +78,7 @@ export default function InterstitialScreen({
           </h2>
           {card.body.map((paragraph, i) => {
             const isSource = paragraph.toLowerCase().startsWith("source:");
+            const text = paragraph.replace(/\{childName\}/g, name);
             return (
               <p
                 key={i}
@@ -84,7 +88,7 @@ export default function InterstitialScreen({
                     : "text-harbor-text leading-relaxed"
                 }
               >
-                {paragraph}
+                {text}
               </p>
             );
           })}

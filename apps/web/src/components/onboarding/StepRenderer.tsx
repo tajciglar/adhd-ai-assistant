@@ -84,7 +84,7 @@ export default function StepRenderer({
             <h1 className="text-2xl font-bold text-harbor-primary leading-snug text-center">
               Discover Your Child's ADHD Wildprint
             </h1>
-            <p className="text-sm text-harbor-text/60 leading-relaxed">
+            <p className="text-sm text-harbor-text leading-relaxed">
               A 5-minute quiz backed by 40+ years of clinical experience, revealing who your child really is, why they do what they do, and the hidden superpower most people around them completely miss.
             </p>
           </div>

@@ -61,7 +61,7 @@ export const BASIC_INFO_QUESTIONS: BasicInfoQuestion[] = [
     type: "single-select",
     key: "childGender",
     title: "You are raising:",
-    emoji: "🌈",
+    emoji: "👶",
     options: ["A Boy", "A Girl", "A Non-binary/Other"],
     optionEmojis: ["👦", "👧", "🌈"],
   },
@@ -101,7 +101,7 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
       'Fails to finish instructions or complete "boring" tasks.',
       "Frequently loses things necessary for tasks (shoes, pencils, toys).",
       "Is easily distracted by unrelated noises or thoughts.",
-      "Gets so lost in {pos} own thoughts they don't notice time passing.",
+      "Gets so lost in {pos} own thoughts {sub} don't notice time passing.",
     ],
   },
   {

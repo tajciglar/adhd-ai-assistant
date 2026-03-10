@@ -90,7 +90,7 @@ export default function SalesPage() {
           <h1 className="text-3xl font-bold text-harbor-primary leading-tight">
             {name} is {typeName}.
           </h1>
-          <p className="text-harbor-text/60 italic text-base leading-relaxed">
+          <p className="text-harbor-text italic text-base leading-relaxed">
             &ldquo;{report.innerVoiceQuote?.trim()}&rdquo;
           </p>
         </div>
@@ -108,20 +108,20 @@ export default function SalesPage() {
             </h3>
             <div className="border-t border-harbor-text/8 pt-4">
               <h4 className="text-sm font-semibold text-harbor-primary mb-1">About {name}</h4>
-              <p className="text-harbor-text/70 text-sm leading-relaxed">
+              <p className="text-harbor-text text-sm leading-relaxed">
                 {report.aboutChild?.slice(0, 300)}...
               </p>
             </div>
             <div className="border-t border-harbor-text/8 pt-4">
               <h4 className="text-sm font-semibold text-harbor-primary mb-1">Hidden Superpower</h4>
-              <p className="text-harbor-text/70 text-sm leading-relaxed">
+              <p className="text-harbor-text text-sm leading-relaxed">
                 {report.hiddenSuperpower?.slice(0, 150)}...
               </p>
             </div>
           </div>
 
           <div className="relative h-32">
-            <div className="px-6 pt-3 space-y-3 text-sm text-harbor-text/70 leading-relaxed">
+            <div className="px-6 pt-3 space-y-3 text-sm text-harbor-text leading-relaxed">
               <div className="border-t border-harbor-text/8 pt-3">
                 <h4 className="text-sm font-semibold text-harbor-primary mb-1">Understanding the Brain</h4>
                 <p>{report.brainSections?.[0]?.content?.slice(0, 100)}...</p>
@@ -181,7 +181,7 @@ export default function SalesPage() {
         <div className="space-y-3">
           <div className="bg-white rounded-xl border border-harbor-text/10 p-5 space-y-2">
             <p className="text-sm font-semibold text-harbor-primary">🧠 Built by specialists</p>
-            <p className="text-harbor-text/70 text-sm leading-relaxed">
+            <p className="text-harbor-text text-sm leading-relaxed">
               Built by ADHD specialists with over 40 years of combined clinical
               experience. This isn't a generic personality quiz. Every question,
               every profile, and every recommendation is grounded in decades of
@@ -190,7 +190,7 @@ export default function SalesPage() {
           </div>
           <div className="bg-white rounded-xl border border-harbor-text/10 p-5 space-y-2">
             <p className="text-sm font-semibold text-harbor-primary">✅ 100% satisfaction guarantee</p>
-            <p className="text-harbor-text/70 text-sm leading-relaxed">
+            <p className="text-harbor-text text-sm leading-relaxed">
               If the report doesn't feel like it was written specifically about
               your child, email us and we'll refund you, no questions asked.
             </p>

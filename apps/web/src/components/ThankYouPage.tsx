@@ -37,16 +37,16 @@ export default function ThankYouPage() {
           <h1 className="text-2xl font-bold text-harbor-primary leading-snug">
             Thank you for investing in understanding {childName} more deeply.
           </h1>
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             What you just did, taking the time to truly see how {pos} brain works,
             is one of the most powerful things a parent can do.
           </p>
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             {childName}'s full Wildprint report is on its way to your inbox right
             now.{email ? ` Check ${email}.` : ""} It should arrive within 2
             minutes.
           </p>
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             If you don't see it, check your spam folder and mark us as a contact:{" "}
             <a
               href="mailto:info@adhdparenting.com"

@@ -164,7 +164,7 @@ export default function CalculatingScreen({
           <h2 className="text-xl font-bold text-harbor-primary leading-snug">
             It looks like you've already discovered your child's Wildprint.
           </h2>
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             We've sent your child's report to this email before. If you can't
             find it, check your spam folder or reach out to us directly at{" "}
             <a
@@ -175,7 +175,7 @@ export default function CalculatingScreen({
             </a>{" "}
             and we'll resend it right away.
           </p>
-          <p className="text-harbor-text/70 leading-relaxed">
+          <p className="text-harbor-text leading-relaxed">
             If you're here for a different child, just use a different email
             address and we'll create a brand new profile for them.
           </p>
@@ -267,7 +267,7 @@ export default function CalculatingScreen({
             </h2>
           </div>
 
-          <p className="text-harbor-text/70 leading-relaxed text-sm">
+          <p className="text-harbor-text leading-relaxed text-sm">
             Your child's full Wildprint report is ready, including the neuroscience
             behind {childName}'s specific profile, what drains {objPronoun}, what
             fuels {objPronoun}, and the hidden superpower most people around{" "}
