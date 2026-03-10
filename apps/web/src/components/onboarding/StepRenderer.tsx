@@ -21,12 +21,18 @@ function interpolate(template: string, responses: OnboardingResponses): string {
   const pos = isMale ? "his" : isFemale ? "her" : "their";
   const obj = isMale ? "him" : isFemale ? "her" : "them";
   const sub = isMale ? "he" : isFemale ? "she" : "they";
+  const is_ = isMale ? "is" : isFemale ? "is" : "are";
+  const was_ = isMale ? "was" : isFemale ? "was" : "were";
+  const dont = isMale ? "doesn't" : isFemale ? "doesn't" : "don't";
 
   return template
     .replace(/\{childName\}/g, childName)
     .replace(/\{pos\}/g, pos)
     .replace(/\{obj\}/g, obj)
-    .replace(/\{sub\}/g, sub);
+    .replace(/\{sub\}/g, sub)
+    .replace(/\{is\}/g, is_)
+    .replace(/\{was\}/g, was_)
+    .replace(/\{dont\}/g, dont);
 }
 
 export default function StepRenderer({

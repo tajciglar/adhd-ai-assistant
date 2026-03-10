@@ -19,7 +19,7 @@ export function TrustPilotReview() {
           <span className="text-xs font-semibold text-harbor-primary">4.9</span>
         </div>
         <p className="text-xs text-harbor-text/50">
-          168+ verified parent reviews
+          111.813+ satisfied customers
         </p>
       </div>
     </div>
