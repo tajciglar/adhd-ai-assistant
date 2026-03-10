@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
 import { ARCHETYPES } from "@adhd-ai-assistant/shared";
@@ -71,13 +71,13 @@ export default function SalesPage() {
   const typeName = archetype?.typeName ?? report.title;
   const emoji = ANIMAL_EMOJI[report.archetypeId] ?? "🧠";
 
-  const WHATS_INSIDE = [
-    `The neuroscience behind ${name}'s specific profile, explained in plain language, not clinical jargon`,
-    `"A Day in ${name}'s Life," four real scenarios (morning, school, after school, bedtime) that will make you say "that's exactly what happens in our house"`,
-    `What drains ${name} vs. what fuels ${obj}, a practical reference table you'll come back to every week`,
-    `What to say, and what never to say, when ${name} is struggling`,
-    `${name}'s hidden superpower, the quality most people around ${obj} completely miss`,
-    `"What ${name} needs to hear most," five sentences that will change how ${subLower} sees ${self}`,
+  const WHATS_INSIDE: React.ReactNode[] = [
+    <><strong>The neuroscience</strong> behind {name}'s specific profile, explained in plain language, not clinical jargon</>,
+    <><strong>"A Day in {name}'s Life,"</strong> four real scenarios (morning, school, after school, bedtime) that will make you say "that's exactly what happens in our house"</>,
+    <><strong>What drains {name} vs. what fuels {obj},</strong> a practical reference table you'll come back to every week</>,
+    <><strong>What to say, and what never to say,</strong> when {name} is struggling</>,
+    <><strong>{name}'s hidden superpower,</strong> the quality most people around {obj} completely miss</>,
+    <><strong>"What {name} needs to hear most,"</strong> five sentences that will change how {subLower} sees {self}</>,
   ];
 
   return (
@@ -162,8 +162,8 @@ export default function SalesPage() {
             What's inside {name}'s full Wildprint report
           </p>
           <ul className="space-y-2">
-            {WHATS_INSIDE.map((bullet) => (
-              <li key={bullet} className="flex items-start gap-3">
+            {WHATS_INSIDE.map((bullet, i) => (
+              <li key={i} className="flex items-start gap-3">
                 <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-harbor-accent/15 flex items-center justify-center">
                   <svg className="w-3 h-3 text-harbor-accent" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -179,18 +179,18 @@ export default function SalesPage() {
 
         {/* ── Section C: Trust & Authority ── */}
         <div className="space-y-3">
-          <div className="bg-white rounded-xl border border-harbor-text/10 p-5 space-y-2">
-            <p className="text-sm font-semibold text-harbor-primary">🧠 Built by specialists</p>
-            <p className="text-harbor-text text-sm leading-relaxed">
+          <div className="bg-white rounded-xl border border-harbor-text/10 p-4 space-y-1.5">
+            <p className="text-xs font-semibold text-harbor-primary">🧠 Built by specialists</p>
+            <p className="text-harbor-text text-xs italic leading-relaxed">
               Built by ADHD specialists with over 40 years of combined clinical
               experience. This isn't a generic personality quiz. Every question,
               every profile, and every recommendation is grounded in decades of
               real work with real ADHD families.
             </p>
           </div>
-          <div className="bg-white rounded-xl border border-harbor-text/10 p-5 space-y-2">
-            <p className="text-sm font-semibold text-harbor-primary">✅ 100% satisfaction guarantee</p>
-            <p className="text-harbor-text text-sm leading-relaxed">
+          <div className="bg-white rounded-xl border border-harbor-text/10 p-4 space-y-1.5">
+            <p className="text-xs font-semibold text-harbor-primary">✅ 100% satisfaction guarantee</p>
+            <p className="text-harbor-text text-xs italic leading-relaxed">
               If the report doesn't feel like it was written specifically about
               your child, email us and we'll refund you, no questions asked.
             </p>
