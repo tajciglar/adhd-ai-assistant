@@ -32,7 +32,7 @@ function generatePdfUrl(opts: {
   childName: string;
   childGender?: string;
 }): string {
-  const baseUrl = (process.env.API_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const baseUrl = (process.env.API_BASE_URL ?? "http://localhost:3000").trim().replace(/\/$/, "");
   const secret = process.env.PDF_SIGNING_SECRET ?? "dev-secret";
 
   const payload = JSON.stringify({
