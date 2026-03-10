@@ -58,6 +58,11 @@ interface ArchetypeDist {
   count: number;
 }
 
+interface TraitPairDist {
+  pair: string;
+  count: number;
+}
+
 interface AnswerDist {
   questionKey: string;
   topAnswer: string;
@@ -71,6 +76,7 @@ interface Analytics {
   dailyTrend: DailyTrend[];
   recentSubmissions: Submission[];
   archetypeDistribution: ArchetypeDist[];
+  traitPairDistribution: TraitPairDist[];
   answerDistribution: AnswerDist[];
   avgCompletionTime: number;
 }
@@ -389,6 +395,39 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+
+        {/* Top-2 Trait Pair Distribution */}
+        {analytics?.traitPairDistribution?.length ? (
+          <div className="bg-white rounded-xl border border-harbor-text/10 p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-harbor-primary">Top Category Pairs</h2>
+            <p className="text-xs text-harbor-text/40">Most common top-2 scoring categories per submission</p>
+            <div className="space-y-2">
+              {(() => {
+                const maxCount = Math.max(...analytics.traitPairDistribution.map((p) => p.count), 1);
+                const total = analytics.traitPairDistribution.reduce((sum, p) => sum + p.count, 0);
+                return analytics.traitPairDistribution.map((item) => (
+                  <div key={item.pair} className="flex items-center gap-3 text-sm">
+                    <span className="w-48 text-right text-harbor-text/60 capitalize truncate" title={item.pair}>
+                      {item.pair.replace(/_/g, " ")}
+                    </span>
+                    <div className="flex-1 h-6 bg-harbor-text/5 rounded overflow-hidden relative">
+                      <div
+                        className="h-full rounded bg-harbor-accent/70 transition-all"
+                        style={{ width: `${(item.count / maxCount) * 100}%` }}
+                      />
+                      <span className="absolute inset-y-0 left-2 flex items-center text-xs text-harbor-text/70">
+                        {item.count}
+                      </span>
+                    </div>
+                    <span className="w-12 text-right text-xs text-harbor-text/40 tabular-nums">
+                      {total > 0 ? `${((item.count / total) * 100).toFixed(0)}%` : ""}
+                    </span>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        ) : null}
 
         {/* Answer Distribution */}
         {analytics?.answerDistribution.length ? (

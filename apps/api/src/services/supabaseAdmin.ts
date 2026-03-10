@@ -124,6 +124,7 @@ export interface FunnelAnalytics {
     purchased: number;
   }>;
   archetypeDistribution: Array<{ archetypeId: string; count: number }>;
+  traitPairDistribution: Array<{ pair: string; count: number }>;
   answerDistribution: Array<{
     questionKey: string;
     topAnswer: string;
@@ -142,6 +143,7 @@ const EMPTY_ANALYTICS: FunnelAnalytics = {
   recentSubmissions: [],
   dailyTrend: [],
   archetypeDistribution: [],
+  traitPairDistribution: [],
   answerDistribution: [],
   avgCompletionTime: 0,
 };
@@ -271,6 +273,26 @@ export async function getAnalytics(days: number = 7): Promise<FunnelAnalytics> {
     .map(([archetypeId, count]) => ({ archetypeId, count }))
     .sort((a, b) => b.count - a.count);
 
+  // 5b. Trait pair distribution — top-2 scoring categories per submission
+  const { data: traitData } = await sb
+    .from("quiz_submissions")
+    .select("trait_scores")
+    .gte("created_at", sinceStr);
+
+  const pairCounts = new Map<string, number>();
+  for (const row of traitData ?? []) {
+    const scores = row.trait_scores as Record<string, number> | null;
+    if (!scores) continue;
+    const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
+    if (sorted.length < 2) continue;
+    const pair = [sorted[0][0], sorted[1][0]].sort().join(" & ");
+    pairCounts.set(pair, (pairCounts.get(pair) ?? 0) + 1);
+  }
+
+  const traitPairDistribution = [...pairCounts.entries()]
+    .map(([pair, count]) => ({ pair, count }))
+    .sort((a, b) => b.count - a.count);
+
   // 6. Answer distribution — most common answer per question from answer_submitted events
   const { data: answerData } = await sb
     .from("funnel_events")
@@ -331,5 +353,5 @@ export async function getAnalytics(days: number = 7): Promise<FunnelAnalytics> {
   }
   const avgCompletionTime = completedCount > 0 ? Math.round(totalSeconds / completedCount) : 0;
 
-  return { stepDropoff, funnelSummary, recentSubmissions, dailyTrend, archetypeDistribution, answerDistribution, avgCompletionTime };
+  return { stepDropoff, funnelSummary, recentSubmissions, dailyTrend, archetypeDistribution, traitPairDistribution, answerDistribution, avgCompletionTime };
 }
