@@ -431,6 +431,38 @@ export default async function guestRoutes(fastify: FastifyInstance) {
     return reply.send(pdfBuffer);
   });
 
+  // ── POST /api/guest/pdf ─────────────────────────────────────────────────────
+  // Accepts a rendered report from the web client and returns the PDF on demand.
+  const postPdfBodySchema = z.object({
+    report: z.object({ archetypeId: z.string(), title: z.string(), innerVoiceQuote: z.string() }).passthrough(),
+    childName: z.string().max(100).default("Your child"),
+  });
+
+  fastify.post("/guest/pdf", async (request, reply) => {
+    const parsed = postPdfBodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid request body" });
+    }
+
+    const { report, childName } = parsed.data;
+
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await generateReportPdf(report as unknown as ArchetypeReportTemplate, { name: childName });
+    } catch (err) {
+      request.log.error({ err }, "guest.pdf.post_generation_failed");
+      return reply.status(500).send({ error: "Failed to generate PDF" });
+    }
+
+    const filename = `${toSlug(childName)}-adhd-guide.pdf`;
+
+    reply
+      .header("Content-Type", "application/pdf")
+      .header("Content-Disposition", `attachment; filename="${filename}"`);
+
+    return reply.send(pdfBuffer);
+  });
+
   // ── POST /api/guest/track ──────────────────────────────────────────────────
   // Anonymous funnel event tracking for analytics dashboard
   const trackBodySchema = z.object({

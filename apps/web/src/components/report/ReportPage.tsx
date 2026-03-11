@@ -1,6 +1,9 @@
+import { useCallback, useState } from "react";
 import { useLocation, Navigate } from "react-router-dom";
 import type { ArchetypeReportTemplate } from "@adhd-parenting-quiz/shared";
 import { AnimalIcon } from "../../lib/animalImages";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 interface RouterState {
   report?: ArchetypeReportTemplate;
@@ -18,6 +21,43 @@ export default function ReportPage() {
   const email = state?.email ?? sessionStorage.getItem("wildprint_email") ?? "";
   const childName = sessionStorage.getItem("wildprint_childName") ?? "Your child";
   const pdfUrl = state?.pdfUrl ?? sessionStorage.getItem("wildprint_pdfUrl") ?? "";
+
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!report) return;
+
+    // If we have a signed URL, just open it
+    if (pdfUrl) {
+      window.open(pdfUrl, "_blank");
+      return;
+    }
+
+    // Fallback: POST report to generate PDF on demand
+    setDownloading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/guest/pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ report, childName }),
+      });
+      if (!res.ok) throw new Error("Failed to download PDF");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${childName}-adhd-guide.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silently fail — button will stop spinning
+    } finally {
+      setDownloading(false);
+    }
+  }, [report, pdfUrl, childName]);
 
   if (!report) {
     return <Navigate to="/" replace />;
@@ -147,17 +187,13 @@ export default function ReportPage() {
             <h2 className="text-xl font-semibold text-harbor-primary mb-3">
               Save Your Report
             </h2>
-            {pdfUrl ? (
-              <a
-                href={pdfUrl}
-                download={`${childName}-adhd-guide.pdf`}
-                className="inline-block rounded-xl bg-harbor-primary text-white px-5 py-3 font-medium hover:opacity-90 transition"
-              >
-                Download PDF
-              </a>
-            ) : (
-              <p className="text-harbor-text/60 text-sm">PDF download will be available shortly.</p>
-            )}
+            <button
+              onClick={() => void handleDownloadPdf()}
+              disabled={downloading}
+              className="rounded-xl bg-harbor-primary text-white px-5 py-3 font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {downloading ? "Generating PDF..." : "Download PDF"}
+            </button>
           </section>
         </div>
       </div>
