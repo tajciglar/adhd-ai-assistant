@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
-import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
-import { ARCHETYPES } from "@adhd-ai-assistant/shared";
+import type { ArchetypeReportTemplate } from "@adhd-parenting-quiz/shared";
+import { ARCHETYPES } from "@adhd-parenting-quiz/shared";
 import { trackPixelEvent, generateEventId } from "../lib/fbq";
 import { trackFunnelEvent } from "../lib/analytics";
+import { AnimalIcon } from "../lib/animalImages";
 
 interface LocationState {
   report?: ArchetypeReportTemplate;
@@ -12,16 +13,6 @@ interface LocationState {
   childGender?: string;
   submissionId?: string;
 }
-
-const ANIMAL_EMOJI: Record<string, string> = {
-  koala: "🐨",
-  hummingbird: "🐦",
-  tiger: "🐯",
-  meerkat: "🦡",
-  stallion: "🐴",
-  fox: "🦊",
-  owl: "🦉",
-};
 
 function getPronouns(gender?: string) {
   const g = (gender ?? "").toLowerCase();
@@ -67,8 +58,6 @@ export default function SalesPage() {
   const { subLower, obj, self } = getPronouns(childGender);
   const archetype = ARCHETYPES.find((a) => a.id === report.archetypeId);
   const typeName = archetype?.typeName ?? report.title;
-  const emoji = ANIMAL_EMOJI[report.archetypeId] ?? "🧠";
-
   const WHATS_INSIDE: React.ReactNode[] = [
     <><strong>The neuroscience</strong> behind {name}'s specific profile, explained in plain language, not clinical jargon</>,
     <><strong>"A Day in {name}'s Life,"</strong> four real scenarios (morning, school, after school, bedtime) that will make you say "that's exactly what happens in our house"</>,
@@ -84,7 +73,7 @@ export default function SalesPage() {
 
         {/* ── Section A: Report Teaser ── */}
         <div className="text-center space-y-4">
-          <div className="text-7xl">{emoji}</div>
+          <AnimalIcon id={report.archetypeId} className="w-28 h-28 mx-auto" />
           <h1 className="text-3xl font-bold text-harbor-primary leading-tight">
             {name} is {typeName}.
           </h1>

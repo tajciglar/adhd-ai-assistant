@@ -7,9 +7,10 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
-import { ARCHETYPES } from "@adhd-ai-assistant/shared";
+import type { ArchetypeReportTemplate } from "@adhd-parenting-quiz/shared";
+import { ARCHETYPES } from "@adhd-parenting-quiz/shared";
 import { api } from "../lib/api";
+import { AnimalIcon } from "../lib/animalImages";
 
 interface LocationState {
   report?: ArchetypeReportTemplate;
@@ -18,16 +19,6 @@ interface LocationState {
   childGender?: string;
   submissionId?: string;
 }
-
-const ANIMAL_EMOJI: Record<string, string> = {
-  koala: "🐨",
-  hummingbird: "🐦",
-  tiger: "🐯",
-  meerkat: "🦡",
-  stallion: "🐴",
-  fox: "🦊",
-  owl: "🦉",
-};
 
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "",
@@ -38,12 +29,12 @@ const stripePromise = loadStripe(
 function CheckoutForm({
   childName,
   typeName,
-  emoji,
+  archetypeId,
   email,
 }: {
   childName: string;
   typeName: string;
-  emoji: string;
+  archetypeId: string;
   email?: string;
 }) {
   const stripe = useStripe();
@@ -92,7 +83,7 @@ function CheckoutForm({
           Order Summary
         </p>
         <div className="flex items-center gap-4">
-          <div className="text-4xl">{emoji}</div>
+          <AnimalIcon id={archetypeId} className="w-16 h-16" />
           <div className="flex-1">
             <p className="font-semibold text-harbor-primary">
               {childName}'s Full Wildprint Report
@@ -189,7 +180,7 @@ export default function CheckoutPage() {
     [report?.archetypeId],
   );
   const typeName = archetype?.typeName ?? report?.title ?? "";
-  const emoji = ANIMAL_EMOJI[report?.archetypeId ?? ""] ?? "🧠";
+  const archetypeId = report?.archetypeId ?? "";
   const name = childName ?? "Your child";
 
   // Create PaymentIntent on mount
@@ -243,7 +234,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6">
         <div className="text-center space-y-3">
-          <div className="text-4xl animate-pulse">{emoji}</div>
+          <div className="animate-pulse"><AnimalIcon id={archetypeId} className="w-16 h-16 mx-auto" /></div>
           <p className="text-harbor-text/50">Preparing secure checkout...</p>
         </div>
       </div>
@@ -280,7 +271,7 @@ export default function CheckoutPage() {
           <CheckoutForm
             childName={name}
             typeName={typeName}
-            emoji={emoji}
+            archetypeId={archetypeId}
             email={email}
           />
         </Elements>

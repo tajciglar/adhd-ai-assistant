@@ -4,9 +4,10 @@ import { api } from "../../lib/api";
 import { clearOnboardingStorage } from "../../hooks/useOnboarding";
 import { getFbp, getFbc, generateEventId, trackPixelEvent } from "../../lib/fbq";
 import { trackFunnelEvent } from "../../lib/analytics";
-import { computeTraitProfile, ARCHETYPES } from "@adhd-ai-assistant/shared";
-import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
+import { computeTraitProfile, ARCHETYPES } from "@adhd-parenting-quiz/shared";
+import type { ArchetypeReportTemplate } from "@adhd-parenting-quiz/shared";
 import type { OnboardingResponses } from "../../types/onboarding";
+import { AnimalIcon } from "../../lib/animalImages";
 
 const LINES = [
   "Reviewing attention patterns...",
@@ -16,16 +17,6 @@ const LINES = [
   "Cross-referencing social patterns...",
   "Finding [NAME]'s Wildprint...",
 ];
-
-const ANIMAL_EMOJI: Record<string, string> = {
-  koala: "🐨",
-  hummingbird: "🐦",
-  tiger: "🐯",
-  meerkat: "🦡",
-  stallion: "🐴",
-  fox: "🦊",
-  owl: "🦉",
-};
 
 type Phase = "analyzing" | "found" | "email" | "submitting" | "duplicate";
 
@@ -61,8 +52,6 @@ export default function CalculatingScreen({
     () => ARCHETYPES.find((a) => a.id === traitProfile.archetypeId) ?? ARCHETYPES[0],
     [traitProfile.archetypeId],
   );
-  const animalEmoji = ANIMAL_EMOJI[archetype.id] ?? "🧠";
-
   const lines = LINES.map((l) => l.replace("[NAME]", childName));
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -193,7 +182,7 @@ export default function CalculatingScreen({
     return (
       <div className="h-[100dvh] bg-harbor-bg flex items-center justify-center px-6 py-12 overflow-hidden">
         <div className="max-w-sm w-full space-y-6 text-center">
-          <div className="text-7xl">{animalEmoji}</div>
+          <AnimalIcon id={archetype.id} className="w-28 h-28 mx-auto" />
           <h2 className="text-2xl font-bold text-harbor-primary">
             We found it.
           </h2>
@@ -252,7 +241,7 @@ export default function CalculatingScreen({
         <div className="bg-white rounded-2xl border border-harbor-text/10 shadow-sm p-6 space-y-5">
           {/* Archetype reveal */}
           <div className="text-center space-y-3">
-            <div className="text-6xl">{animalEmoji}</div>
+            <AnimalIcon id={archetype.id} className="w-24 h-24 mx-auto" />
             <p className="text-sm font-semibold uppercase tracking-widest text-harbor-accent">
               The Wildprint has been identified.
             </p>
