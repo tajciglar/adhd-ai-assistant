@@ -88,10 +88,10 @@ export default function StepRenderer({
           <div className="mb-6 space-y-2">
             <TrustPilotReview />
             <h1 className="text-2xl font-bold text-harbor-primary leading-snug text-center">
-              Discover Your Child's ADHD Personality Report
+              Discover Your Child's ADHD Personality Type
             </h1>
             <p className="text-sm text-harbor-text leading-relaxed text-center">
-              A 7-minute quiz backed by 40+ years of clinical experience, revealing who your child really is, why they do what they do, and the hidden superpower most people around them completely miss.
+              A 7-minute assessment backed by 40+ years of clinical experience, revealing who your child really is, why they do what they do, and the hidden superpower most people around them completely miss.
             </p>
             
           </div>
