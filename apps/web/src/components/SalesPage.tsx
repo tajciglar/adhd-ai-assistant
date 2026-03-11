@@ -33,7 +33,7 @@ function getPronouns(gender?: string) {
 export default function SalesPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { report, email, childName, childGender, submissionId } =
+  const { report, email, childName, childGender } =
     (location.state ?? {}) as LocationState;
 
   const firedRef = useRef(false);
@@ -48,20 +48,18 @@ export default function SalesPage() {
   }, [report]);
 
   const handleCheckout = useCallback(() => {
-    // Track checkout events
-    trackFunnelEvent("checkout_started");
-    trackPixelEvent("InitiateCheckout", { content_category: "adhd_report", value: 17, currency: "USD" }, generateEventId());
+    // Track optin events
+    trackFunnelEvent("optin_completed");
+    trackPixelEvent("Lead", { content_category: "adhd_report" }, generateEventId());
 
     // Store data in sessionStorage for ThankYouPage
     if (childName) sessionStorage.setItem("wildprint_childName", childName);
     if (email) sessionStorage.setItem("wildprint_email", email);
     if (childGender) sessionStorage.setItem("wildprint_childGender", childGender);
 
-    // Navigate to custom checkout
-    navigate("/checkout", {
-      state: { report, email, childName, childGender, submissionId },
-    });
-  }, [email, childName, childGender, report, submissionId, navigate]);
+    // Skip checkout — go straight to thank you (test mode)
+    navigate("/thank-you");
+  }, [email, childName, childGender, navigate]);
 
   if (!report) return <Navigate to="/" replace />;
 
@@ -137,7 +135,7 @@ export default function SalesPage() {
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span className="text-sm font-medium text-harbor-primary/70">Full report unlocked after purchase</span>
+                <span className="text-sm font-medium text-harbor-primary/70">Get the full report</span>
               </button>
             </div>
           </div>
@@ -204,7 +202,7 @@ export default function SalesPage() {
             onClick={handleCheckout}
             className="w-full rounded-xl bg-harbor-primary text-white px-5 py-4 font-semibold text-base hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
           >
-            {`Unlock ${name}'s Full Wildprint Report · $17 →`}
+            {`Get ${name}'s Full Wildprint Report →`}
           </button>
         </div>
       </div>

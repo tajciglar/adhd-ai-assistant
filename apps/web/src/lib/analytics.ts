@@ -15,7 +15,7 @@ export function getSessionId(): string {
  * Never throws — tracking failures shouldn't break the UX.
  */
 export function trackFunnelEvent(
-  eventType: "step_viewed" | "quiz_completed" | "checkout_started" | "purchase_completed" | "answer_submitted",
+  eventType: "step_viewed" | "quiz_completed" | "checkout_started" | "purchase_completed" | "answer_submitted" | "optin_completed" | "optin_thankyou",
   stepNumber?: number,
   metadata?: Record<string, unknown>,
 ): void {
