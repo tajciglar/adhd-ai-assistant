@@ -18,8 +18,7 @@ export default function HalfwayScreen({
             child's brain actually works. {childName} is lucky to have you.
           </p>
           <p className="text-harbor-text text-sm leading-relaxed">
-            Join 12,000+ parents who've already discovered their child's
-            Wildprint.
+            Join 110.000+ parents who’ve already trusted ADHDParenting.
           </p>
         </div>
 
