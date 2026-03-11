@@ -10,16 +10,27 @@ function buildQuestionMap(): Record<string, string> {
     for (let i = 0; i < cat.questions.length; i++) {
       // Strip pronoun placeholders for display
       const text = cat.questions[i]
+        .replace(/\{childName\}/g, "the child")
         .replace(/\{pos\}/g, "their")
         .replace(/\{obj\}/g, "them")
-        .replace(/\{sub\}/g, "they");
+        .replace(/\{sub\}/g, "they")
+        .replace(/\{is\}/g, "are")
+        .replace(/\{was\}/g, "were")
+        .replace(/\{dont\}/g, "don't");
       map[`${cat.id}_${i}`] = text;
     }
   }
   return map;
 }
 
-const QUESTION_MAP = buildQuestionMap();
+const QUESTION_MAP: Record<string, string> = {
+  caregiverType: "You are",
+  childAgeRange: "How old is your child?",
+  childGender: "You are raising",
+  adhdJourney: "Where are you on the ADHD journey?",
+  childName: "Child's name",
+  ...buildQuestionMap(),
+};
 
 interface FunnelSummary {
   quizStarted: number;
@@ -450,10 +461,14 @@ export default function AdminDashboard() {
           </div>
         ) : null}
 
-        {/* Answer Distribution */}
-        {analytics?.answerDistribution.length ? (
-          <div className="bg-white rounded-xl border border-harbor-text/10 p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-harbor-primary">Most Common Answers</h2>
+        {/* Answer Distribution — split into onboarding vs scoring */}
+        {(() => {
+          if (!analytics?.answerDistribution.length) return null;
+          const BASIC_KEYS = new Set(["caregiverType", "childAgeRange", "childGender", "adhdJourney", "childName"]);
+          const onboarding = analytics.answerDistribution.filter((a) => BASIC_KEYS.has(a.questionKey));
+          const scoring = analytics.answerDistribution.filter((a) => !BASIC_KEYS.has(a.questionKey));
+
+          const AnswerTable = ({ items }: { items: AnswerDist[] }) => (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -465,7 +480,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {analytics.answerDistribution.map((item) => (
+                  {items.map((item) => (
                     <tr key={item.questionKey} className="border-b border-harbor-text/5">
                       <td className="py-2 pr-4 text-harbor-text/70 text-xs max-w-[300px]" title={item.questionKey}>
                         {QUESTION_MAP[item.questionKey] ?? item.questionKey}
@@ -484,8 +499,27 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-          </div>
-        ) : null}
+          );
+
+          return (
+            <>
+              {onboarding.length ? (
+                <div className="bg-white rounded-xl border border-harbor-text/10 p-6 space-y-4">
+                  <h2 className="text-lg font-semibold text-harbor-primary">Onboarding Answers</h2>
+                  <p className="text-xs text-harbor-text/40">Demographics and basic info questions</p>
+                  <AnswerTable items={onboarding} />
+                </div>
+              ) : null}
+              {scoring.length ? (
+                <div className="bg-white rounded-xl border border-harbor-text/10 p-6 space-y-4">
+                  <h2 className="text-lg font-semibold text-harbor-primary">Assessment Answers</h2>
+                  <p className="text-xs text-harbor-text/40">Likert scoring questions by category</p>
+                  <AnswerTable items={scoring} />
+                </div>
+              ) : null}
+            </>
+          );
+        })()}
 
         {/* Recent Submissions */}
         {analytics?.recentSubmissions.length ? (
