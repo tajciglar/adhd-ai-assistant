@@ -143,11 +143,11 @@ export default function ReportPage() {
             <p className="text-lg text-harbor-text italic">{report.closingLine}</p>
           </section>
 
-          {pdfUrl ? (
-            <section className="bg-white rounded-2xl border border-harbor-text/10 p-6 mb-10">
-              <h2 className="text-xl font-semibold text-harbor-primary mb-3">
-                Save Your Report
-              </h2>
+          <section className="bg-white rounded-2xl border border-harbor-text/10 p-6 mb-10">
+            <h2 className="text-xl font-semibold text-harbor-primary mb-3">
+              Save Your Report
+            </h2>
+            {pdfUrl ? (
               <a
                 href={pdfUrl}
                 download={`${childName}-adhd-guide.pdf`}
@@ -155,8 +155,10 @@ export default function ReportPage() {
               >
                 Download PDF
               </a>
-            </section>
-          ) : null}
+            ) : (
+              <p className="text-harbor-text/60 text-sm">PDF download will be available shortly.</p>
+            )}
+          </section>
         </div>
       </div>
     </div>
