@@ -1,10 +1,15 @@
 export const ANIMAL_IMAGE: Record<string, string> = {
-  koala: "/animals/Profile-Koala-jukebox-bg-removed.png",
-  hummingbird: "/animals/Profile-Hummingbird-jukebox-bg-removed.png",
-  tiger: "/animals/Profile-Tiger-jukebox-bg-removed.png",
-  meerkat: "/animals/Profile-Meerkat-jukebox-bg-removed.png",
-  stallion: "/animals/Profile-Stallion-jukebox-bg-removed.png",
-  fox: "/animals/Profile-Fox-jukebox-bg-removed.png",
+  koala: "/animals/koala.png",
+  hummingbird: "/animals/hummingbird.png",
+  tiger: "/animals/tiger.png",
+  meerkat: "/animals/meerkat.png",
+  stallion: "/animals/stallion.png",
+  fox: "/animals/fox.png",
+  rabbit: "/animals/rabbit.png",
+  elephant: "/animals/elephant.png",
+  dolphin: "/animals/dolphin.png",
+  hedgehog: "/animals/hedgehog.png",
+  bull: "/animals/bull.png",
 };
 
 export function AnimalIcon({

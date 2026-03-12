@@ -10,12 +10,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ANIMAL_IMAGE: Record<string, string> = {
-  koala: path.resolve(__dirname, "../../../../web/public/animals/Profile-Koala-jukebox-bg-removed.png"),
-  hummingbird: path.resolve(__dirname, "../../../../web/public/animals/Profile-Hummingbird-jukebox-bg-removed.png"),
-  tiger: path.resolve(__dirname, "../../../../web/public/animals/Profile-Tiger-jukebox-bg-removed.png"),
-  meerkat: path.resolve(__dirname, "../../../../web/public/animals/Profile-Meerkat-jukebox-bg-removed.png"),
-  stallion: path.resolve(__dirname, "../../../../web/public/animals/Profile-Stallion-jukebox-bg-removed.png"),
-  fox: path.resolve(__dirname, "../../../../web/public/animals/Profile-Fox-jukebox-bg-removed.png"),
+  koala: path.resolve(__dirname, "../../../../web/public/animals/koala.png"),
+  hummingbird: path.resolve(__dirname, "../../../../web/public/animals/hummingbird.png"),
+  tiger: path.resolve(__dirname, "../../../../web/public/animals/tiger.png"),
+  meerkat: path.resolve(__dirname, "../../../../web/public/animals/meerkat.png"),
+  stallion: path.resolve(__dirname, "../../../../web/public/animals/stallion.png"),
+  fox: path.resolve(__dirname, "../../../../web/public/animals/fox.png"),
+  rabbit: path.resolve(__dirname, "../../../../web/public/animals/rabbit.png"),
+  elephant: path.resolve(__dirname, "../../../../web/public/animals/elephant.png"),
+  dolphin: path.resolve(__dirname, "../../../../web/public/animals/dolphin.png"),
+  hedgehog: path.resolve(__dirname, "../../../../web/public/animals/hedgehog.png"),
+  bull: path.resolve(__dirname, "../../../../web/public/animals/bull.png"),
 };
 
 /* ─── Data Interfaces ─────────────────────────────────────────────────────── */
