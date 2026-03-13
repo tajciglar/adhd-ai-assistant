@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["nodejs_22", "openssl"]
+
+[phases.install]
+cmds = ["corepack enable && corepack prepare pnpm@10.29.2 --activate && pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = [
+  "pnpm --filter @adhd-parenting-ai-assistant/shared build",
+  "pnpm --filter @adhd-parenting-ai-assistant/api prisma:generate",
+  "pnpm --filter @adhd-parenting-ai-assistant/api build"
+]
+
+[start]
+cmd = "cd apps/api && npx prisma migrate deploy && node dist/server.js"
