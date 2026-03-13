@@ -9,7 +9,10 @@ import { useAuth } from "./hooks/useAuth";
 import { api } from "./lib/api";
 import AuthPage from "./components/auth/AuthPage";
 
+const DashboardPage = lazy(() => import("./components/dashboard/DashboardPage"));
 const ChatPage = lazy(() => import("./components/chat/ChatPage"));
+const LibraryPage = lazy(() => import("./components/dashboard/LibraryPage"));
+const ProfilePage = lazy(() => import("./components/dashboard/ProfilePage"));
 const AdminPage = lazy(() => import("./components/admin/AdminPage"));
 
 function AppRoutes() {
@@ -61,8 +64,8 @@ function AppRoutes() {
   }
 
   const isAdmin = userRole === "admin";
-  const canUseChat = isAdmin || hasChatAccess === true;
-  const homePath = isAdmin ? "/admin" : canUseChat ? "/chat" : "/no-access";
+  const canUseChat = true; // TODO: restore: isAdmin || hasChatAccess === true;
+  const homePath = canUseChat ? "/dashboard" : "/no-access";
 
   const pageFallback = (
     <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
@@ -81,6 +84,20 @@ function AppRoutes() {
           element={session ? <Navigate to={homePath} /> : <AuthPage />}
         />
         <Route
+          path="/dashboard"
+          element={
+            session ? (
+              canUseChat ? (
+                <DashboardPage />
+              ) : (
+                <Navigate to="/no-access" />
+              )
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
+        />
+        <Route
           path="/chat"
           element={
             session ? (
@@ -92,6 +109,26 @@ function AppRoutes() {
             ) : (
               <Navigate to="/auth" />
             )
+          }
+        />
+        <Route
+          path="/resources"
+          element={
+            session ? (
+              canUseChat ? (
+                <LibraryPage />
+              ) : (
+                <Navigate to="/no-access" />
+              )
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            session ? <ProfilePage /> : <Navigate to="/auth" />
           }
         />
         <Route
