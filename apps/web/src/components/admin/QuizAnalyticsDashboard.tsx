@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ASSESSMENT_CATEGORIES } from "@adhd-parenting-ai-assistant/shared";
+import { ASSESSMENT_CATEGORIES } from "@adhd-ai-assistant/shared";
 import { api } from "../../lib/api";
 
 function buildQuestionMap(): Record<string, string> {
