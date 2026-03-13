@@ -18,7 +18,7 @@ interface DashboardUserInfo {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [userInfo, setUserInfo] = useState<DashboardUserInfo | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
