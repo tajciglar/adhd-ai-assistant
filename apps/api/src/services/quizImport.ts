@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Prisma } from "@prisma/client";
 import { getSupabaseAdmin } from "./supabaseAdmin.js";
-import { computeTraitProfile, ARCHETYPES } from "@adhd-parenting-ai-assistant/shared";
+import { computeTraitProfile, ARCHETYPES } from "@adhd-ai-assistant/shared";
 
 interface QuizSubmission {
   id: string;

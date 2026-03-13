@@ -4,7 +4,7 @@
  * creates KnowledgeEntry records and indexes them for RAG retrieval.
  *
  * Usage:
- *   pnpm --filter @adhd-parenting-ai-assistant/api import-content
+ *   pnpm --filter @adhd-ai-assistant/api import-content
  *
  * Requires:
  *   - DATABASE_URL env var (or .env file)

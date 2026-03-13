@@ -21,13 +21,13 @@ COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
 
 # Build shared package first (api depends on it)
-RUN pnpm --filter @adhd-parenting-ai-assistant/shared build
+RUN pnpm --filter @adhd-ai-assistant/shared build
 
 # Generate Prisma client
-RUN pnpm --filter @adhd-parenting-ai-assistant/api prisma:generate
+RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
 
 # Build API TypeScript
-RUN pnpm --filter @adhd-parenting-ai-assistant/api build
+RUN pnpm --filter @adhd-ai-assistant/api build
 
 # --- Production stage ---
 FROM node:22-slim AS production

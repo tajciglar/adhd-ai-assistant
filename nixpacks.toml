@@ -6,9 +6,9 @@ cmds = ["corepack enable && corepack prepare pnpm@10.29.2 --activate && pnpm ins
 
 [phases.build]
 cmds = [
-  "pnpm --filter @adhd-parenting-ai-assistant/shared build",
-  "pnpm --filter @adhd-parenting-ai-assistant/api prisma:generate",
-  "pnpm --filter @adhd-parenting-ai-assistant/api build"
+  "pnpm --filter @adhd-ai-assistant/shared build",
+  "pnpm --filter @adhd-ai-assistant/api prisma:generate",
+  "pnpm --filter @adhd-ai-assistant/api build"
 ]
 
 [start]

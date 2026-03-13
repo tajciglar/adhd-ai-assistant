@@ -10,7 +10,7 @@ importers:
 
   apps/api:
     dependencies:
-      '@adhd-parenting-ai-assistant/shared':
+      '@adhd-ai-assistant/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@fastify/cors':
@@ -59,7 +59,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@adhd-parenting-ai-assistant/shared':
+      '@adhd-ai-assistant/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@supabase/supabase-js':
