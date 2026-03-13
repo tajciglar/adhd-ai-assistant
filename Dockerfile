@@ -49,8 +49,8 @@ RUN pnpm install --frozen-lockfile
 # Copy Prisma schema and migrations (needed for prisma migrate deploy + generate)
 COPY --from=base /app/apps/api/prisma ./apps/api/prisma
 
-# Generate Prisma client in production stage so it lands in pnpm's resolved paths
-RUN pnpm --filter @adhd-parenting-ai-assistant/api prisma:generate
+# Generate Prisma client in production stage
+RUN cd apps/api && npx prisma generate
 
 # Copy built shared package (runtime dependency for API)
 COPY --from=base /app/packages/shared/dist ./packages/shared/dist
