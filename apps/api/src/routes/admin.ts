@@ -315,7 +315,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const entry = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
@@ -366,7 +366,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.put<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const parsed = entryBodySchema.safeParse(request.body);
 
@@ -410,7 +410,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.delete<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const existing = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
@@ -467,7 +467,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/admin/jobs/:id",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const job = await fastify.prisma.adminImportJob.findUnique({
         where: { id },
@@ -844,7 +844,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.put<{ Params: { id: string } }>(
     "/admin/report-templates/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const parsed = reportTemplateSchema.safeParse(request.body);
 
