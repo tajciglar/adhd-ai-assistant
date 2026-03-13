@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { KnowledgeEntry } from "../../types/admin";
 
 interface EntryEditorProps {
@@ -7,6 +7,10 @@ interface EntryEditorProps {
   saving: boolean;
   onSave: (data: { category: string; title: string; content: string }) => void;
   onCancel: () => void;
+  onClassify?: (
+    title: string,
+    content: string,
+  ) => Promise<{ category: string; isNew: boolean } | null>;
 }
 
 export default function EntryEditor({
@@ -15,12 +19,35 @@ export default function EntryEditor({
   saving,
   onSave,
   onCancel,
+  onClassify,
 }: EntryEditorProps) {
   const [category, setCategory] = useState(entry?.category ?? "");
   const [title, setTitle] = useState(entry?.title ?? "");
   const [content, setContent] = useState(entry?.content ?? "");
+  const [classifying, setClassifying] = useState(false);
+  const [classifyHint, setClassifyHint] = useState("");
 
   const isValid = category.trim() && title.trim() && content.trim();
+  const canClassify = title.trim().length > 0 && content.trim().length > 0;
+
+  const handleClassify = useCallback(async () => {
+    if (!onClassify || !canClassify) return;
+    setClassifying(true);
+    setClassifyHint("");
+    try {
+      const result = await onClassify(title.trim(), content.trim());
+      if (result) {
+        setCategory(result.category);
+        setClassifyHint(
+          result.isNew ? "New category suggested" : "Matched existing category",
+        );
+      } else {
+        setClassifyHint("Could not classify — please enter manually");
+      }
+    } finally {
+      setClassifying(false);
+    }
+  }, [onClassify, canClassify, title, content]);
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
@@ -36,14 +63,32 @@ export default function EntryEditor({
             <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">
               Category
             </label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              list="category-suggestions"
-              placeholder="e.g. Executive Function Skills"
-              className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 text-harbor-text placeholder:text-harbor-text/30 focus:outline-none focus:border-harbor-accent transition-colors"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  setClassifyHint("");
+                }}
+                list="category-suggestions"
+                placeholder="e.g. Executive Function Skills"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-harbor-text/15 text-harbor-text placeholder:text-harbor-text/30 focus:outline-none focus:border-harbor-accent transition-colors"
+              />
+              {onClassify && (
+                <button
+                  onClick={handleClassify}
+                  disabled={!canClassify || classifying}
+                  title="Auto-classify using AI"
+                  className="px-3 py-2.5 rounded-xl border border-harbor-accent/30 text-harbor-accent text-sm font-medium hover:bg-harbor-accent/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+                >
+                  {classifying ? "..." : "AI Suggest"}
+                </button>
+              )}
+            </div>
+            {classifyHint && (
+              <p className="text-xs text-harbor-accent mt-1">{classifyHint}</p>
+            )}
             <datalist id="category-suggestions">
               {categories.map((cat) => (
                 <option key={cat} value={cat} />

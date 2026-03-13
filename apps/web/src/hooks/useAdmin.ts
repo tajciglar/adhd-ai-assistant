@@ -200,6 +200,73 @@ export function useAdmin() {
     dispatch({ type: "SET_TEST_RESULTS", results: null });
   }, []);
 
+  const classifyEntry = useCallback(
+    async (
+      title: string,
+      content: string,
+    ): Promise<{ category: string; isNew: boolean } | null> => {
+      try {
+        const result = (await api.post("/api/admin/entries/classify", {
+          title,
+          content,
+        })) as { category: string; isNew: boolean };
+        return result;
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
+  const parseDocument = useCallback(
+    async (
+      documentText: string,
+      moduleName?: string,
+    ): Promise<{ category: string; title: string; content: string }[]> => {
+      const result = (await api.post("/api/admin/entries/parse-document", {
+        documentText,
+        moduleName,
+      })) as {
+        entries: { category: string; title: string; content: string }[];
+      };
+      return result.entries;
+    },
+    [],
+  );
+
+  const checkDuplicates = useCallback(
+    async (
+      entries: { title: string; content?: string }[],
+    ): Promise<
+      {
+        index: number;
+        status: "new" | "duplicate" | "similar";
+        existingEntryId?: string;
+        existingTitle?: string;
+        existingCategory?: string;
+      }[]
+    > => {
+      try {
+        const result = (await api.post(
+          "/api/admin/entries/check-duplicates",
+          { entries },
+        )) as {
+          results: {
+            index: number;
+            status: "new" | "duplicate" | "similar";
+            existingEntryId?: string;
+            existingTitle?: string;
+            existingCategory?: string;
+          }[];
+        };
+        return result.results;
+      } catch {
+        return entries.map((_, index) => ({ index, status: "new" as const }));
+      }
+    },
+    [],
+  );
+
   const filteredEntries = state.filter
     ? state.entries.filter((e) => e.category === state.filter)
     : state.entries;
@@ -220,5 +287,8 @@ export function useAdmin() {
     bulkImport,
     testQuery,
     clearTestResults,
+    classifyEntry,
+    parseDocument,
+    checkDuplicates,
   };
 }

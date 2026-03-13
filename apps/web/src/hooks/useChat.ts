@@ -23,6 +23,7 @@ type Action =
   | { type: "SET_ACTIVE"; id: string; messages: Message[] }
   | { type: "NEW_CONVERSATION" }
   | { type: "SENDING"; sending: boolean }
+  | { type: "ADD_OPTIMISTIC_USER_MESSAGE"; message: Message }
   | {
       type: "MESSAGE_SENT";
       conversationId: string;
@@ -30,6 +31,7 @@ type Action =
       assistantMessage: Message;
       isNew: boolean;
     }
+  | { type: "SEND_FAILED"; optimisticId: string }
   | { type: "REMOVE_CONVERSATION"; id: string }
   | { type: "LOADED" };
 
@@ -60,9 +62,19 @@ function reducer(state: ChatState, action: Action): ChatState {
       return { ...state, activeConversationId: null, messages: [] };
     case "SENDING":
       return { ...state, sending: action.sending };
+    case "ADD_OPTIMISTIC_USER_MESSAGE":
+      return {
+        ...state,
+        messages: [...state.messages, action.message],
+        sending: true,
+      };
     case "MESSAGE_SENT": {
+      // Replace the optimistic user message with the real one, add assistant message
+      const withoutOptimistic = state.messages.filter(
+        (m) => !m.id.startsWith("optimistic-"),
+      );
       const newMessages = [
-        ...state.messages,
+        ...withoutOptimistic,
         action.userMessage,
         action.assistantMessage,
       ];
@@ -100,6 +112,14 @@ function reducer(state: ChatState, action: Action): ChatState {
         sending: false,
       };
     }
+    case "SEND_FAILED":
+      return {
+        ...state,
+        messages: state.messages.filter(
+          (m) => m.id !== action.optimisticId,
+        ),
+        sending: false,
+      };
     case "REMOVE_CONVERSATION": {
       const conversations = state.conversations.filter(
         (c) => c.id !== action.id,
@@ -119,6 +139,8 @@ function reducer(state: ChatState, action: Action): ChatState {
   }
 }
 
+const STORAGE_KEY = "harbor_active_conversation";
+
 export function useChat() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -129,18 +151,45 @@ export function useChat() {
         conversations: Conversation[];
       }>,
     ])
-      .then(([userInfo, convData]) => {
+      .then(async ([userInfo, convData]) => {
         dispatch({ type: "SET_USER_INFO", userInfo });
         dispatch({
           type: "SET_CONVERSATIONS",
           conversations: convData.conversations,
         });
+
+        // Restore last active conversation from localStorage
+        const savedId = localStorage.getItem(STORAGE_KEY);
+        if (
+          savedId &&
+          convData.conversations.some((c) => c.id === savedId)
+        ) {
+          try {
+            const data = (await api.get(
+              `/api/conversations/${savedId}/messages`,
+            )) as { messages: Message[] };
+            dispatch({ type: "SET_ACTIVE", id: savedId, messages: data.messages });
+          } catch {
+            // Conversation may have been deleted — just show welcome
+          }
+        }
+
         dispatch({ type: "LOADED" });
       })
       .catch(() => {
         dispatch({ type: "LOADED" });
       });
   }, []);
+
+  // Persist active conversation to localStorage (only after initial load)
+  useEffect(() => {
+    if (state.loading) return; // Don't wipe localStorage before restore completes
+    if (state.activeConversationId) {
+      localStorage.setItem(STORAGE_KEY, state.activeConversationId);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [state.activeConversationId, state.loading]);
 
   const selectConversation = useCallback(async (id: string) => {
     try {
@@ -155,7 +204,17 @@ export function useChat() {
 
   const sendMessage = useCallback(
     async (text: string) => {
-      dispatch({ type: "SENDING", sending: true });
+      // Show the user message immediately (optimistic update)
+      const optimisticId = `optimistic-${Date.now()}`;
+      dispatch({
+        type: "ADD_OPTIMISTIC_USER_MESSAGE",
+        message: {
+          id: optimisticId,
+          role: "USER",
+          content: text,
+          createdAt: new Date().toISOString(),
+        },
+      });
 
       try {
         const data = (await api.post("/api/chat", {
@@ -171,7 +230,7 @@ export function useChat() {
           isNew: !state.activeConversationId,
         });
       } catch {
-        dispatch({ type: "SENDING", sending: false });
+        dispatch({ type: "SEND_FAILED", optimisticId });
       }
     },
     [state.activeConversationId],

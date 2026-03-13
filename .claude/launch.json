@@ -4,7 +4,7 @@
     {
       "name": "api",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@adhd-ai-assistant/api", "dev"],
+      "runtimeArgs": ["--filter", "@adhd-parenting-ai-assistant/api", "dev"],
       "port": 3001
     },
     {

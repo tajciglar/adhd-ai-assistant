@@ -1,5 +1,6 @@
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 30_000;
+export const LONG_REQUEST_TIMEOUT_MS = 120_000;
 const EMBEDDING_DIMENSIONS = 1536;
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
@@ -42,10 +43,10 @@ function getGeminiApiKey(): string {
   return key;
 }
 
-async function postGemini<T>(path: string, body: unknown): Promise<T> {
+async function postGemini<T>(path: string, body: unknown, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const url = new URL(`${GEMINI_BASE_URL}${path}`);
@@ -86,7 +87,7 @@ async function postGemini<T>(path: string, body: unknown): Promise<T> {
         throw err;
       }
       const message = controller.signal.aborted
-        ? `Gemini ${path} timed out after ${REQUEST_TIMEOUT_MS}ms`
+        ? `Gemini ${path} timed out after ${timeoutMs}ms`
         : `Gemini ${path} network error`;
       throw new Error(message);
     } finally {
@@ -146,6 +147,7 @@ export async function createEmbeddings(input: string[]): Promise<number[][]> {
 
 export async function createChatCompletion(
   messages: ChatCompletionMessage[],
+  options?: { timeoutMs?: number },
 ): Promise<{
   content: string;
   usage?: {
@@ -179,6 +181,7 @@ export async function createChatCompletion(
   const data = await postGemini<GeminiGenerateResponse>(
     `/models/${AI_CHAT_MODEL}:generateContent`,
     payload,
+    options?.timeoutMs,
   );
   const content =
     data.candidates?.[0]?.content?.parts

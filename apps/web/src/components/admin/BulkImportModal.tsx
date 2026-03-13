@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
-import { parseDocxToEntries } from "../../lib/parseDocx";
 
 interface ParsedRow {
   category: string;
@@ -84,36 +83,22 @@ export default function BulkImportModal({
       setFileName(file.name);
       setError("");
 
-      const isDocx = file.name.toLowerCase().endsWith(".docx");
-
       const reader = new FileReader();
-      reader.onload = async (evt) => {
+      reader.onload = (evt) => {
         try {
           const buffer = evt.target?.result as ArrayBuffer;
-
-          let parsed: ParsedRow[];
-          if (isDocx) {
-            parsed = await parseDocxToEntries(buffer, file.name);
-          } else {
-            parsed = parseSpreadsheet(buffer);
-          }
+          const parsed = parseSpreadsheet(buffer);
 
           if (parsed.length === 0) {
             setError(
-              isDocx
-                ? "No entries found. Structure your doc with H1 headings (category) and H2 headings (entry title) followed by content."
-                : "No valid rows found. Expected columns: Topic and Question/Issue (Content optional).",
+              "No valid rows found. Expected columns: Topic and Question/Issue (Content optional).",
             );
             return;
           }
 
           setRows(parsed);
         } catch {
-          setError(
-            isDocx
-              ? "Failed to parse .docx file. Make sure it's a valid Word document."
-              : "Failed to parse file. Please use .xlsx or .csv format.",
-          );
+          setError("Failed to parse file. Please use .xlsx or .csv format.");
         }
       };
       reader.readAsArrayBuffer(file);
@@ -136,7 +121,7 @@ export default function BulkImportModal({
             Bulk Import
           </h3>
           <p className="text-xs text-harbor-text/40 mt-0.5">
-            Upload .xlsx/.csv (spreadsheet) or .docx (Google Docs export) files
+            Upload .xlsx or .csv spreadsheet files
           </p>
         </div>
 
@@ -146,7 +131,7 @@ export default function BulkImportModal({
               <input
                 ref={fileRef}
                 type="file"
-                accept=".xlsx,.xls,.csv,.docx"
+                accept=".xlsx,.xls,.csv"
                 onChange={handleFile}
                 className="hidden"
               />
@@ -158,7 +143,7 @@ export default function BulkImportModal({
                   {fileName || "Click to select a file"}
                 </div>
                 <div className="text-harbor-text/25 text-xs mt-1">
-                  .xlsx, .csv, or .docx
+                  .xlsx or .csv
                 </div>
               </button>
 

@@ -173,3 +173,21 @@ model ReportTemplate {
 
   @@map("report_templates")
 }
+
+model Resource {
+  id               String   @id @default(uuid())
+  filename         String
+  originalName     String   @map("original_name")
+  mimeType         String   @default("application/pdf") @map("mime_type")
+  sizeBytes        Int      @map("size_bytes")
+  storagePath      String   @unique @map("storage_path")
+  title            String
+  description      String   @default("")
+  category         String   @default("Downloadable Resources")
+  knowledgeEntryId String?  @unique @map("knowledge_entry_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("resources")
+}

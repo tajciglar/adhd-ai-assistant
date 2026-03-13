@@ -1,12 +1,12 @@
 {
-  "name": "adhd-ai-assistant",
+  "name": "adhd-parenting-ai-assistant",
   "version": "1.0.0",
   "private": true,
   "description": "",
   "scripts": {
-    "build:shared": "pnpm --filter @adhd-ai-assistant/shared build",
-    "dev:api": "pnpm run build:shared && pnpm --filter @adhd-ai-assistant/api dev",
-    "build:api": "pnpm run build:shared && pnpm --filter @adhd-ai-assistant/api build",
+    "build:shared": "pnpm --filter @adhd-parenting-ai-assistant/shared build",
+    "dev:api": "pnpm run build:shared && pnpm --filter @adhd-parenting-ai-assistant/api dev",
+    "build:api": "pnpm run build:shared && pnpm --filter @adhd-parenting-ai-assistant/api build",
     "dev:web": "pnpm run build:shared && pnpm --filter web dev",
     "build:web": "pnpm run build:shared && pnpm --filter web build"
   },

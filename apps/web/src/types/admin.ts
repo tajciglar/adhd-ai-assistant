@@ -63,3 +63,14 @@ export interface ReportTemplateRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Resource {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  filename: string;
+  originalName: string;
+  sizeBytes: number;
+  createdAt: string;
+}

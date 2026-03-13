@@ -23,7 +23,14 @@ export default function ChatPage() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
-  const childName = userInfo?.profile?.childName ?? "";
+  const rawChildName = userInfo?.profile?.childName ?? "";
+  const childName = rawChildName
+    ? rawChildName
+        .trim()
+        .split(/\s+/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    : "";
   const isAdmin = userInfo?.role === "admin";
 
   const handleStarterClick = useCallback(
@@ -61,7 +68,7 @@ export default function ChatPage() {
       />
 
       <div className="flex-1 flex flex-col">
-        {activeConversationId ? (
+        {activeConversationId || messages.length > 0 ? (
           <>
             <ChatMessageList messages={messages} sending={sending} />
             <ChatInput

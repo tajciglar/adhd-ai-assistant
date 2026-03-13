@@ -2,14 +2,15 @@ import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
+import multipart from "@fastify/multipart";
 import prismaPlugin from "./plugins/prisma.js";
 import supabasePlugin from "./plugins/supabase.js";
 import healthRoutes from "./routes/health.js";
-import onboardingRoutes from "./routes/onboarding.js";
 import chatRoutes from "./routes/chat.js";
 import userRoutes from "./routes/user.js";
 import adminRoutes from "./routes/admin.js";
-import reportRoutes from "./routes/report.js";
+import resourceRoutes from "./routes/resources.js";
+import { getSupabaseAdmin } from "./services/supabaseAdmin.js";
 
 const envToLogger: Record<string, object | boolean> = {
   development: {
@@ -84,15 +85,18 @@ async function buildServer() {
     allowList: (request) => request.method === "OPTIONS",
   });
 
+  await server.register(multipart, {
+    limits: { fileSize: 20_971_520 }, // 20 MB
+  });
+
   await server.register(prismaPlugin);
   await server.register(supabasePlugin);
 
   await server.register(healthRoutes);
-  await server.register(onboardingRoutes, { prefix: "/api" });
   await server.register(chatRoutes, { prefix: "/api" });
   await server.register(userRoutes, { prefix: "/api" });
   await server.register(adminRoutes, { prefix: "/api" });
-  await server.register(reportRoutes, { prefix: "/api" });
+  await server.register(resourceRoutes, { prefix: "/api" });
 
   server.setErrorHandler((error: FastifyError, _request, reply) => {
     server.log.error(error);
@@ -121,6 +125,17 @@ async function main() {
 
   const host = process.env.HOST ?? "0.0.0.0";
   const port = Number(process.env.PORT) || 3001;
+
+  // Ensure Supabase Storage bucket exists
+  const supaAdmin = getSupabaseAdmin();
+  if (supaAdmin) {
+    const { error } = await supaAdmin.storage.createBucket("resources", {
+      public: false,
+    });
+    if (error && !error.message.includes("already exists")) {
+      server.log.warn({ error }, "Could not create storage bucket");
+    }
+  }
 
   try {
     await server.listen({ host, port });

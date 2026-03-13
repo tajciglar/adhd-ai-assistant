@@ -4,67 +4,50 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation,
 } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { api } from "./lib/api";
 import AuthPage from "./components/auth/AuthPage";
 
-// Lazy-load heavy route components for faster initial page load
-const OnboardingPage = lazy(() => import("./components/onboarding/OnboardingPage"));
-const ReportPage = lazy(() => import("./components/report/ReportPage"));
 const ChatPage = lazy(() => import("./components/chat/ChatPage"));
 const AdminPage = lazy(() => import("./components/admin/AdminPage"));
 
 function AppRoutes() {
   const { session, loading } = useAuth();
-  const location = useLocation();
-  const [onboardingCompleted, setOnboardingCompleted] = useState<
-    boolean | null
-  >(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [hasChatAccess, setHasChatAccess] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!session) {
-      return;
-    }
+    if (!session) return;
 
     let active = true;
 
     api
-      .get("/api/onboarding")
+      .get("/api/user/me")
       .then((data) => {
         if (!active) return;
         const d = data as {
-          onboardingCompleted?: boolean;
           role?: string;
           hasChatAccess?: boolean;
         };
-        setOnboardingCompleted(Boolean(d.onboardingCompleted));
         setUserRole(d.role ?? "user");
         setHasChatAccess(Boolean(d.hasChatAccess));
       })
       .catch(() => {
         if (!active) return;
-        setOnboardingCompleted(false);
-        setUserRole(null);
+        setUserRole("user");
         setHasChatAccess(false);
-      })
-      .finally(() => {
-        if (!active) return;
       });
 
     return () => {
       active = false;
     };
-  }, [session, location.pathname]);
+  }, [session]);
 
-  const shouldWaitForOnboarding =
-    Boolean(session) &&
-    (onboardingCompleted === null || userRole === null || hasChatAccess === null);
+  const shouldWaitForUserData =
+    Boolean(session) && (userRole === null || hasChatAccess === null);
 
-  if (loading || shouldWaitForOnboarding) {
+  if (loading || shouldWaitForUserData) {
     return (
       <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
         <div className="text-center">
@@ -77,22 +60,9 @@ function AppRoutes() {
     );
   }
 
-  const effectiveOnboardingCompleted = session ? onboardingCompleted : null;
-  const effectiveUserRole = session ? userRole : null;
-  const effectiveHasChatAccess = session ? hasChatAccess : null;
-  const isAdmin = effectiveUserRole === "admin";
-  const canUseChat = isAdmin || effectiveHasChatAccess === true;
-  // Admins skip onboarding — it's for parents, not content managers
-  const needsOnboarding =
-    Boolean(session) && effectiveOnboardingCompleted === false && !isAdmin;
-  // Where to send authenticated users by default
-  const homePath = needsOnboarding
-    ? "/onboarding"
-    : isAdmin && !onboardingCompleted
-      ? "/admin"
-      : canUseChat
-        ? "/chat"
-        : "/report";
+  const isAdmin = userRole === "admin";
+  const canUseChat = isAdmin || hasChatAccess === true;
+  const homePath = isAdmin ? "/admin" : canUseChat ? "/chat" : "/no-access";
 
   const pageFallback = (
     <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
@@ -105,76 +75,64 @@ function AppRoutes() {
 
   return (
     <Suspense fallback={pageFallback}>
-    <Routes>
-      <Route
-        path="/auth"
-        element={
-          session ? <Navigate to={homePath} /> : <AuthPage />
-        }
-      />
-      <Route
-        path="/onboarding"
-        element={
-          session ? (
-            needsOnboarding ? (
-              <OnboardingPage />
+      <Routes>
+        <Route
+          path="/auth"
+          element={session ? <Navigate to={homePath} /> : <AuthPage />}
+        />
+        <Route
+          path="/chat"
+          element={
+            session ? (
+              canUseChat ? (
+                <ChatPage />
+              ) : (
+                <Navigate to="/no-access" />
+              )
             ) : (
-              <Navigate to={homePath} />
+              <Navigate to="/auth" />
             )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-      <Route
-        path="/report"
-        element={
-          session ? (
-            needsOnboarding ? (
-              <Navigate to="/onboarding" />
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            session ? (
+              isAdmin ? (
+                <AdminPage />
+              ) : (
+                <Navigate to="/chat" />
+              )
             ) : (
-              <ReportPage />
+              <Navigate to="/auth" />
             )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-      <Route
-        path="/chat"
-        element={
-          session ? (
-            needsOnboarding ? (
-              <Navigate to="/onboarding" />
-            ) : !canUseChat ? (
-              <Navigate to="/report" />
+          }
+        />
+        <Route
+          path="/no-access"
+          element={
+            session ? (
+              <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6">
+                <div className="text-center max-w-md">
+                  <h1 className="text-2xl font-bold text-harbor-primary mb-3">
+                    Access Not Enabled
+                  </h1>
+                  <p className="text-harbor-text/60">
+                    Your account doesn't have chat access yet. Please complete
+                    the parenting quiz first to unlock the AI assistant.
+                  </p>
+                </div>
+              </div>
             ) : (
-              <ChatPage />
+              <Navigate to="/auth" />
             )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          session ? (
-            isAdmin ? (
-              <AdminPage />
-            ) : (
-              <Navigate to="/chat" />
-            )
-          ) : (
-            <Navigate to="/auth" />
-          )
-        }
-      />
-      <Route
-        path="*"
-        element={<Navigate to={session ? homePath : "/auth"} />}
-      />
-    </Routes>
+          }
+        />
+        <Route
+          path="*"
+          element={<Navigate to={session ? homePath : "/auth"} />}
+        />
+      </Routes>
     </Suspense>
   );
 }

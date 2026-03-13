@@ -125,23 +125,6 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       const { message, conversationId } = parsed.data;
       const userId = request.user.id;
 
-      const user = await fastify.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          profile: {
-            select: {
-              onboardingCompleted: true,
-            },
-          },
-        },
-      });
-
-      if (!user?.profile?.onboardingCompleted) {
-        return reply.status(403).send({
-          error: "User has not completed onboarding",
-        });
-      }
-
       let conversation: { id: string };
 
       if (conversationId) {

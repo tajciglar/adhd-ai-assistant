@@ -58,10 +58,33 @@ async function request(
   return res.json();
 }
 
+async function uploadRequest(
+  path: string,
+  formData: FormData,
+): Promise<unknown> {
+  const token = await getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: "Upload failed" }));
+    throw new Error(
+      (error as { error?: string }).error || `API error: ${res.status}`,
+    );
+  }
+
+  return res.json();
+}
+
 export const api = {
   get: (path: string) => request("GET", path),
   patch: (path: string, body: unknown) => request("PATCH", path, body),
   post: (path: string, body?: unknown) => request("POST", path, body),
   put: (path: string, body: unknown) => request("PUT", path, body),
   delete: (path: string) => request("DELETE", path),
+  upload: (path: string, formData: FormData) =>
+    uploadRequest(path, formData),
 };

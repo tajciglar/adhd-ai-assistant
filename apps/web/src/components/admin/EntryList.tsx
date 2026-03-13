@@ -5,6 +5,7 @@ interface EntryListProps {
   onEdit: (entry: KnowledgeEntry) => void;
   onDelete: (id: string) => void;
   onBulkImport: () => void;
+  onSmartImport: () => void;
   onTestQuery: () => void;
 }
 
@@ -13,6 +14,7 @@ export default function EntryList({
   onEdit,
   onDelete,
   onBulkImport,
+  onSmartImport,
   onTestQuery,
 }: EntryListProps) {
   return (
@@ -27,6 +29,12 @@ export default function EntryList({
             className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-text/15 text-harbor-text/70 hover:bg-harbor-bg transition-colors cursor-pointer"
           >
             Test Query
+          </button>
+          <button
+            onClick={onSmartImport}
+            className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+          >
+            Smart Import
           </button>
           <button
             onClick={onBulkImport}

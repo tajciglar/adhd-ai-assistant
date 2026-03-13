@@ -10,12 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@adhd-ai-assistant/shared": "workspace:*",
+    "@adhd-parenting-ai-assistant/shared": "workspace:*",
     "@supabase/supabase-js": "^2.98.0",
     "framer-motion": "^12.34.3",
-    "mammoth": "^1.11.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.1",
     "xlsx": "^0.18.5"
   },

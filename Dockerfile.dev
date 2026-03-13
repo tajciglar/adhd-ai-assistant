@@ -18,10 +18,10 @@ COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
 
 # Build shared package first (api depends on it)
-RUN pnpm --filter @adhd-ai-assistant/shared build
+RUN pnpm --filter @adhd-parenting-ai-assistant/shared build
 
-RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
+RUN pnpm --filter @adhd-parenting-ai-assistant/api prisma:generate
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && cd /app && pnpm --filter @adhd-ai-assistant/api dev"]
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && cd /app && pnpm --filter @adhd-parenting-ai-assistant/api dev"]

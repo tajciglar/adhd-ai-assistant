@@ -6,6 +6,11 @@ import {
   invalidateRetrievalCaches,
   retrieveRelevantKnowledge,
 } from "../services/ai/retrieval.js";
+import { getQuizAnalytics } from "../services/quizAnalytics.js";
+import {
+  classifyContent,
+  parseDocumentIntoEntries,
+} from "../services/ai/categorize.js";
 
 async function requireAdmin(
   fastify: FastifyInstance,
@@ -42,6 +47,28 @@ const bulkImportSchema = z.object({
 
 const testQuerySchema = z.object({
   query: z.string().min(1).max(2000),
+});
+
+const classifySchema = z.object({
+  title: z.string().min(1).max(500),
+  content: z.string().min(1).max(10000),
+});
+
+const parseDocumentSchema = z.object({
+  documentText: z.string().min(1).max(200000),
+  moduleName: z.string().max(200).optional(),
+});
+
+const checkDuplicatesSchema = z.object({
+  entries: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(500),
+        content: z.string().max(50000).optional(),
+      }),
+    )
+    .min(1)
+    .max(500),
 });
 
 const reportTemplateSchema = z.object({
@@ -500,6 +527,257 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // ── AI Classification ──────────────────────────────────────────────────
+  fastify.post(
+    "/admin/entries/classify",
+    { preHandler: basePreHandler, config: writeRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = classifySchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      try {
+        const result = await classifyContent({
+          title: parsed.data.title,
+          content: parsed.data.content,
+          prisma: fastify.prisma,
+        });
+
+        await audit(
+          request.user.id,
+          "admin.entry.classify",
+          "knowledge_entry",
+          undefined,
+          { suggestedCategory: result.category, isNew: result.isNew },
+        );
+
+        return reply.send(result);
+      } catch (error) {
+        fastify.log.error({ error }, "admin.classify_failed");
+        return reply.status(500).send({
+          error: "Failed to classify content. Please try again.",
+        });
+      }
+    },
+  );
+
+  fastify.post(
+    "/admin/entries/parse-document",
+    { preHandler: basePreHandler, config: bulkRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = parseDocumentSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      try {
+        const entries = await parseDocumentIntoEntries({
+          documentText: parsed.data.documentText,
+          moduleName: parsed.data.moduleName,
+          prisma: fastify.prisma,
+        });
+
+        await audit(
+          request.user.id,
+          "admin.entry.parse_document",
+          "knowledge_entry",
+          undefined,
+          {
+            moduleName: parsed.data.moduleName,
+            entriesFound: entries.length,
+            inputLength: parsed.data.documentText.length,
+          },
+        );
+
+        return reply.send({ entries });
+      } catch (error) {
+        fastify.log.error({ error }, "admin.parse_document_failed");
+        const message =
+          error instanceof Error ? error.message : "Failed to parse document";
+        return reply.status(500).send({ error: message });
+      }
+    },
+  );
+
+  // ── Duplicate Detection ──────────────────────────────────────────────────
+  fastify.post(
+    "/admin/entries/check-duplicates",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = checkDuplicatesSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      const existingEntries = await fastify.prisma.knowledgeEntry.findMany({
+        select: { id: true, title: true, category: true },
+      });
+
+      // Build a map of lowercased titles for fast lookup
+      const exactMap = new Map<string, { id: string; title: string; category: string }>();
+      for (const e of existingEntries) {
+        exactMap.set(e.title.toLowerCase().trim(), e);
+      }
+
+      // Simple word-overlap similarity
+      function wordOverlap(a: string, b: string): number {
+        const wordsA = new Set(a.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
+        const wordsB = new Set(b.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
+        if (wordsA.size === 0 || wordsB.size === 0) return 0;
+        let overlap = 0;
+        for (const w of wordsA) {
+          if (wordsB.has(w)) overlap++;
+        }
+        return overlap / Math.max(wordsA.size, wordsB.size);
+      }
+
+      const results = parsed.data.entries.map((entry, index) => {
+        const titleLower = entry.title.toLowerCase().trim();
+
+        // Check exact match
+        const exact = exactMap.get(titleLower);
+        if (exact) {
+          return {
+            index,
+            status: "duplicate" as const,
+            existingEntryId: exact.id,
+            existingTitle: exact.title,
+            existingCategory: exact.category,
+          };
+        }
+
+        // Check fuzzy similarity
+        let bestMatch: { id: string; title: string; category: string; score: number } | null = null;
+        for (const e of existingEntries) {
+          const score = wordOverlap(entry.title, e.title);
+          if (score > 0.6 && (!bestMatch || score > bestMatch.score)) {
+            bestMatch = { id: e.id, title: e.title, category: e.category, score };
+          }
+        }
+
+        if (bestMatch) {
+          return {
+            index,
+            status: "similar" as const,
+            existingEntryId: bestMatch.id,
+            existingTitle: bestMatch.title,
+            existingCategory: bestMatch.category,
+          };
+        }
+
+        return { index, status: "new" as const };
+      });
+
+      return reply.send({ results });
+    },
+  );
+
+  // ── Token Usage Analytics ───────────────────────────────────────────────
+  fastify.get(
+    "/admin/token-usage",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { days } = request.query as { days?: string };
+      const numDays = Math.min(Math.max(Number(days) || 7, 1), 90);
+
+      try {
+        const since = new Date();
+        since.setDate(since.getDate() - numDays);
+
+        const messages = await fastify.prisma.message.findMany({
+          where: {
+            role: "ASSISTANT",
+            createdAt: { gte: since },
+          },
+          select: {
+            createdAt: true,
+            metadata: true,
+          },
+          orderBy: { createdAt: "asc" },
+        });
+
+        // Aggregate by day
+        const dailyMap = new Map<
+          string,
+          { promptTokens: number; completionTokens: number; totalTokens: number; messageCount: number }
+        >();
+
+        let totalPromptTokens = 0;
+        let totalCompletionTokens = 0;
+        let totalTokens = 0;
+        let totalMessages = 0;
+
+        for (const msg of messages) {
+          const usage = (msg.metadata as Record<string, unknown>)?.usage as
+            | { promptTokens?: number; completionTokens?: number; totalTokens?: number }
+            | undefined;
+
+          if (!usage) continue;
+
+          const day = msg.createdAt.toISOString().slice(0, 10);
+          const existing = dailyMap.get(day) ?? {
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            messageCount: 0,
+          };
+
+          const pt = usage.promptTokens ?? 0;
+          const ct = usage.completionTokens ?? 0;
+          const tt = usage.totalTokens ?? pt + ct;
+
+          existing.promptTokens += pt;
+          existing.completionTokens += ct;
+          existing.totalTokens += tt;
+          existing.messageCount += 1;
+          dailyMap.set(day, existing);
+
+          totalPromptTokens += pt;
+          totalCompletionTokens += ct;
+          totalTokens += tt;
+          totalMessages += 1;
+        }
+
+        const daily = Array.from(dailyMap.entries()).map(([date, data]) => ({
+          date,
+          ...data,
+        }));
+
+        // Gemini 2.5 Flash pricing: $0.15/M input, $0.60/M output
+        const estimatedCost =
+          (totalPromptTokens / 1_000_000) * 0.15 +
+          (totalCompletionTokens / 1_000_000) * 0.6;
+
+        return reply.send({
+          totalPromptTokens,
+          totalCompletionTokens,
+          totalTokens,
+          totalMessages,
+          estimatedCost: Math.round(estimatedCost * 10000) / 10000,
+          avgTokensPerResponse:
+            totalMessages > 0 ? Math.round(totalTokens / totalMessages) : 0,
+          daily,
+          days: numDays,
+        });
+      } catch (error) {
+        fastify.log.error({ error }, "admin.token_usage_failed");
+        return reply.status(500).send({
+          error: "Failed to fetch token usage analytics",
+        });
+      }
+    },
+  );
+
   fastify.get(
     "/admin/report-templates",
     { preHandler: basePreHandler, config: readRateLimitConfig },
@@ -618,6 +896,24 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       });
 
       return reply.send({ template });
+    },
+  );
+
+  // ── Quiz Analytics ────────────────────────────────────────────────────────
+  fastify.get(
+    "/admin/quiz-analytics",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { days } = request.query as { days?: string };
+      const numDays = Math.min(Math.max(Number(days) || 7, 1), 90);
+
+      try {
+        const analytics = await getQuizAnalytics(numDays);
+        return reply.send(analytics);
+      } catch (err) {
+        fastify.log.error({ err }, "admin.quiz_analytics.query_failed");
+        return reply.status(500).send({ error: "Failed to fetch quiz analytics" });
+      }
     },
   );
 }
