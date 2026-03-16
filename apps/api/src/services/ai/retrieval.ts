@@ -1,13 +1,16 @@
 import { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { embedTexts } from "./embed.js";
+import { createChatCompletion } from "./geminiClient.js";
 
 const DEFAULT_TOP_K = 8;
 const MIN_SCORE = 0.35;
 const EMBEDDING_CACHE_TTL_MS = 60_000;
 const RETRIEVAL_CACHE_TTL_MS = 30_000;
+const HYDE_CACHE_TTL_MS = 120_000;
 const MAX_EMBEDDING_CACHE = 2_000;
 const MAX_RETRIEVAL_CACHE = 2_000;
+const MAX_HYDE_CACHE = 500;
 
 export interface RetrievedSource {
   entryId: string;
@@ -31,6 +34,10 @@ const embeddingCache = new Map<
 const retrievalCache = new Map<
   string,
   { value: RetrievalResult; expiresAt: number; lastAccessedAt: number }
+>();
+const hydeCache = new Map<
+  string,
+  { value: string; expiresAt: number; lastAccessedAt: number }
 >();
 
 function toVectorLiteral(vector: number[]): string {
@@ -84,6 +91,46 @@ function evictLru<
 export function invalidateRetrievalCaches() {
   embeddingCache.clear();
   retrievalCache.clear();
+  hydeCache.clear();
+}
+
+// ─── HyDE: Hypothetical Document Embedding ─────────────────────────────────
+
+const HYDE_SYSTEM_PROMPT = `You are an expert ADHD parenting knowledge base. Given a parent's question, write a short hypothetical knowledge base article (150-200 words) that would perfectly answer their question. Write as if this article already exists in a professional ADHD parenting resource library. Include specific strategies, ADHD mechanisms, and practical advice. Do NOT address the parent directly — write the article content only.`;
+
+async function generateHypotheticalDocument(query: string): Promise<string | null> {
+  const now = Date.now();
+
+  // Check HyDE cache first
+  const cached = hydeCache.get(query);
+  if (cached && cached.expiresAt > now) {
+    cached.lastAccessedAt = now;
+    return cached.value;
+  }
+
+  try {
+    const { content } = await createChatCompletion(
+      [
+        { role: "system", content: HYDE_SYSTEM_PROMPT },
+        { role: "user", content: query },
+      ],
+      { timeoutMs: 8_000 },
+    );
+
+    if (!content || content.length < 50) return null;
+
+    evictLru(hydeCache, MAX_HYDE_CACHE);
+    hydeCache.set(query, {
+      value: content,
+      expiresAt: now + HYDE_CACHE_TTL_MS,
+      lastAccessedAt: now,
+    });
+
+    return content;
+  } catch {
+    // HyDE is best-effort — fall back to raw query embedding on failure
+    return null;
+  }
 }
 
 export function rerankAndFilterSources(
@@ -143,7 +190,13 @@ async function getQueryEmbedding(normalizedQuery: string): Promise<{
     return { embedding: cached.value, cacheHit: true };
   }
 
-  const [queryEmbedding] = await embedTexts([normalizedQuery]);
+  // HyDE: generate a hypothetical document to enrich the embedding
+  const hydeDoc = await generateHypotheticalDocument(normalizedQuery);
+  const textToEmbed = hydeDoc
+    ? `${normalizedQuery}\n\n${hydeDoc}`
+    : normalizedQuery;
+
+  const [queryEmbedding] = await embedTexts([textToEmbed]);
   if (!queryEmbedding || queryEmbedding.length === 0) {
     return { embedding: [], cacheHit: false };
   }
