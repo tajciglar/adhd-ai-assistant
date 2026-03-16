@@ -106,7 +106,7 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center gap-1">
                 <div className="flex items-center gap-2">
                   <p className="text-xl font-bold text-slate-900">{capitalizedName}</p>
-                  <span className="bg-harbor-primary/10 text-harbor-primary px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  <span className="bg-harbor-highlight/15 text-amber-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
                     Premium
                   </span>
                 </div>
@@ -137,17 +137,17 @@ export default function ProfilePage() {
 
             {/* Premium card */}
             <div className="px-4 pb-4">
-              <div className="relative overflow-hidden rounded-xl border border-harbor-primary/15 bg-harbor-surface-soft p-5">
+              <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-amber-50/40 p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <span
-                        className="material-symbols-outlined text-harbor-primary text-[16px]"
+                        className="material-symbols-outlined text-amber-600 text-[16px]"
                         style={{ fontVariationSettings: "'FILL' 1" }}
                       >
                         workspace_premium
                       </span>
-                      <p className="text-harbor-primary text-sm font-bold">Premium Plan Active</p>
+                      <p className="text-slate-800 text-sm font-bold">Premium Plan Active</p>
                     </div>
                     <p className="text-slate-600 text-xs leading-relaxed max-w-[220px]">
                       Full access to all ADHD tools, expert content, and priority support.
@@ -172,8 +172,8 @@ export default function ProfilePage() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-harbor-surface-soft rounded-lg flex items-center justify-center">
-                        <span className="material-symbols-outlined text-harbor-primary text-[16px]">{item.icon}</span>
+                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                        <span className="material-symbols-outlined text-slate-500 text-[16px]">{item.icon}</span>
                       </div>
                       <span className="text-slate-800 text-sm font-medium">{item.label}</span>
                     </div>
@@ -214,7 +214,7 @@ export default function ProfilePage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-2xl font-bold text-slate-900">{capitalizedName}</h1>
-                  <span className="bg-harbor-primary/10 text-harbor-primary text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-harbor-highlight/15 text-amber-700 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full">
                     Premium
                   </span>
                 </div>
@@ -227,20 +227,24 @@ export default function ProfilePage() {
             <section className="mb-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-slate-900">Parenting Milestones</h2>
-                <button className="text-harbor-primary text-sm font-semibold hover:underline cursor-pointer">
+                <button className="text-slate-500 text-sm font-semibold hover:text-slate-800 hover:underline cursor-pointer transition-colors">
                   View All Badges
                 </button>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: "Strategies Mastered", value: "12", change: "+2 this month", icon: "verified",  progress: 0.75, color: "bg-harbor-primary" },
-                  { label: "Focus Sessions",       value: "48", change: "+5%",           icon: "timer",     progress: 0.5,  color: "bg-harbor-secondary" },
-                  { label: "Community Kudos",      value: "156", change: "+12%",          icon: "favorite",  progress: 1.0,  color: "bg-harbor-success" },
+                  { label: "Strategies Mastered", value: "12", change: "+2 this month", icon: "verified",  progress: 0.75, color: "bg-sky-500" },
+                  { label: "Focus Sessions",       value: "48", change: "+5%",           icon: "timer",     progress: 0.5,  color: "bg-amber-500" },
+                  { label: "Community Kudos",      value: "156", change: "+12%",          icon: "favorite",  progress: 1.0,  color: "bg-rose-400" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-slate-500 text-xs font-medium">{stat.label}</span>
-                      <span className="material-symbols-outlined text-harbor-primary bg-harbor-surface-soft p-1.5 rounded-lg text-[18px]">
+                      <span className={`material-symbols-outlined p-1.5 rounded-lg text-[18px] ${
+                        stat.icon === "verified" ? "text-sky-600 bg-sky-50" :
+                        stat.icon === "timer" ? "text-amber-600 bg-amber-50" :
+                        "text-rose-500 bg-rose-50"
+                      }`}>
                         {stat.icon}
                       </span>
                     </div>
@@ -274,7 +278,7 @@ export default function ProfilePage() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-harbor-surface-soft text-harbor-primary flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
                           <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
                         </div>
                         <div className="text-left">
@@ -291,13 +295,13 @@ export default function ProfilePage() {
               {/* Subscription — less purple-heavy version */}
               <div>
                 <h2 className="text-base font-bold text-slate-900 mb-4">Subscription</h2>
-                <div className="bg-white rounded-2xl border border-harbor-primary/15 shadow-sm p-5 relative overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 relative overflow-hidden">
                   {/* Subtle accent strip at top */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-harbor-primary rounded-t-2xl" />
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-harbor-highlight rounded-t-2xl" />
                   <div className="pt-2">
                     <div className="flex items-center gap-2 mb-1">
                       <span
-                        className="material-symbols-outlined text-harbor-primary text-[18px]"
+                        className="material-symbols-outlined text-amber-600 text-[18px]"
                         style={{ fontVariationSettings: "'FILL' 1" }}
                       >
                         workspace_premium

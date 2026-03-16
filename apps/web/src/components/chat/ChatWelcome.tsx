@@ -6,10 +6,10 @@ interface ChatWelcomeProps {
 }
 
 const STARTERS = [
-  { icon: "school", label: "Homework & Focus" },
-  { icon: "wb_sunny", label: "Morning Routines" },
-  { icon: "devices", label: "Managing Screen Time" },
-  { icon: "favorite", label: "Emotional Regulation" },
+  { icon: "school", label: "Homework & Focus", color: "text-sky-600", bg: "bg-sky-50" },
+  { icon: "wb_sunny", label: "Morning Routines", color: "text-amber-600", bg: "bg-amber-50" },
+  { icon: "devices", label: "Managing Screen Time", color: "text-emerald-600", bg: "bg-emerald-50" },
+  { icon: "favorite", label: "Emotional Regulation", color: "text-rose-500", bg: "bg-rose-50" },
 ] as const;
 
 export default function ChatWelcome({ childName, onStarterClick }: ChatWelcomeProps) {
@@ -58,8 +58,7 @@ export default function ChatWelcome({ childName, onStarterClick }: ChatWelcomePr
           >
             <h1 className="text-2xl font-bold text-slate-900 mb-1">Hi there!</h1>
             <p className="text-slate-500 text-base leading-relaxed">
-              Ready to talk about {name}?{" "}
-              <span className="text-harbor-primary font-medium">I'm here to help.</span>
+              Ready to talk about {name}? I'm here to help.
             </p>
           </motion.div>
         </motion.div>
@@ -73,18 +72,18 @@ export default function ChatWelcome({ childName, onStarterClick }: ChatWelcomePr
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.25 + i * 0.07, ease: [0.4, 0, 0.2, 1] }}
               onClick={() => onStarterClick(starter)}
-              className="flex items-center gap-3 text-left p-4 rounded-xl border border-slate-100 bg-white hover:border-harbor-primary/30 hover:bg-harbor-surface-soft/50 hover:shadow-sm transition-all cursor-pointer group"
+              className="flex items-center gap-3 text-left p-4 rounded-xl border border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm transition-all cursor-pointer group"
             >
-              <div className="w-8 h-8 rounded-lg bg-harbor-surface-soft flex items-center justify-center shrink-0 group-hover:bg-harbor-primary/10 transition-colors">
+              <div className={`w-8 h-8 rounded-lg ${STARTERS[i].bg} flex items-center justify-center shrink-0 transition-colors`}>
                 <span
-                  className="material-symbols-outlined text-harbor-primary/60 text-[18px] group-hover:text-harbor-primary transition-colors"
+                  className={`material-symbols-outlined ${STARTERS[i].color} text-[18px] transition-colors`}
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   {STARTERS[i].icon}
                 </span>
               </div>
               <span className="text-slate-700 text-sm font-medium flex-1">{starter}</span>
-              <span className="material-symbols-outlined text-slate-300 text-[18px] group-hover:text-harbor-primary/40 transition-colors">
+              <span className="material-symbols-outlined text-slate-300 text-[18px] group-hover:text-slate-400 transition-colors">
                 chevron_right
               </span>
             </motion.button>

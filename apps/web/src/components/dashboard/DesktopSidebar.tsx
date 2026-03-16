@@ -50,19 +50,19 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
               onClick={() => navigate(item.path)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer w-full text-left ${
                 isActive
-                  ? "bg-harbor-primary/10 text-harbor-primary"
+                  ? "bg-slate-100 text-slate-900"
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               <span
-                className="material-symbols-outlined text-[20px]"
+                className={`material-symbols-outlined text-[20px] ${isActive ? "text-slate-700" : ""}`}
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
                 {item.icon}
               </span>
               <span>{item.label}</span>
               {isActive && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-harbor-primary" />
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-400" />
               )}
             </button>
           );
@@ -73,14 +73,14 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
             onClick={() => navigate("/admin")}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer w-full text-left ${
               active === "admin"
-                ? "bg-harbor-primary/10 text-harbor-primary"
+                ? "bg-slate-100 text-slate-900"
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >
             <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
             <span>Admin</span>
             {active === "admin" && (
-              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-harbor-primary" />
+              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-400" />
             )}
           </button>
         )}

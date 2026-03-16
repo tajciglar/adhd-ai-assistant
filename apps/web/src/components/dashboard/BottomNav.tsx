@@ -29,12 +29,12 @@ export default function BottomNav({ active }: BottomNavProps) {
             {/* Icon with pill background when active */}
             <div
               className={`flex items-center justify-center w-10 h-8 rounded-xl transition-all ${
-                isActive ? "bg-harbor-primary/10" : ""
+                isActive ? "bg-slate-900/8" : ""
               }`}
             >
               <span
                 className={`material-symbols-outlined text-[22px] transition-colors ${
-                  isActive ? "text-harbor-primary" : "text-slate-400"
+                  isActive ? "text-slate-800" : "text-slate-400"
                 }`}
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
@@ -43,7 +43,7 @@ export default function BottomNav({ active }: BottomNavProps) {
             </div>
             <p
               className={`text-[10px] font-semibold transition-colors ${
-                isActive ? "text-harbor-primary" : "text-slate-400"
+                isActive ? "text-slate-800" : "text-slate-400"
               }`}
             >
               {item.label}

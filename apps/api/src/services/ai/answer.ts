@@ -1,10 +1,13 @@
 import type { FastifyInstance } from "fastify";
+import type { ArchetypeReportTemplate } from "@adhd-ai-assistant/shared";
 import { createChatCompletion, AI_CHAT_MODEL } from "./geminiClient.js";
 import {
   retrieveRelevantKnowledge,
   type RetrievedSource,
 } from "./retrieval.js";
-import { buildGroundedPrompt, type ChildContext } from "./prompt.js";
+import { buildGroundedPrompt, type ChildContext, type UserMemory } from "./prompt.js";
+import { extractMemories } from "./memory.js";
+import { extractConversationInsight } from "./insights.js";
 
 interface AnswerInput {
   fastify: FastifyInstance;
@@ -117,21 +120,31 @@ export async function generateGroundedAnswer({
     };
   }
 
-  // Fetch active child profile (first child) with trait profile
-  const profile = await fastify.prisma.userProfile.findUnique({
-    where: { userId },
-    include: {
-      children: {
-        take: 1,
-        select: {
-          childName: true,
-          childAge: true,
-          childGender: true,
-          traitProfile: true,
+  // Fetch active child profile, report template, and user memories in parallel
+  const [profile, memoriesResult] = await Promise.all([
+    fastify.prisma.userProfile.findUnique({
+      where: { userId },
+      include: {
+        children: {
+          take: 1,
+          select: {
+            childName: true,
+            childAge: true,
+            childGender: true,
+            traitProfile: true,
+          },
         },
       },
-    },
-  });
+    }),
+    fastify.prisma.userMemory
+      .findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: { fact: true, category: true, createdAt: true },
+      })
+      .catch(() => [] as UserMemory[]),
+  ]);
 
   const activeChild = profile?.children?.[0] ?? null;
   const childContext: ChildContext | null = activeChild
@@ -143,11 +156,25 @@ export async function generateGroundedAnswer({
       }
     : null;
 
+  // Fetch report template for the child's archetype
+  let reportTemplate: ArchetypeReportTemplate | null = null;
+  const archetypeId = childContext?.traitProfile?.archetypeId;
+  if (archetypeId) {
+    const templateRow = await fastify.prisma.reportTemplate.findUnique({
+      where: { archetypeId },
+    });
+    if (templateRow) {
+      reportTemplate = templateRow.template as unknown as ArchetypeReportTemplate;
+    }
+  }
+
   const messages = buildGroundedPrompt({
     question,
     sources,
     child: childContext,
     history,
+    reportTemplate,
+    memories: memoriesResult as UserMemory[],
   });
   const promptChars = messages.reduce((sum, message) => sum + message.content.length, 0);
 
@@ -169,6 +196,22 @@ export async function generateGroundedAnswer({
         latencyMs: Date.now() - start,
       },
       "chat.grounded.success",
+    );
+
+    // Non-blocking: extract memories and insights from this exchange
+    extractMemories(fastify, userId, question, content).catch((err) =>
+      fastify.log.warn({ err }, "memory.extraction.failed"),
+    );
+    extractConversationInsight(fastify, userId, question, {
+      sourceCount: sourceMetadata.length,
+      avgScore:
+        sourceMetadata.length > 0
+          ? sourceMetadata.reduce((sum, s) => sum + s.score, 0) /
+            sourceMetadata.length
+          : 0,
+      archetypeId: archetypeId ?? null,
+    }).catch((err) =>
+      fastify.log.warn({ err }, "insight.extraction.failed"),
     );
 
     return {

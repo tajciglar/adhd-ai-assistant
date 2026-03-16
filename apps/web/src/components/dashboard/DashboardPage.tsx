@@ -130,7 +130,7 @@ export default function DashboardPage() {
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
               <input
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-harbor-primary/20 focus:border-harbor-primary/30 outline-none transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-200 outline-none transition-all"
                 placeholder="Search resources, tips, or guides…"
                 type="text"
                 value={searchQuery}
@@ -172,7 +172,7 @@ export default function DashboardPage() {
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
               <input
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm focus:ring-2 focus:ring-harbor-primary/20 text-sm outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm focus:ring-2 focus:ring-slate-200 text-sm outline-none transition-all"
                 placeholder="Search resources, tips, or guides…"
                 type="text"
                 value={searchQuery}
@@ -199,38 +199,39 @@ export default function DashboardPage() {
 
           {/* ── AI Consultation CTA ── */}
           <div className="px-4 md:px-8 mb-6">
-            <div className="relative overflow-hidden bg-harbor-primary rounded-2xl p-6 text-white shadow-lg shadow-harbor-primary/20">
+            <div className="relative overflow-hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              {/* Left accent bar */}
+              <div className="absolute left-0 top-4 bottom-4 w-1 bg-harbor-primary rounded-r-full" />
+
               {/* Content */}
-              <div className="relative z-10 flex flex-col gap-2 max-w-[75%] md:max-w-md">
-                <span className="bg-white/15 w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/20">
+              <div className="relative z-10 flex flex-col gap-2 pl-4 max-w-[75%] md:max-w-md">
+                <span className="bg-harbor-primary/10 text-harbor-primary w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
                   AI Coach
                 </span>
-                <h2 className="text-xl font-bold leading-snug">
+                <h2 className="text-xl font-bold leading-snug text-slate-900">
                   Start AI Consultation
                 </h2>
-                <p className="text-white/80 text-sm leading-relaxed mb-3">
+                <p className="text-slate-500 text-sm leading-relaxed mb-3">
                   Get personalized strategies tailored for{childName ? ` ${childName}'s` : " your child's"} unique needs.
                 </p>
                 <button
                   onClick={() => navigate("/chat")}
-                  className="bg-white text-harbor-primary font-bold py-2.5 px-5 rounded-xl w-fit flex items-center gap-2 active:scale-95 transition-transform cursor-pointer text-sm shadow-sm"
+                  className="bg-harbor-primary text-white font-bold py-2.5 px-5 rounded-xl w-fit flex items-center gap-2 active:scale-95 transition-transform cursor-pointer text-sm shadow-sm shadow-harbor-primary/20"
                 >
                   <span>Begin Session</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
               </div>
 
-              {/* Intentional decorative icon — large, low opacity */}
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-[0.07] pointer-events-none select-none">
+              {/* Decorative icon */}
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-[0.04] pointer-events-none select-none">
                 <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: "148px", fontVariationSettings: "'FILL' 1" }}
+                  className="material-symbols-outlined text-slate-900"
+                  style={{ fontSize: "140px", fontVariationSettings: "'FILL' 1" }}
                 >
                   neurology
                 </span>
               </div>
-              {/* Subtle top-right gradient accent */}
-              <div className="absolute top-0 right-0 w-40 h-full bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
             </div>
           </div>
 
@@ -257,27 +258,27 @@ export default function DashboardPage() {
                   {/* Progress line */}
                   <div className="absolute top-5 left-5 right-5 h-px bg-slate-100" />
                   <div
-                    className="absolute top-5 left-5 h-px bg-harbor-primary/30 transition-all"
+                    className="absolute top-5 left-5 h-px bg-harbor-success/40 transition-all"
                     style={{ width: `calc(${(todayIndex / (weekDays.length - 1)) * 100}% - 0px)` }}
                   />
 
                   {weekDays.map((day, i) => (
                     <div key={i} className="flex flex-col items-center gap-2 z-10">
-                      <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">{day.label}</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{day.label}</span>
                       {day.isToday ? (
-                        <div className="w-10 h-10 rounded-full bg-harbor-primary flex items-center justify-center text-white shadow-md shadow-harbor-primary/30">
+                        <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white shadow-md shadow-slate-900/20">
                           <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                             bolt
                           </span>
                         </div>
                       ) : day.completed ? (
-                        <div className="w-10 h-10 rounded-full bg-harbor-primary/10 text-harbor-primary flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-harbor-success/15 text-harbor-success flex items-center justify-center">
                           <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                             check_circle
                           </span>
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center" />
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-200 bg-slate-50/80 flex items-center justify-center" />
                       )}
                     </div>
                   ))}
@@ -291,7 +292,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
                     <div
-                      className="h-1.5 rounded-full bg-harbor-primary transition-all"
+                      className="h-1.5 rounded-full bg-slate-800 transition-all"
                       style={{ width: `${(completedCount / 7) * 100}%` }}
                     />
                   </div>
@@ -321,7 +322,7 @@ export default function DashboardPage() {
                 <h3 className="text-base font-bold text-slate-900">Recent Resources</h3>
                 <button
                   onClick={() => navigate("/resources")}
-                  className="text-harbor-primary text-sm font-semibold cursor-pointer hover:underline"
+                  className="text-slate-500 text-sm font-semibold cursor-pointer hover:text-slate-800 hover:underline transition-colors"
                 >
                   View All
                 </button>
@@ -333,7 +334,7 @@ export default function DashboardPage() {
                     <button
                       key={resource.id}
                       onClick={() => navigate("/resources")}
-                      className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 hover:border-harbor-primary/20 hover:shadow-md transition-all cursor-pointer text-left w-full"
+                      className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 hover:border-slate-200 hover:shadow-md transition-all cursor-pointer text-left w-full"
                     >
                       <div className={`w-12 h-12 ${style.bg} rounded-xl flex items-center justify-center shrink-0`}>
                         <span className={`material-symbols-outlined ${style.color} text-2xl`} style={{ fontVariationSettings: "'FILL' 1" }}>

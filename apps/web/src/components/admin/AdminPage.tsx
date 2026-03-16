@@ -16,6 +16,7 @@ import ResourceList from "./ResourceList";
 import ResourceUploadModal from "./ResourceUploadModal";
 import QuizAnalyticsDashboard from "./QuizAnalyticsDashboard";
 import TokenUsageDashboard from "./TokenUsageDashboard";
+import ConversationInsights from "./ConversationInsights";
 import type { KnowledgeEntry, ReportTemplateRecord } from "../../types/admin";
 
 export default function AdminPage() {
@@ -215,9 +216,11 @@ export default function AdminPage() {
           />
         ) : activeSection === "analytics" ? (
           <QuizAnalyticsDashboard />
-        ) : (
+        ) : activeSection === "token-usage" ? (
           <TokenUsageDashboard />
-        )}
+        ) : activeSection === "insights" ? (
+          <ConversationInsights />
+        ) : null}
       </div>
 
       {showEditor && (

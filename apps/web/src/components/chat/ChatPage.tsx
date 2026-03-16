@@ -75,7 +75,7 @@ export default function ChatPage() {
             </h3>
             <button
               onClick={newConversation}
-              className="text-harbor-primary hover:bg-harbor-primary/10 rounded-lg p-1 cursor-pointer transition-colors"
+              className="text-slate-500 hover:bg-slate-100 rounded-lg p-1 cursor-pointer transition-colors"
               title="New Chat"
             >
               <span className="material-symbols-outlined text-lg">add</span>
@@ -90,7 +90,7 @@ export default function ChatPage() {
                 key={conv.id}
                 className={`group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors ${
                   activeConversationId === conv.id
-                    ? "bg-harbor-primary/10 text-harbor-primary border border-harbor-primary/20"
+                    ? "bg-slate-100 text-slate-900 border border-slate-200"
                     : "text-slate-600 hover:bg-slate-50"
                 }`}
                 onClick={() => selectConversation(conv.id)}
@@ -166,7 +166,7 @@ export default function ChatPage() {
                 search
               </span>
               <input
-                className="w-full bg-slate-100 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-harbor-primary/20 outline-none"
+                className="w-full bg-slate-100 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-slate-200 outline-none"
                 placeholder="Search guides or chats"
               />
             </div>
