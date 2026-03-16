@@ -25,7 +25,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
       await fastify.prisma.user.upsert({
         where: { id: userId },
         update: {},
-        create: { id: userId, email },
+        // All email/password signups get chat access automatically
+        create: { id: userId, email, hasChatAccess: true },
       });
 
       // Try importing quiz data if no profile exists yet

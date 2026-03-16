@@ -16,6 +16,21 @@ interface DashboardUserInfo {
   };
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getResourceStyle(resource: Resource): { icon: string; bg: string; color: string; label: string } {
+  const cat = (resource.category ?? "").toLowerCase();
+  if (cat.includes("video")) return { icon: "play_circle", bg: "bg-emerald-50", color: "text-emerald-600", label: "Video" };
+  if (cat.includes("article")) return { icon: "article", bg: "bg-sky-50", color: "text-sky-600", label: "Article" };
+  if (cat.includes("checklist") || cat.includes("printable"))
+    return { icon: "task_alt", bg: "bg-harbor-surface-soft", color: "text-harbor-primary", label: "Checklist" };
+  return { icon: "picture_as_pdf", bg: "bg-red-50", color: "text-red-500", label: "PDF" };
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -48,11 +63,11 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-harbor-primary mb-2">
-            Harbor
-          </h1>
-          <p className="text-harbor-text/40">Loading...</p>
+        <div className="text-center space-y-2">
+          <div className="w-10 h-10 bg-harbor-primary rounded-2xl flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-white">psychology</span>
+          </div>
+          <p className="text-harbor-text/40 text-sm">Loading…</p>
         </div>
       </div>
     );
@@ -67,98 +82,98 @@ export default function DashboardPage() {
     { label: "T", completed: false },
     { label: "F", completed: false },
     { label: "S", completed: false },
+    { label: "S", completed: false },
   ];
+  const completedCount = weekDays.filter((d) => d.completed).length;
+  const todayIndex = weekDays.findIndex((d) => d.isToday);
 
-  function formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
+  const displayResources: Resource[] =
+    resources.length > 0
+      ? resources
+      : ([
+          { id: "p1", title: "Evening Routine Guide", category: "PDF", sizeBytes: 1228800 } as Resource,
+          { id: "p2", title: "Managing Meltdowns", category: "Video", sizeBytes: 0 } as Resource,
+          { id: "p3", title: "Nutrition & ADHD Symptoms", category: "Article", sizeBytes: 0 } as Resource,
+        ]);
 
   return (
     <div className="flex min-h-screen bg-harbor-bg">
       <DesktopSidebar active="dashboard" isAdmin={isAdmin} />
 
       <div className="flex-1 flex flex-col">
-        {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-harbor-primary rounded-xl flex items-center justify-center text-white">
-              <span className="material-symbols-outlined">psychology</span>
+        {/* ── Mobile Header ── */}
+        <header className="md:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-harbor-primary rounded-xl flex items-center justify-center shadow-sm shadow-harbor-primary/30">
+              <span className="material-symbols-outlined text-white text-[18px]">psychology</span>
             </div>
-            <h1 className="text-lg font-bold tracking-tight text-slate-900">
-              Harbor
-            </h1>
+            <span className="text-base font-bold tracking-tight text-slate-900">Harbor</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => navigate("/chat")}
-              className="flex items-center gap-1.5 px-3 py-2 bg-harbor-primary text-white rounded-xl text-sm font-semibold shadow-sm shadow-harbor-primary/20 hover:opacity-90 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-harbor-primary text-white rounded-xl text-sm font-semibold shadow-sm shadow-harbor-primary/25 active:scale-95 transition-all cursor-pointer"
             >
-              <span className="material-symbols-outlined text-lg">chat_bubble</span>
-              <span className="hidden sm:inline">Chat</span>
+              <span className="material-symbols-outlined text-[16px]">chat_bubble</span>
+              <span>Chat</span>
             </button>
-            <button className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+            <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative">
+              <span className="material-symbols-outlined text-[22px]">notifications</span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-harbor-error rounded-full border-2 border-white" />
             </button>
           </div>
         </header>
 
-        {/* Desktop Header */}
-        <header className="hidden md:flex h-16 border-b border-harbor-primary/10 bg-white items-center justify-between px-8 shrink-0">
+        {/* ── Desktop Header ── */}
+        <header className="hidden md:flex h-16 border-b border-slate-100 bg-white items-center justify-between px-8 shrink-0">
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             <div className="relative w-full">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-                search
-              </span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
               <input
-                className="w-full bg-slate-100 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-harbor-primary/20 outline-none"
-                placeholder="Search resources, tips, or guides..."
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-harbor-primary/20 focus:border-harbor-primary/30 outline-none transition-all"
+                placeholder="Search resources, tips, or guides…"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
-              <span className="material-symbols-outlined text-xl">notifications</span>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-slate-50 text-slate-500 transition-colors border border-slate-100">
+              <span className="material-symbols-outlined text-[20px]">notifications</span>
             </button>
             <button
               onClick={() => navigate("/profile")}
-              className="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+              className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-slate-50 text-slate-500 transition-colors border border-slate-100"
             >
-              <span className="material-symbols-outlined text-xl">settings</span>
+              <span className="material-symbols-outlined text-[20px]">settings</span>
             </button>
-            <div className="h-8 w-px bg-harbor-primary/10 mx-1" />
+            <div className="w-px h-6 bg-slate-100 mx-1" />
             <button
               onClick={() => navigate("/profile")}
-              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <div className="text-right hidden sm:block">
+              <div className="text-right">
                 <p className="text-xs font-bold leading-tight text-slate-900">
                   {childName ? `${childName}'s Parent` : user?.email?.split("@")[0] ?? "Parent"}
                 </p>
-                <p className="text-[10px] text-slate-500">Parent Member</p>
+                <p className="text-[10px] text-slate-400">Parent Member</p>
               </div>
-              <div className="w-9 h-9 rounded-full bg-harbor-primary/10 border-2 border-white shadow-sm flex items-center justify-center">
-                <span className="material-symbols-outlined text-harbor-primary text-lg">person</span>
+              <div className="w-9 h-9 rounded-full bg-harbor-surface-soft border-2 border-white shadow-sm flex items-center justify-center">
+                <span className="material-symbols-outlined text-harbor-primary text-[18px]">person</span>
               </div>
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-28 md:pb-8">
+        <main className="flex-1 overflow-y-auto pb-28 md:pb-10">
           {/* Mobile Search */}
-          <div className="md:hidden px-4 py-4">
+          <div className="md:hidden px-4 pt-4 pb-2">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                search
-              </span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
               <input
-                className="w-full pl-10 pr-4 py-3 bg-white border-none rounded-xl shadow-sm focus:ring-2 focus:ring-harbor-primary text-sm outline-none"
-                placeholder="Search resources, tips, or guides..."
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm focus:ring-2 focus:ring-harbor-primary/20 text-sm outline-none transition-all"
+                placeholder="Search resources, tips, or guides…"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -166,97 +181,135 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Desktop greeting */}
-          <div className="hidden md:block px-8 pt-8 pb-2">
-            <h1 className="text-2xl font-bold text-slate-900">
-              Welcome back{childName ? `, ${childName}'s Parent` : ""}!
+          {/* Mobile greeting */}
+          <div className="md:hidden px-4 pt-4 pb-2">
+            <p className="text-slate-500 text-sm">Good morning</p>
+            <h1 className="text-xl font-bold text-slate-900">
+              {childName ? `${childName}'s Parent` : user?.email?.split("@")[0] ?? "Welcome back"}
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Here's what's happening with your parenting journey.
-            </p>
           </div>
 
-          {/* AI Consultation CTA */}
+          {/* Desktop greeting */}
+          <div className="hidden md:block px-8 pt-8 pb-4">
+            <h1 className="text-2xl font-bold text-slate-900">
+              {childName ? `Welcome back, ${childName}'s parent` : "Welcome back!"}
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">Here's your parenting snapshot for today.</p>
+          </div>
+
+          {/* ── AI Consultation CTA ── */}
           <div className="px-4 md:px-8 mb-6">
             <div className="relative overflow-hidden bg-harbor-primary rounded-2xl p-6 text-white shadow-lg shadow-harbor-primary/20">
-              <div className="relative z-10 flex flex-col gap-2">
-                <span className="bg-white/20 w-fit px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              {/* Content */}
+              <div className="relative z-10 flex flex-col gap-2 max-w-[75%] md:max-w-md">
+                <span className="bg-white/15 w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/20">
                   AI Coach
                 </span>
-                <h2 className="text-xl font-bold">Start AI Consultation</h2>
-                <p className="text-white/90 text-sm mb-4 max-w-[80%]">
-                  Get instant personalized guidance and strategies tailored for
-                  {childName ? ` ${childName}'s` : " your child's"} unique needs.
+                <h2 className="text-xl font-bold leading-snug">
+                  Start AI Consultation
+                </h2>
+                <p className="text-white/80 text-sm leading-relaxed mb-3">
+                  Get personalized strategies tailored for{childName ? ` ${childName}'s` : " your child's"} unique needs.
                 </p>
                 <button
                   onClick={() => navigate("/chat")}
-                  className="bg-white text-harbor-primary font-bold py-3 px-6 rounded-xl w-full md:w-auto md:max-w-xs flex items-center justify-center gap-2 active:scale-95 transition-transform cursor-pointer"
+                  className="bg-white text-harbor-primary font-bold py-2.5 px-5 rounded-xl w-fit flex items-center gap-2 active:scale-95 transition-transform cursor-pointer text-sm shadow-sm"
                 >
                   <span>Begin Session</span>
-                  <span className="material-symbols-outlined text-sm">
-                    arrow_forward
-                  </span>
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
               </div>
-              {/* Decorative background elements */}
-              <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-              <div className="absolute -left-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
+
+              {/* Intentional decorative icon — large, low opacity */}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-[0.07] pointer-events-none select-none">
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "148px", fontVariationSettings: "'FILL' 1" }}
+                >
+                  neurology
+                </span>
+              </div>
+              {/* Subtle top-right gradient accent */}
+              <div className="absolute top-0 right-0 w-40 h-full bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
             </div>
           </div>
 
-          {/* Two-column layout on desktop */}
+          {/* ── Two-column layout on desktop ── */}
           <div className="md:grid md:grid-cols-2 md:gap-6 md:px-8">
-            {/* Weekly Momentum Section */}
+            {/* Weekly Momentum */}
             <section className="px-4 md:px-0 mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">
-                  Weekly Momentum
-                </h3>
-                <span className="text-harbor-primary text-sm font-semibold">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold text-slate-900">Weekly Momentum</h3>
+                <span className="flex items-center gap-1 text-harbor-highlight text-sm font-bold">
+                  <span
+                    className="material-symbols-outlined text-[16px]"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    local_fire_department
+                  </span>
                   {streakDays} Day Streak
                 </span>
               </div>
+
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <div className="flex justify-between items-center mb-6">
+                {/* Day circles */}
+                <div className="relative flex justify-between items-center mb-5">
+                  {/* Progress line */}
+                  <div className="absolute top-5 left-5 right-5 h-px bg-slate-100" />
+                  <div
+                    className="absolute top-5 left-5 h-px bg-harbor-primary/30 transition-all"
+                    style={{ width: `calc(${(todayIndex / (weekDays.length - 1)) * 100}% - 0px)` }}
+                  />
+
                   {weekDays.map((day, i) => (
-                    <div
-                      key={i}
-                      className={`flex flex-col items-center gap-2 ${!day.completed && !day.isToday ? "opacity-40" : ""}`}
-                    >
-                      <span className="text-[10px] uppercase font-bold text-slate-400">
-                        {day.label}
-                      </span>
+                    <div key={i} className="flex flex-col items-center gap-2 z-10">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">{day.label}</span>
                       {day.isToday ? (
-                        <div className="w-10 h-10 rounded-full bg-harbor-primary flex items-center justify-center text-white ring-4 ring-harbor-primary/20">
-                          <span className="material-symbols-outlined text-xl">
+                        <div className="w-10 h-10 rounded-full bg-harbor-primary flex items-center justify-center text-white shadow-md shadow-harbor-primary/30">
+                          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                             bolt
                           </span>
                         </div>
                       ) : day.completed ? (
                         <div className="w-10 h-10 rounded-full bg-harbor-primary/10 text-harbor-primary flex items-center justify-center">
-                          <span className="material-symbols-outlined text-xl">
+                          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                             check_circle
                           </span>
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center" />
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center" />
                       )}
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <span className="material-symbols-outlined text-yellow-600">
+
+                {/* Progress bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-[11px] text-slate-400 mb-1.5">
+                    <span>{completedCount} of 7 days</span>
+                    <span>{Math.round((completedCount / 7) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                    <div
+                      className="h-1.5 rounded-full bg-harbor-primary transition-all"
+                      style={{ width: `${(completedCount / 7) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Milestone */}
+                <div className="flex items-center gap-3 p-3 bg-harbor-highlight/10 rounded-xl border border-harbor-highlight/20">
+                  <div className="w-8 h-8 bg-harbor-highlight/20 rounded-lg flex items-center justify-center shrink-0">
+                    <span
+                      className="material-symbols-outlined text-harbor-highlight text-[18px]"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
                       emoji_events
                     </span>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-900">
-                      Next Milestone: 14 Days
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      2 more days to unlock the "Focus Pro" badge!
-                    </p>
+                    <p className="text-xs font-bold text-slate-900">Next Milestone: 14 Days</p>
+                    <p className="text-[11px] text-slate-500">2 more days to unlock "Focus Pro"</p>
                   </div>
                 </div>
               </div>
@@ -264,114 +317,40 @@ export default function DashboardPage() {
 
             {/* Recent Resources */}
             <section className="px-4 md:px-0">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">
-                  Recent Resources
-                </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold text-slate-900">Recent Resources</h3>
                 <button
                   onClick={() => navigate("/resources")}
-                  className="text-harbor-primary text-sm font-semibold cursor-pointer"
+                  className="text-harbor-primary text-sm font-semibold cursor-pointer hover:underline"
                 >
                   View All
                 </button>
               </div>
-              <div className="grid grid-cols-1 gap-4">
-                {resources.length > 0 ? (
-                  resources.map((resource) => (
-                    <div
+              <div className="flex flex-col gap-3">
+                {displayResources.map((resource) => {
+                  const style = getResourceStyle(resource);
+                  return (
+                    <button
                       key={resource.id}
-                      className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4"
+                      onClick={() => navigate("/resources")}
+                      className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 hover:border-harbor-primary/20 hover:shadow-md transition-all cursor-pointer text-left w-full"
                     >
-                      <div className="w-16 h-16 bg-red-50 rounded-lg flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-red-500 text-3xl">
-                          picture_as_pdf
+                      <div className={`w-12 h-12 ${style.bg} rounded-xl flex items-center justify-center shrink-0`}>
+                        <span className={`material-symbols-outlined ${style.color} text-2xl`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                          {style.icon}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold truncate text-slate-900">
-                          {resource.title}
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          PDF &bull; {formatFileSize(resource.sizeBytes)}
+                        <h4 className="text-sm font-semibold truncate text-slate-900">{resource.title}</h4>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {style.label}
+                          {resource.sizeBytes > 0 && ` · ${formatFileSize(resource.sizeBytes)}`}
                         </p>
-                        {resource.category && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] text-slate-500">
-                              {resource.category}
-                            </span>
-                          </div>
-                        )}
                       </div>
-                      <button className="p-2 text-slate-400 cursor-pointer">
-                        <span className="material-symbols-outlined">more_vert</span>
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
-                      <div className="w-16 h-16 bg-red-50 rounded-lg flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-red-500 text-3xl">
-                          picture_as_pdf
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold truncate text-slate-900">
-                          Evening Routine Guide
-                        </h4>
-                        <p className="text-xs text-slate-500">PDF &bull; 1.2 MB</p>
-                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] text-slate-500 inline-block mt-1">
-                          Parenting
-                        </span>
-                      </div>
-                      <button className="p-2 text-slate-400">
-                        <span className="material-symbols-outlined">more_vert</span>
-                      </button>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
-                      <div className="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-blue-500 text-3xl">
-                          play_circle
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold truncate text-slate-900">
-                          Managing Meltdowns
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          Video Lesson &bull; 12 mins
-                        </p>
-                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] text-slate-500 inline-block mt-1">
-                          Behavioral
-                        </span>
-                      </div>
-                      <button className="p-2 text-slate-400">
-                        <span className="material-symbols-outlined">more_vert</span>
-                      </button>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
-                      <div className="w-16 h-16 bg-purple-50 rounded-lg flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-harbor-primary text-3xl">
-                          article
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold truncate text-slate-900">
-                          Nutrition & ADHD Symptoms
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          Article &bull; 5 min read
-                        </p>
-                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] text-slate-500 inline-block mt-1">
-                          Wellness
-                        </span>
-                      </div>
-                      <button className="p-2 text-slate-400">
-                        <span className="material-symbols-outlined">more_vert</span>
-                      </button>
-                    </div>
-                  </>
-                )}
+                      <span className="material-symbols-outlined text-slate-300 shrink-0">chevron_right</span>
+                    </button>
+                  );
+                })}
               </div>
             </section>
           </div>

@@ -1,14 +1,35 @@
 @import "tailwindcss";
 
 @theme {
-  --color-harbor-primary: #7040ca;
-  --color-harbor-bg: #FAF7FC;
-  --color-harbor-accent: #9B59B6;
-  --color-harbor-text: #1a1a1a;
+  /* Brand */
+  --color-harbor-primary: #7040CA;
+  --color-harbor-secondary: #4CC9F0;
+  --color-harbor-success: #3DDC97;
+  --color-harbor-highlight: #F9C74F;
   --color-harbor-error: #C97B63;
+
+  /* Backgrounds */
+  --color-harbor-bg: #FAF7FC;
+  --color-harbor-surface: #FFFFFF;
+  --color-harbor-surface-soft: #F2EDF9;
+
+  /* Text */
+  --color-harbor-text: #1F2933;
+
+  /* Legacy aliases — kept for backward compat */
+  --color-harbor-accent: #9B59B6;
   --color-harbor-primary-light: #9B59B6;
   --color-harbor-accent-light: #C39BD3;
+
+  /* Typography */
   --font-family-sans: "Inter", system-ui, sans-serif;
+  --font-size-2xs: 0.625rem;   /* 10px */
+  --font-size-xs:  0.75rem;    /* 12px */
+  --font-size-sm:  0.875rem;   /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg:  1.125rem;   /* 18px */
+  --font-size-xl:  1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
 }
 
 .material-symbols-outlined {
