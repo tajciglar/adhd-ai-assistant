@@ -55,7 +55,7 @@ const classifySchema = z.object({
 });
 
 const parseDocumentSchema = z.object({
-  documentText: z.string().min(1).max(200000),
+  documentText: z.string().min(1).max(500000),
   moduleName: z.string().max(200).optional(),
 });
 
