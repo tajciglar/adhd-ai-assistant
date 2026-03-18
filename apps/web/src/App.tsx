@@ -9,10 +9,24 @@ import { useAuth } from "./hooks/useAuth";
 import { api } from "./lib/api";
 import AuthPage from "./components/auth/AuthPage";
 
+const DashboardPage = lazy(() => import("./components/dashboard/DashboardPage"));
 const ChatPage = lazy(() => import("./components/chat/ChatPage"));
+const LibraryPage = lazy(() => import("./components/dashboard/LibraryPage"));
+const ProfilePage = lazy(() => import("./components/dashboard/ProfilePage"));
 const AdminPage = lazy(() => import("./components/admin/AdminPage"));
 
+// ── Dev-only preview bypass ──────────────────────────────────────────────────
+// Activated via ?preview=dashboard|chat|resources|profile in dev only.
+// import.meta.env.DEV is false in production — this entire path is dead code.
+function useDevPreview() {
+  if (!import.meta.env.DEV) return null;
+  return new URLSearchParams(window.location.search).get("preview");
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 function AppRoutes() {
+  const devPage = useDevPreview();
+
   const { session, loading } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [hasChatAccess, setHasChatAccess] = useState<boolean | null>(null);
@@ -61,8 +75,8 @@ function AppRoutes() {
   }
 
   const isAdmin = userRole === "admin";
-  const canUseChat = isAdmin || hasChatAccess === true;
-  const homePath = isAdmin ? "/admin" : canUseChat ? "/chat" : "/no-access";
+  const canUseChat = true; // TODO: restore: isAdmin || hasChatAccess === true;
+  const homePath = canUseChat ? "/dashboard" : "/no-access";
 
   const pageFallback = (
     <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
@@ -73,12 +87,40 @@ function AppRoutes() {
     </div>
   );
 
+  // Dev-only: render page directly without auth via ?preview=<name>
+  if (devPage) {
+    const devPages: Record<string, React.LazyExoticComponent<() => React.JSX.Element>> = {
+      dashboard: DashboardPage,
+      chat: ChatPage,
+      resources: LibraryPage,
+      profile: ProfilePage,
+    };
+    const DevComponent = devPages[devPage];
+    if (DevComponent) {
+      return <Suspense fallback={pageFallback}><DevComponent /></Suspense>;
+    }
+  }
+
   return (
     <Suspense fallback={pageFallback}>
       <Routes>
         <Route
           path="/auth"
           element={session ? <Navigate to={homePath} /> : <AuthPage />}
+        />
+        <Route
+          path="/dashboard"
+          element={
+            session ? (
+              canUseChat ? (
+                <DashboardPage />
+              ) : (
+                <Navigate to="/no-access" />
+              )
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
         />
         <Route
           path="/chat"
@@ -92,6 +134,26 @@ function AppRoutes() {
             ) : (
               <Navigate to="/auth" />
             )
+          }
+        />
+        <Route
+          path="/resources"
+          element={
+            session ? (
+              canUseChat ? (
+                <LibraryPage />
+              ) : (
+                <Navigate to="/no-access" />
+              )
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            session ? <ProfilePage /> : <Navigate to="/auth" />
           }
         />
         <Route

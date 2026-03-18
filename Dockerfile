@@ -21,13 +21,13 @@ COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
 
 # Build shared package first (api depends on it)
-RUN pnpm --filter @adhd-parenting-ai-assistant/shared build
+RUN pnpm --filter @adhd-ai-assistant/shared build
 
 # Generate Prisma client
-RUN pnpm --filter @adhd-parenting-ai-assistant/api prisma:generate
+RUN pnpm --filter @adhd-ai-assistant/api prisma:generate
 
 # Build API TypeScript
-RUN pnpm --filter @adhd-parenting-ai-assistant/api build
+RUN pnpm --filter @adhd-ai-assistant/api build
 
 # --- Production stage ---
 FROM node:22-slim AS production
@@ -49,8 +49,8 @@ RUN pnpm install --frozen-lockfile
 # Copy Prisma schema and migrations (needed for prisma migrate deploy + generate)
 COPY --from=base /app/apps/api/prisma ./apps/api/prisma
 
-# Generate Prisma client in production stage so it lands in pnpm's resolved paths
-RUN pnpm --filter @adhd-parenting-ai-assistant/api prisma:generate
+# Generate Prisma client in production stage
+RUN cd apps/api && npx prisma generate
 
 # Copy built shared package (runtime dependency for API)
 COPY --from=base /app/packages/shared/dist ./packages/shared/dist
@@ -61,4 +61,4 @@ COPY --from=base /app/apps/api/dist ./apps/api/dist
 ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && cd /app && pnpm --filter @adhd-parenting-ai-assistant/api start"]
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && node dist/server.js"]

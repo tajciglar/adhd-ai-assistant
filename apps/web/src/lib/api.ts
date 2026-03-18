@@ -79,6 +79,34 @@ async function uploadRequest(
   return res.json();
 }
 
+/**
+ * POST a JSON body and return the raw Response for SSE streaming.
+ * Caller reads the body stream directly.
+ */
+async function streamRequest(
+  path: string,
+  body: unknown,
+): Promise<Response> {
+  const token = await getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: "Request failed" }));
+    throw new Error(
+      (error as { error?: string }).error || `API error: ${res.status}`,
+    );
+  }
+
+  return res;
+}
+
 export const api = {
   get: (path: string) => request("GET", path),
   patch: (path: string, body: unknown) => request("PATCH", path, body),
@@ -87,4 +115,5 @@ export const api = {
   delete: (path: string) => request("DELETE", path),
   upload: (path: string, formData: FormData) =>
     uploadRequest(path, formData),
+  stream: (path: string, body: unknown) => streamRequest(path, body),
 };

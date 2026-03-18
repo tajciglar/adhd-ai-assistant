@@ -26,6 +26,7 @@ model User {
   conversations  Conversation[]
   adminAuditLog  AdminAuditLog[]
   importJobs     AdminImportJob[]
+  memories       UserMemory[]
 
   @@map("users")
 }
@@ -190,4 +191,34 @@ model Resource {
 
   @@index([category])
   @@map("resources")
+}
+
+model UserMemory {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fact      String
+  category  String   @default("general")
+  source    String   @default("conversation")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("user_memories")
+}
+
+model ConversationInsight {
+  id                   String   @id @default(uuid())
+  userId               String   @map("user_id")
+  topic                String
+  userMessage          String   @map("user_message")
+  retrievalScore       Float    @map("retrieval_score")
+  hadSufficientSources Boolean  @default(true) @map("had_sufficient_sources")
+  archetypeId          String?  @map("archetype_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([topic])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("conversation_insights")
 }

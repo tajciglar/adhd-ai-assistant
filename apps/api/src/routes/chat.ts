@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { generateGroundedAnswer } from "../services/ai/answer.js";
+import { generateGroundedAnswer, streamGroundedAnswer } from "../services/ai/answer.js";
 
 const chatBodySchema = z.object({
   message: z.string().min(1).max(5000),
@@ -219,6 +219,110 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           metadata: assistantMessage.metadata,
         },
       });
+    },
+  );
+
+  // POST /chat/stream — SSE streaming variant
+  fastify.post<{ Body: ChatBody }>(
+    "/chat/stream",
+    {
+      preHandler: [fastify.authenticate, requireChatAccess],
+      config: {
+        rateLimit: {
+          max: 15,
+          timeWindow: "1 minute",
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = chatBodySchema.safeParse(request.body);
+
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      const { message, conversationId } = parsed.data;
+      const userId = request.user.id;
+
+      let conversation: { id: string };
+
+      if (conversationId) {
+        const existing = await fastify.prisma.conversation.findFirst({
+          where: { id: conversationId, userId },
+        });
+
+        if (!existing) {
+          return reply.status(404).send({ error: "Conversation not found" });
+        }
+
+        const messageCount = await fastify.prisma.message.count({
+          where: { conversationId },
+        });
+        if (messageCount >= MAX_MESSAGES_PER_CONVERSATION) {
+          return reply.status(429).send({
+            error: "Conversation has reached the maximum number of messages.",
+          });
+        }
+
+        conversation = existing;
+      } else {
+        const title =
+          message.length > 60 ? message.substring(0, 57) + "..." : message;
+        conversation = await fastify.prisma.conversation.create({
+          data: { userId, title },
+        });
+      }
+
+      const history = await fastify.prisma.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        select: { role: true, content: true },
+      });
+
+      const userMessage = await fastify.prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "USER",
+          content: message,
+        },
+      });
+
+      // Set SSE headers
+      reply.raw.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      });
+
+      const stream = streamGroundedAnswer({
+        fastify,
+        userId,
+        question: message,
+        history: history.reverse(),
+        conversationId: conversation.id,
+        userMessageId: userMessage.id,
+      });
+
+      try {
+        for await (const event of stream) {
+          const data = JSON.stringify(event);
+          reply.raw.write(`data: ${data}\n\n`);
+        }
+      } catch (err) {
+        const errorEvent = JSON.stringify({
+          type: "error",
+          error: "Stream interrupted",
+        });
+        reply.raw.write(`data: ${errorEvent}\n\n`);
+      }
+
+      reply.raw.write("data: [DONE]\n\n");
+      reply.raw.end();
     },
   );
 }

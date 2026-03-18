@@ -11,6 +11,7 @@ import userRoutes from "./routes/user.js";
 import adminRoutes from "./routes/admin.js";
 import resourceRoutes from "./routes/resources.js";
 import { getSupabaseAdmin } from "./services/supabaseAdmin.js";
+import { warmHydeCache } from "./services/ai/retrieval.js";
 
 const envToLogger: Record<string, object | boolean> = {
   development: {
@@ -143,6 +144,11 @@ async function main() {
     server.log.error(err);
     process.exit(1);
   }
+
+  // Non-blocking: pre-warm HyDE cache with common queries after startup
+  warmHydeCache().catch((err) =>
+    server.log.warn({ err }, "hyde.warmup.failed"),
+  );
 
   const shutdown = async () => {
     server.log.info("Shutting down...");

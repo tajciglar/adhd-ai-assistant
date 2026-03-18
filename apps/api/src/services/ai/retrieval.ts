@@ -1,13 +1,16 @@
 import { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { embedTexts } from "./embed.js";
+import { createChatCompletion } from "./geminiClient.js";
 
 const DEFAULT_TOP_K = 8;
 const MIN_SCORE = 0.35;
 const EMBEDDING_CACHE_TTL_MS = 60_000;
 const RETRIEVAL_CACHE_TTL_MS = 30_000;
+const HYDE_CACHE_TTL_MS = 120_000;
 const MAX_EMBEDDING_CACHE = 2_000;
 const MAX_RETRIEVAL_CACHE = 2_000;
+const MAX_HYDE_CACHE = 500;
 
 export interface RetrievedSource {
   entryId: string;
@@ -31,6 +34,10 @@ const embeddingCache = new Map<
 const retrievalCache = new Map<
   string,
   { value: RetrievalResult; expiresAt: number; lastAccessedAt: number }
+>();
+const hydeCache = new Map<
+  string,
+  { value: string; expiresAt: number; lastAccessedAt: number }
 >();
 
 function toVectorLiteral(vector: number[]): string {
@@ -84,6 +91,93 @@ function evictLru<
 export function invalidateRetrievalCaches() {
   embeddingCache.clear();
   retrievalCache.clear();
+  hydeCache.clear();
+}
+
+// ─── HyDE: Hypothetical Document Embedding ─────────────────────────────────
+
+const HYDE_SYSTEM_PROMPT = `You are an expert ADHD parenting knowledge base. Given a parent's question, write a short hypothetical knowledge base article (150-200 words) that would perfectly answer their question. Write as if this article already exists in a professional ADHD parenting resource library. Include specific strategies, ADHD mechanisms, and practical advice. Do NOT address the parent directly — write the article content only.`;
+
+async function generateHypotheticalDocument(query: string): Promise<string | null> {
+  const now = Date.now();
+
+  // Check HyDE cache first
+  const cached = hydeCache.get(query);
+  if (cached && cached.expiresAt > now) {
+    cached.lastAccessedAt = now;
+    return cached.value;
+  }
+
+  try {
+    const { content } = await createChatCompletion(
+      [
+        { role: "system", content: HYDE_SYSTEM_PROMPT },
+        { role: "user", content: query },
+      ],
+      { timeoutMs: 8_000 },
+    );
+
+    if (!content || content.length < 50) return null;
+
+    evictLru(hydeCache, MAX_HYDE_CACHE);
+    hydeCache.set(query, {
+      value: content,
+      expiresAt: now + HYDE_CACHE_TTL_MS,
+      lastAccessedAt: now,
+    });
+
+    return content;
+  } catch {
+    // HyDE is best-effort — fall back to raw query embedding on failure
+    return null;
+  }
+}
+
+// ─── HyDE Precompute / Warmup ────────────────────────────────────────────────
+
+const COMMON_QUERIES = [
+  "my child won't do homework",
+  "morning routine is a disaster",
+  "how to handle meltdowns",
+  "screen time is out of control",
+  "my child can't focus in school",
+  "bedtime battles every night",
+  "is this normal for ADHD",
+  "how to help with emotional regulation",
+  "should I medicate my child",
+  "my child has no friends",
+  "how to stop yelling at my child",
+  "chores and responsibility",
+  "I feel like I'm failing as a parent",
+  "how to talk to teachers about ADHD",
+  "transition between activities",
+];
+
+/**
+ * Pre-warm the HyDE cache with common parent queries.
+ * Call once on server startup (non-blocking). Runs sequentially
+ * with a small delay to avoid hammering the Gemini API.
+ */
+export async function warmHydeCache(): Promise<void> {
+  let warmed = 0;
+  for (const query of COMMON_QUERIES) {
+    const normalized = normalizeQuery(query);
+    // Skip if already cached
+    const existing = hydeCache.get(normalized);
+    if (existing && existing.expiresAt > Date.now()) continue;
+
+    try {
+      await generateHypotheticalDocument(normalized);
+      warmed++;
+      // Small delay between calls to stay under rate limits
+      await new Promise((r) => setTimeout(r, 200));
+    } catch {
+      // Best-effort — skip failures
+    }
+  }
+  if (warmed > 0) {
+    console.log(`[HyDE] Pre-warmed cache with ${warmed} common queries`);
+  }
 }
 
 export function rerankAndFilterSources(
@@ -143,7 +237,13 @@ async function getQueryEmbedding(normalizedQuery: string): Promise<{
     return { embedding: cached.value, cacheHit: true };
   }
 
-  const [queryEmbedding] = await embedTexts([normalizedQuery]);
+  // HyDE: generate a hypothetical document to enrich the embedding
+  const hydeDoc = await generateHypotheticalDocument(normalizedQuery);
+  const textToEmbed = hydeDoc
+    ? `${normalizedQuery}\n\n${hydeDoc}`
+    : normalizedQuery;
+
+  const [queryEmbedding] = await embedTexts([textToEmbed]);
   if (!queryEmbedding || queryEmbedding.length === 0) {
     return { embedding: [], cacheHit: false };
   }

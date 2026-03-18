@@ -1,5 +1,5 @@
 {
-  "name": "@adhd-parenting-ai-assistant/api",
+  "name": "@adhd-ai-assistant/api",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "security:check-logs": "tsx scripts/check-no-secret-logs.ts"
   },
   "dependencies": {
-    "@adhd-parenting-ai-assistant/shared": "workspace:*",
+    "@adhd-ai-assistant/shared": "workspace:*",
     "@fastify/cors": "^11.0.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/multipart": "^9.4.0",

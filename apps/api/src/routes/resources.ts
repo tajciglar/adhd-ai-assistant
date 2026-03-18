@@ -5,6 +5,23 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabaseAdmin.js";
 import { reindexKnowledgeEntry } from "../services/ai/knowledgeIndex.js";
 import { invalidateRetrievalCaches } from "../services/ai/retrieval.js";
+import { createChatCompletion } from "../services/ai/geminiClient.js";
+
+/** Robustly extract a string value from a @fastify/multipart field */
+function extractFieldValue(
+  fields: Record<string, unknown>,
+  name: string,
+): string | undefined {
+  const field = fields[name];
+  if (!field) return undefined;
+  if (typeof field === "string") return field.trim() || undefined;
+  if (typeof field === "object" && field !== null) {
+    // MultipartValue shape: { value: string, fieldname, ... }
+    const val = (field as Record<string, unknown>).value;
+    if (typeof val === "string") return val.trim() || undefined;
+  }
+  return undefined;
+}
 
 const BUCKET = "resources";
 const ALLOWED_MIME = new Set(["application/pdf"]);
@@ -40,6 +57,23 @@ function buildCompanionContent(
   );
   return lines.join("\n");
 }
+
+// In-memory store for pending bulk uploads (file buffers awaiting confirmation)
+const pendingBulkUploads = new Map<
+  string,
+  {
+    files: { buffer: Buffer; filename: string; mimetype: string }[];
+    expiresAt: number;
+  }
+>();
+
+// Cleanup expired batches every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, batch] of pendingBulkUploads) {
+    if (batch.expiresAt < now) pendingBulkUploads.delete(id);
+  }
+}, 5 * 60 * 1000);
 
 export default async function resourceRoutes(fastify: FastifyInstance) {
   const adminPreHandler = [
@@ -93,15 +127,12 @@ export default async function resourceRoutes(fastify: FastifyInstance) {
           .send({ error: "Only PDF files are allowed" });
       }
 
-      // Read multipart fields
-      const fields = data.fields as Record<
-        string,
-        { value?: string } | undefined
-      >;
-      const title = fields.title?.value?.trim();
-      const description = fields.description?.value?.trim() ?? "";
+      // Read multipart fields — handle various @fastify/multipart field shapes
+      const fields = data.fields as Record<string, unknown>;
+      const title = extractFieldValue(fields, "title");
+      const description = extractFieldValue(fields, "description") ?? "";
       const category =
-        fields.category?.value?.trim() || "Downloadable Resources";
+        extractFieldValue(fields, "category") || "Downloadable Resources";
 
       if (!title) {
         return reply.status(400).send({ error: "Title is required" });
@@ -184,6 +215,210 @@ export default async function resourceRoutes(fastify: FastifyInstance) {
         await supabase.storage.from(BUCKET).remove([storagePath]);
         throw error;
       }
+    },
+  );
+
+  // ── Bulk Upload PDFs (multi-file) ──
+  // Step 1: Upload files + get AI-generated metadata for review
+  fastify.post(
+    "/admin/resources/bulk-prepare",
+    { preHandler: adminPreHandler, config: writeRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parts = request.parts();
+      const files: { buffer: Buffer; filename: string; mimetype: string }[] = [];
+
+      for await (const part of parts) {
+        if (part.type === "file" && ALLOWED_MIME.has(part.mimetype)) {
+          const buffer = await part.toBuffer();
+          files.push({
+            buffer,
+            filename: part.filename,
+            mimetype: part.mimetype,
+          });
+        }
+      }
+
+      if (files.length === 0) {
+        return reply.status(400).send({ error: "No PDF files uploaded" });
+      }
+
+      // Generate AI titles + descriptions for each file
+      const prepared = await Promise.all(
+        files.map(async (f) => {
+          const cleanName = f.filename
+            .replace(/\.pdf$/i, "")
+            .replace(/[-_]/g, " ");
+
+          try {
+            const { content } = await createChatCompletion(
+              [
+                {
+                  role: "system",
+                  content: `You generate metadata for ADHD parenting PDF resources. Given a filename, produce a JSON object with "title" (clear, parent-friendly title, max 60 chars) and "description" (1-2 sentence description of what this resource likely contains, focused on how it helps parents, max 200 chars) and "category" (short category like "Downloadable Resources", "Worksheets", "Checklists", "Guides"). Respond ONLY with the JSON object, no markdown.`,
+                },
+                { role: "user", content: `Filename: "${f.filename}"` },
+              ],
+              { timeoutMs: 10_000 },
+            );
+
+            const parsed = JSON.parse(content || "{}");
+            return {
+              filename: f.filename,
+              sizeBytes: f.buffer.length,
+              title: parsed.title || cleanName,
+              description: parsed.description || "",
+              category: parsed.category || "Downloadable Resources",
+            };
+          } catch {
+            return {
+              filename: f.filename,
+              sizeBytes: f.buffer.length,
+              title: cleanName,
+              description: "",
+              category: "Downloadable Resources",
+            };
+          }
+        }),
+      );
+
+      // Store the buffers temporarily in memory (keyed by filename) for the confirm step
+      const batchId = randomUUID();
+      pendingBulkUploads.set(batchId, {
+        files,
+        expiresAt: Date.now() + 10 * 60 * 1000, // 10 min TTL
+      });
+
+      return reply.send({ batchId, files: prepared });
+    },
+  );
+
+  // Step 2: Confirm bulk upload with reviewed/edited metadata
+  fastify.post<{
+    Body: {
+      batchId: string;
+      files: {
+        filename: string;
+        title: string;
+        description: string;
+        category: string;
+      }[];
+    };
+  }>(
+    "/admin/resources/bulk-confirm",
+    { preHandler: adminPreHandler, config: writeRateLimitConfig },
+    async (request, reply) => {
+      const supabase = getSupabaseAdmin();
+      if (!supabase) {
+        return reply.status(503).send({ error: "Storage not configured" });
+      }
+
+      const { batchId, files: metadata } = request.body;
+      const pending = pendingBulkUploads.get(batchId);
+
+      if (!pending || pending.expiresAt < Date.now()) {
+        pendingBulkUploads.delete(batchId);
+        return reply
+          .status(400)
+          .send({ error: "Batch expired or not found. Please re-upload." });
+      }
+
+      const results: {
+        filename: string;
+        success: boolean;
+        error?: string;
+        resourceId?: string;
+      }[] = [];
+
+      for (const meta of metadata) {
+        const fileData = pending.files.find(
+          (f) => f.filename === meta.filename,
+        );
+        if (!fileData) {
+          results.push({
+            filename: meta.filename,
+            success: false,
+            error: "File not found in batch",
+          });
+          continue;
+        }
+
+        const resourceId = randomUUID();
+        const sanitizedName = fileData.filename
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .slice(0, 200);
+        const storagePath = `${resourceId}/${sanitizedName}`;
+
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from(BUCKET)
+            .upload(storagePath, fileData.buffer, {
+              contentType: fileData.mimetype,
+              upsert: false,
+            });
+
+          if (uploadError) throw uploadError;
+
+          const companionContent = buildCompanionContent(
+            resourceId,
+            sanitizedName,
+            meta.title,
+            meta.description,
+          );
+
+          const knowledgeEntry = await fastify.prisma.knowledgeEntry.create({
+            data: {
+              title: `PDF Resource: ${meta.title}`,
+              content: companionContent,
+              category: meta.category,
+            },
+          });
+
+          await fastify.prisma.resource.create({
+            data: {
+              id: resourceId,
+              filename: sanitizedName,
+              originalName: fileData.filename,
+              mimeType: fileData.mimetype,
+              sizeBytes: fileData.buffer.length,
+              storagePath,
+              title: meta.title,
+              description: meta.description,
+              category: meta.category,
+              knowledgeEntryId: knowledgeEntry.id,
+            },
+          });
+
+          await reindexKnowledgeEntry(fastify, {
+            id: knowledgeEntry.id,
+            title: knowledgeEntry.title,
+            category: knowledgeEntry.category,
+            content: knowledgeEntry.content,
+          });
+
+          results.push({ filename: meta.filename, success: true, resourceId });
+        } catch (err) {
+          results.push({
+            filename: meta.filename,
+            success: false,
+            error: err instanceof Error ? err.message : "Upload failed",
+          });
+        }
+      }
+
+      pendingBulkUploads.delete(batchId);
+
+      await audit(
+        request.user.id,
+        "admin.resource.bulk_upload",
+        "resource",
+        batchId,
+        {
+          total: metadata.length,
+          succeeded: results.filter((r) => r.success).length,
+        },
+      );
+
+      return reply.send({ results });
     },
   );
 

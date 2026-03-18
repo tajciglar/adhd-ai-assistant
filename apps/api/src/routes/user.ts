@@ -25,7 +25,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
       await fastify.prisma.user.upsert({
         where: { id: userId },
         update: {},
-        create: { id: userId, email },
+        // All email/password signups get chat access automatically
+        create: { id: userId, email, hasChatAccess: true },
       });
 
       // Try importing quiz data if no profile exists yet
@@ -96,6 +97,69 @@ export default async function userRoutes(fastify: FastifyInstance) {
           traitProfile: activeChild?.traitProfile ?? null,
         },
       });
+    },
+  );
+
+  // ── Memory Management ───────────────────────────────────────────────
+
+  // GET /user/memories — list all memories for the authenticated user
+  fastify.get(
+    "/user/memories",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { id: userId } = request.user;
+
+      const memories = await fastify.prisma.userMemory.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          fact: true,
+          category: true,
+          source: true,
+          createdAt: true,
+        },
+      });
+
+      return reply.send({ memories });
+    },
+  );
+
+  // DELETE /user/memories/:id — delete a single memory (ownership verified)
+  fastify.delete<{ Params: { id: string } }>(
+    "/user/memories/:id",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { id: userId } = request.user;
+      const { id: memoryId } = request.params;
+
+      const memory = await fastify.prisma.userMemory.findUnique({
+        where: { id: memoryId },
+        select: { userId: true },
+      });
+
+      if (!memory || memory.userId !== userId) {
+        return reply.status(404).send({ error: "Memory not found" });
+      }
+
+      await fastify.prisma.userMemory.delete({ where: { id: memoryId } });
+
+      return reply.send({ success: true });
+    },
+  );
+
+  // DELETE /user/memories — clear ALL memories for the authenticated user
+  fastify.delete(
+    "/user/memories",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { id: userId } = request.user;
+
+      const { count } = await fastify.prisma.userMemory.deleteMany({
+        where: { userId },
+      });
+
+      return reply.send({ success: true, deleted: count });
     },
   );
 }

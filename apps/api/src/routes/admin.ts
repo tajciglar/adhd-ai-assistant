@@ -55,7 +55,7 @@ const classifySchema = z.object({
 });
 
 const parseDocumentSchema = z.object({
-  documentText: z.string().min(1).max(200000),
+  documentText: z.string().min(1).max(500000),
   moduleName: z.string().max(200).optional(),
 });
 
@@ -315,7 +315,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const entry = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
@@ -366,7 +366,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.put<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const parsed = entryBodySchema.safeParse(request.body);
 
@@ -410,7 +410,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.delete<{ Params: { id: string } }>(
     "/admin/entries/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const existing = await fastify.prisma.knowledgeEntry.findUnique({
         where: { id },
@@ -467,7 +467,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/admin/jobs/:id",
     { preHandler: basePreHandler, config: readRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const job = await fastify.prisma.adminImportJob.findUnique({
         where: { id },
@@ -844,7 +844,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   fastify.put<{ Params: { id: string } }>(
     "/admin/report-templates/:id",
     { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request, reply) => {
       const { id } = request.params;
       const parsed = reportTemplateSchema.safeParse(request.body);
 
@@ -913,6 +913,83 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       } catch (err) {
         fastify.log.error({ err }, "admin.quiz_analytics.query_failed");
         return reply.status(500).send({ error: "Failed to fetch quiz analytics" });
+      }
+    },
+  );
+
+  // ── Conversation Insights ──────────────────────────────────────────────────
+  fastify.get(
+    "/admin/conversation-insights",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { days } = request.query as { days?: string };
+      const numDays = Math.min(Math.max(Number(days) || 30, 1), 90);
+      const since = new Date();
+      since.setDate(since.getDate() - numDays);
+
+      try {
+        // Top topics by count
+        const topTopics = await fastify.prisma.conversationInsight.groupBy({
+          by: ["topic"],
+          where: { createdAt: { gte: since } },
+          _count: { topic: true },
+          _avg: { retrievalScore: true },
+          orderBy: { _count: { topic: "desc" } },
+          take: 15,
+        });
+
+        // Content gaps: topics with low avg retrieval scores
+        const contentGaps = await fastify.prisma.conversationInsight.groupBy({
+          by: ["topic"],
+          where: {
+            createdAt: { gte: since },
+            hadSufficientSources: false,
+          },
+          _count: { topic: true },
+          _avg: { retrievalScore: true },
+          orderBy: { _count: { topic: "desc" } },
+          take: 10,
+        });
+
+        // Topics by archetype
+        const archetypeTopics = await fastify.prisma.conversationInsight.groupBy({
+          by: ["archetypeId", "topic"],
+          where: {
+            createdAt: { gte: since },
+            archetypeId: { not: null },
+          },
+          _count: { topic: true },
+          orderBy: { _count: { topic: "desc" } },
+          take: 30,
+        });
+
+        // Total conversations in period
+        const totalCount = await fastify.prisma.conversationInsight.count({
+          where: { createdAt: { gte: since } },
+        });
+
+        return reply.send({
+          period: { days: numDays, since: since.toISOString() },
+          totalConversations: totalCount,
+          topTopics: topTopics.map((t) => ({
+            topic: t.topic,
+            count: t._count.topic,
+            avgRetrievalScore: Number((t._avg.retrievalScore ?? 0).toFixed(3)),
+          })),
+          contentGaps: contentGaps.map((t) => ({
+            topic: t.topic,
+            count: t._count.topic,
+            avgRetrievalScore: Number((t._avg.retrievalScore ?? 0).toFixed(3)),
+          })),
+          archetypeTopics: archetypeTopics.map((t) => ({
+            archetypeId: t.archetypeId,
+            topic: t.topic,
+            count: t._count.topic,
+          })),
+        });
+      } catch (err) {
+        fastify.log.error({ err }, "admin.conversation_insights.query_failed");
+        return reply.status(500).send({ error: "Failed to fetch conversation insights" });
       }
     },
   );

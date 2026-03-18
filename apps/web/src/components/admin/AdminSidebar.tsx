@@ -1,4 +1,4 @@
-export type AdminSection = "knowledge" | "resources" | "templates" | "analytics" | "token-usage";
+export type AdminSection = "knowledge" | "resources" | "templates" | "analytics" | "token-usage" | "insights";
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
@@ -95,6 +95,16 @@ export default function AdminSidebar({
         >
           Token Usage
         </button>
+        <button
+          onClick={() => onSectionChange("insights")}
+          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
+            activeSection === "insights"
+              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+              : "text-harbor-text/70 hover:bg-harbor-bg"
+          }`}
+        >
+          Conversation Insights
+        </button>
       </div>
 
       {(activeSection === "knowledge" || activeSection === "templates") && (
@@ -169,13 +179,19 @@ export default function AdminSidebar({
               View quiz funnel analytics, step dropoff rates, archetype distribution, and recent submissions.
             </p>
           </div>
-        ) : (
+        ) : activeSection === "token-usage" ? (
           <div className="px-4 py-2">
             <p className="text-xs text-harbor-text/50 leading-relaxed">
               Monitor Gemini API token usage and estimated costs across all AI assistant responses.
             </p>
           </div>
-        )}
+        ) : activeSection === "insights" ? (
+          <div className="px-4 py-2">
+            <p className="text-xs text-harbor-text/50 leading-relaxed">
+              See what parents ask about most, identify content gaps, and view patterns by archetype.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div className="p-4 border-t border-harbor-text/10">

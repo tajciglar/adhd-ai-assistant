@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 interface ParsedEntry {
   category: string;
@@ -44,12 +44,61 @@ export default function SmartImportModal({
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState<"input" | "review">("input");
+  const [fileName, setFileName] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Duplicate detection state
   const [dupResults, setDupResults] = useState<DupResult[]>([]);
   const [excluded, setExcluded] = useState<Set<number>>(new Set());
   const [checkingDups, setCheckingDups] = useState(false);
   const [dupFilter, setDupFilter] = useState<DupFilter>("all");
+
+  const handleFile = useCallback((file: File) => {
+    if (!file.name.match(/\.(md|txt|text|markdown)$/i)) {
+      setError("Unsupported file type. Use .md or .txt files.");
+      return;
+    }
+    if (file.size > 500_000) {
+      setError("File too large (max 500KB).");
+      return;
+    }
+    setError("");
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setDocumentText(text);
+      // Auto-fill module name from filename if empty
+      if (!moduleName) {
+        const name = file.name
+          .replace(/\.(md|txt|text|markdown)$/i, "")
+          .replace(/[-_]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        setModuleName(name);
+      }
+    };
+    reader.readAsText(file);
+  }, [moduleName]);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [handleFile],
+  );
+
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleFile(file);
+    },
+    [handleFile],
+  );
 
   const handleParse = useCallback(async () => {
     if (!documentText.trim()) return;
@@ -179,23 +228,85 @@ export default function SmartImportModal({
             Smart Import
           </h3>
           <p className="text-xs text-harbor-text/40 mt-0.5">
-            Paste a full document — AI will split it into individual Q&A entries
+            Upload or paste a document — AI splits it into knowledge base entries
           </p>
         </div>
 
         <div className="p-6 flex-1 overflow-y-auto">
           {step === "input" ? (
             <div className="space-y-4">
+              {/* File upload zone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                  dragOver
+                    ? "border-harbor-accent bg-harbor-accent/5"
+                    : fileName
+                      ? "border-green-300 bg-green-50/50"
+                      : "border-harbor-text/15 hover:border-harbor-text/30 hover:bg-harbor-bg/50"
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".md,.txt,.text,.markdown"
+                  onChange={handleFileInput}
+                  className="hidden"
+                />
+                {fileName ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-green-600 text-xl">
+                      description
+                    </span>
+                    <span className="text-sm font-medium text-harbor-text">
+                      {fileName}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFileName("");
+                        setDocumentText("");
+                        if (fileInputRef.current)
+                          fileInputRef.current.value = "";
+                      }}
+                      className="text-harbor-text/30 hover:text-red-500 ml-1 cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-harbor-text/25 text-3xl mb-2">
+                      upload_file
+                    </span>
+                    <p className="text-sm text-harbor-text/50">
+                      Drop a <span className="font-medium">.md</span> or{" "}
+                      <span className="font-medium">.txt</span> file here, or
+                      click to browse
+                    </p>
+                    <p className="text-xs text-harbor-text/30 mt-1">
+                      Max 500KB — or paste content below
+                    </p>
+                  </>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">
-                  Module Name{" "}
-                  <span className="text-harbor-text/30">(optional)</span>
+                  Category / Module Name{" "}
+                  <span className="text-harbor-text/30">(optional — AI will auto-classify if empty)</span>
                 </label>
                 <input
                   type="text"
                   value={moduleName}
                   onChange={(e) => setModuleName(e.target.value)}
-                  placeholder="e.g. Morning Routines, Emotional Regulation"
+                  placeholder="e.g. Chores & Routines, Discipline & Boundaries"
                   className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 text-harbor-text placeholder:text-harbor-text/30 focus:outline-none focus:border-harbor-accent transition-colors"
                 />
               </div>
@@ -206,9 +317,12 @@ export default function SmartImportModal({
                 </label>
                 <textarea
                   value={documentText}
-                  onChange={(e) => setDocumentText(e.target.value)}
-                  placeholder="Paste your full document content here... The AI will identify individual questions and answers within the text."
-                  rows={16}
+                  onChange={(e) => {
+                    setDocumentText(e.target.value);
+                    if (fileName) setFileName("");
+                  }}
+                  placeholder="Or paste your document content here... The AI will split it into sections, extract parent questions, and create knowledge base entries."
+                  rows={12}
                   className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 text-harbor-text placeholder:text-harbor-text/30 focus:outline-none focus:border-harbor-accent transition-colors resize-y font-mono text-sm"
                 />
                 <div className="flex justify-between mt-1">
@@ -216,9 +330,9 @@ export default function SmartImportModal({
                     {wordEstimate.toLocaleString()} words &middot;{" "}
                     {charCount.toLocaleString()} chars
                   </p>
-                  {charCount > 200000 && (
+                  {charCount > 500000 && (
                     <p className="text-xs text-red-500">
-                      Document too long (max 200,000 chars)
+                      Document too long (max 500,000 chars)
                     </p>
                   )}
                 </div>
@@ -420,7 +534,7 @@ export default function SmartImportModal({
             <button
               onClick={handleParse}
               disabled={
-                !documentText.trim() || parsing || charCount > 200000
+                !documentText.trim() || parsing || charCount > 500000
               }
               className="px-6 py-2.5 rounded-xl text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
