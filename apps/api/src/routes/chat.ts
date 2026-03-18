@@ -291,13 +291,20 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Set SSE headers. Use reply.header() instead of reply.raw.writeHead()
-      // so Fastify's CORS plugin headers are preserved on the response.
-      reply
-        .header("Content-Type", "text/event-stream")
-        .header("Cache-Control", "no-cache")
-        .header("Connection", "keep-alive")
-        .header("X-Accel-Buffering", "no");
+      // Set SSE headers directly on the raw response so they merge with
+      // any CORS headers already set by @fastify/cors via res.setHeader().
+      // reply.header() stores on Fastify's internal map and never reaches
+      // reply.raw when we bypass reply.send() with raw writes.
+      const origin = request.headers.origin;
+      if (origin) {
+        reply.raw.setHeader("Access-Control-Allow-Origin", origin);
+        reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
+      }
+      reply.raw.setHeader("Content-Type", "text/event-stream");
+      reply.raw.setHeader("Cache-Control", "no-cache");
+      reply.raw.setHeader("Connection", "keep-alive");
+      reply.raw.setHeader("X-Accel-Buffering", "no");
+      reply.raw.setHeader("Vary", "Origin");
       reply.raw.writeHead(200);
 
       const stream = streamGroundedAnswer({
