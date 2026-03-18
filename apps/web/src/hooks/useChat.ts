@@ -48,6 +48,14 @@ const initialState: ChatState = {
 };
 
 function reducer(state: ChatState, action: Action): ChatState {
+  // Debug: track every dispatch to find what clears messages
+  if (typeof window !== "undefined") {
+    console.log(
+      `[useChat] ${action.type}`,
+      action.type === "SET_ACTIVE" ? `(sending=${state.sending} streaming=${state.streaming})` : "",
+      `msgs=${state.messages.length}`,
+    );
+  }
   switch (action.type) {
     case "SET_USER_INFO":
       return { ...state, userInfo: action.userInfo };
