@@ -48,14 +48,6 @@ const initialState: ChatState = {
 };
 
 function reducer(state: ChatState, action: Action): ChatState {
-  // Debug: track every dispatch to find what clears messages
-  if (typeof window !== "undefined") {
-    console.log(
-      `[useChat] ${action.type}`,
-      action.type === "SET_ACTIVE" ? `(sending=${state.sending} streaming=${state.streaming})` : "",
-      `msgs=${state.messages.length}`,
-    );
-  }
   switch (action.type) {
     case "SET_USER_INFO":
       return { ...state, userInfo: action.userInfo };
@@ -277,61 +269,96 @@ export function useChat() {
       });
 
       try {
-        const res = await api.stream("/api/chat/stream", {
-          message: text,
-          conversationId: activeConvRef.current ?? undefined,
-        });
+        // Try SSE streaming first
+        let streamed = false;
+        try {
+          const res = await api.stream("/api/chat/stream", {
+            message: text,
+            conversationId: activeConvRef.current ?? undefined,
+          });
 
-        if (!res.body) throw new Error("No response body");
+          if (!res.body) throw new Error("No response body");
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const jsonStr = line.slice(6).trim();
-            if (!jsonStr || jsonStr === "[DONE]") continue;
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr || jsonStr === "[DONE]") continue;
 
-            try {
-              const event = JSON.parse(jsonStr);
+              try {
+                const event = JSON.parse(jsonStr);
 
-              if (event.type === "preamble") {
-                preambleReceived = true;
-                dispatch({
-                  type: "STREAM_PREAMBLE",
-                  conversationId: event.data.conversationId,
-                  userMessage: {
-                    id: event.data.userMessageId,
-                    role: "USER",
-                    content: text,
-                    createdAt: new Date().toISOString(),
-                  },
-                  assistantMessageId: event.data.assistantMessageId,
-                  isNew,
-                });
-              } else if (event.type === "delta") {
-                dispatch({ type: "STREAM_DELTA", text: event.text });
-              } else if (event.type === "done") {
-                dispatch({ type: "STREAM_DONE", metadata: event.metadata });
-              } else if (event.type === "error") {
-                dispatch({ type: "STREAM_DONE", metadata: undefined });
+                if (event.type === "preamble") {
+                  preambleReceived = true;
+                  dispatch({
+                    type: "STREAM_PREAMBLE",
+                    conversationId: event.data.conversationId,
+                    userMessage: {
+                      id: event.data.userMessageId,
+                      role: "USER",
+                      content: text,
+                      createdAt: new Date().toISOString(),
+                    },
+                    assistantMessageId: event.data.assistantMessageId,
+                    isNew,
+                  });
+                } else if (event.type === "delta") {
+                  dispatch({ type: "STREAM_DELTA", text: event.text });
+                } else if (event.type === "done") {
+                  dispatch({ type: "STREAM_DONE", metadata: event.metadata });
+                } else if (event.type === "error") {
+                  dispatch({ type: "STREAM_DONE", metadata: undefined });
+                }
+              } catch {
+                // Skip malformed JSON
               }
-            } catch {
-              // Skip malformed JSON
             }
           }
+
+          streamed = preambleReceived;
+        } catch {
+          // Streaming failed (CORS / network) — fall back below
         }
 
-        // Stream ended. If preamble never arrived, clear sending state.
+        // Fallback: non-streaming endpoint
+        if (!streamed) {
+          const data = (await api.post("/api/chat", {
+            message: text,
+            conversationId: activeConvRef.current ?? undefined,
+          })) as {
+            conversationId: string;
+            userMessage: { id: string; role: string; content: string; createdAt: string };
+            assistantMessage: { id: string; role: string; content: string; createdAt: string; metadata?: Message["metadata"] };
+          };
+
+          preambleReceived = true;
+          dispatch({
+            type: "STREAM_PREAMBLE",
+            conversationId: data.conversationId,
+            userMessage: {
+              id: data.userMessage.id,
+              role: "USER",
+              content: text,
+              createdAt: data.userMessage.createdAt,
+            },
+            assistantMessageId: data.assistantMessage.id,
+            isNew,
+          });
+          dispatch({ type: "STREAM_DELTA", text: data.assistantMessage.content });
+          dispatch({ type: "STREAM_DONE", metadata: data.assistantMessage.metadata });
+        }
+
         if (!preambleReceived) {
           dispatch({ type: "SENDING", sending: false });
         }
