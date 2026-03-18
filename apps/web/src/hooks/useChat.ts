@@ -234,6 +234,7 @@ export function useChat() {
     async (text: string) => {
       const optimisticId = `optimistic-${Date.now()}`;
       const isNew = !activeConvRef.current;
+      let preambleReceived = false;
 
       dispatch({
         type: "ADD_OPTIMISTIC_USER_MESSAGE",
@@ -274,6 +275,7 @@ export function useChat() {
               const event = JSON.parse(jsonStr);
 
               if (event.type === "preamble") {
+                preambleReceived = true;
                 dispatch({
                   type: "STREAM_PREAMBLE",
                   conversationId: event.data.conversationId,
@@ -291,13 +293,20 @@ export function useChat() {
               } else if (event.type === "done") {
                 dispatch({ type: "STREAM_DONE", metadata: event.metadata });
               } else if (event.type === "error") {
-                dispatch({ type: "STREAM_DELTA", text: event.error });
                 dispatch({ type: "STREAM_DONE", metadata: undefined });
               }
             } catch {
               // Skip malformed JSON
             }
           }
+        }
+
+        // Stream ended cleanly. If preamble never arrived (server error before
+        // streaming started), keep the optimistic message and clear sending state
+        // so the UI isn't stuck. The message is saved server-side; reloading the
+        // conversation will pick it up.
+        if (!preambleReceived) {
+          dispatch({ type: "SENDING", sending: false });
         }
       } catch {
         dispatch({ type: "SEND_FAILED", optimisticId });
