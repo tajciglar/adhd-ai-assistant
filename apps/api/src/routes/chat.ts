@@ -291,13 +291,14 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Set SSE headers
-      reply.raw.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "X-Accel-Buffering": "no",
-      });
+      // Set SSE headers. Use reply.header() instead of reply.raw.writeHead()
+      // so Fastify's CORS plugin headers are preserved on the response.
+      reply
+        .header("Content-Type", "text/event-stream")
+        .header("Cache-Control", "no-cache")
+        .header("Connection", "keep-alive")
+        .header("X-Accel-Buffering", "no");
+      reply.raw.writeHead(200);
 
       const stream = streamGroundedAnswer({
         fastify,
