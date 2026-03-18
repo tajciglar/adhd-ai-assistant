@@ -25,6 +25,15 @@ function pickValue(
   return "";
 }
 
+/** Derive a human-readable category name from a filename */
+function categoryFromFilename(name: string): string {
+  return name
+    .replace(/\.(xlsx|xls|csv)$/i, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 interface BulkImportModalProps {
   saving: boolean;
   onImport: (
@@ -41,39 +50,46 @@ export default function BulkImportModal({
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const parseSpreadsheet = useCallback((data: ArrayBuffer): ParsedRow[] => {
-    const bytes = new Uint8Array(data);
-    const workbook = XLSX.read(bytes, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
+  const parseSpreadsheet = useCallback(
+    (data: ArrayBuffer, filename: string): ParsedRow[] => {
+      const bytes = new Uint8Array(data);
+      const workbook = XLSX.read(bytes, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
 
-    const parsed: ParsedRow[] = [];
-    let lastCategory = "";
+      const fallbackCategory = categoryFromFilename(filename);
+      const parsed: ParsedRow[] = [];
+      let lastCategory = "";
 
-    for (const row of json) {
-      const category = pickValue(row, ["topic", "category"]) || lastCategory;
-      const title = pickValue(row, [
-        "questionissue",
-        "question",
-        "title",
-      ]);
-      const rawContent = pickValue(row, [
-        "content",
-        "answer",
-        "response",
-        "body",
-      ]);
-      const content = rawContent || title;
+      for (const row of json) {
+        const category =
+          pickValue(row, ["topic", "category"]) || lastCategory || fallbackCategory;
+        const title = pickValue(row, [
+          "questionissue",
+          "question",
+          "title",
+        ]);
+        const rawContent = pickValue(row, [
+          "content",
+          "answer",
+          "response",
+          "body",
+        ]);
+        const content = rawContent || title;
 
-      if (category && title && content) {
-        lastCategory = category;
-        parsed.push({ category, title, content });
+        if (category && title && content) {
+          lastCategory = category;
+          parsed.push({ category, title, content });
+        }
       }
-    }
-    return parsed;
-  }, []);
+      return parsed;
+    },
+    [],
+  );
 
   const handleFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +103,7 @@ export default function BulkImportModal({
       reader.onload = (evt) => {
         try {
           const buffer = evt.target?.result as ArrayBuffer;
-          const parsed = parseSpreadsheet(buffer);
+          const parsed = parseSpreadsheet(buffer, file.name);
 
           if (parsed.length === 0) {
             setError(
@@ -106,12 +122,35 @@ export default function BulkImportModal({
     [parseSpreadsheet],
   );
 
+  const updateCategory = useCallback(
+    (index: number, newCategory: string) => {
+      setRows((prev) =>
+        prev.map((row, i) => (i === index ? { ...row, category: newCategory } : row)),
+      );
+    },
+    [],
+  );
+
+  const updateAllCategories = useCallback(
+    (oldCategory: string, newCategory: string) => {
+      setRows((prev) =>
+        prev.map((row) =>
+          row.category === oldCategory ? { ...row, category: newCategory } : row,
+        ),
+      );
+    },
+    [],
+  );
+
   const handleImport = useCallback(async () => {
     const success = await onImport(rows);
     if (success) {
       onClose();
     }
   }, [rows, onImport, onClose]);
+
+  // Get unique categories for the summary chips
+  const uniqueCategories = [...new Set(rows.map((r) => r.category))];
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
@@ -171,6 +210,35 @@ export default function BulkImportModal({
                 </button>
               </div>
 
+              {/* Category chips — click to rename all entries in that category */}
+              <div className="mb-3 flex flex-wrap gap-2">
+                <span className="text-xs text-harbor-text/40 self-center mr-1">Categories:</span>
+                {uniqueCategories.map((cat) => {
+                  const count = rows.filter((r) => r.category === cat).length;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        setEditingIdx(null);
+                        const newName = prompt(
+                          `Rename category "${cat}" (${count} entries) to:`,
+                          cat,
+                        );
+                        if (newName && newName.trim() && newName.trim() !== cat) {
+                          updateAllCategories(cat, newName.trim());
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-harbor-bg text-xs text-harbor-text/70 hover:bg-harbor-accent/10 hover:text-harbor-accent transition-colors cursor-pointer"
+                      title={`Click to rename "${cat}" (${count} entries)`}
+                    >
+                      <span className="material-symbols-outlined text-[12px]">edit</span>
+                      {cat}
+                      <span className="text-harbor-text/30">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="border border-harbor-text/10 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
@@ -189,8 +257,42 @@ export default function BulkImportModal({
                   <tbody className="divide-y divide-harbor-text/5">
                     {rows.slice(0, 20).map((row, i) => (
                       <tr key={i}>
-                        <td className="px-4 py-2 text-harbor-text/70">
-                          {row.category}
+                        <td className="px-4 py-2">
+                          {editingIdx === i ? (
+                            <input
+                              autoFocus
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => {
+                                if (editValue.trim()) {
+                                  updateCategory(i, editValue.trim());
+                                }
+                                setEditingIdx(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  if (editValue.trim()) {
+                                    updateCategory(i, editValue.trim());
+                                  }
+                                  setEditingIdx(null);
+                                } else if (e.key === "Escape") {
+                                  setEditingIdx(null);
+                                }
+                              }}
+                              className="w-full px-1.5 py-0.5 text-sm border border-harbor-accent/40 rounded focus:outline-none focus:border-harbor-accent"
+                            />
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setEditingIdx(i);
+                                setEditValue(row.category);
+                              }}
+                              className="text-harbor-text/70 hover:text-harbor-accent cursor-pointer text-left"
+                              title="Click to edit category"
+                            >
+                              {row.category}
+                            </button>
+                          )}
                         </td>
                         <td className="px-4 py-2 text-harbor-text truncate max-w-[200px]">
                           {row.title}
