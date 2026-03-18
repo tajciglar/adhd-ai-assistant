@@ -43,6 +43,15 @@ async function buildServer() {
     .filter(Boolean)
     .map((origin) => (origin.startsWith("http") ? origin : `https://${origin}`));
 
+  /** Check if an origin is allowed (exact match OR Vercel preview URL) */
+  function isOriginAllowed(origin: string): boolean {
+    if (allowedOrigins.includes(origin)) return true;
+    // Allow all Vercel preview URLs for this project
+    if (/^https:\/\/adhd-ai-assistant[a-z0-9-]*\.vercel\.app$/.test(origin)) return true;
+    if (/^https:\/\/adhd-ai-assistant[a-z0-9-]*-tajciglars-projects\.vercel\.app$/.test(origin)) return true;
+    return false;
+  }
+
   await server.register(helmet, {
     global: true,
     contentSecurityPolicy: false, // API only
@@ -54,14 +63,12 @@ async function buildServer() {
   await server.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
+      if (isOriginAllowed(origin)) return cb(null, true);
       return cb(new Error("Origin not allowed"), false);
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
-    // Browsers cache preflight for 1 hour (avoids repeated OPTIONS requests)
     maxAge: 3600,
-    // Handle preflight immediately, before other hooks/plugins
     strictPreflight: false,
   });
 
@@ -70,7 +77,7 @@ async function buildServer() {
     if (!origin) return;
     if (request.url.startsWith("/health")) return;
 
-    if (!allowedOrigins.includes(origin)) {
+    if (!isOriginAllowed(origin)) {
       await reply.status(403).send({ error: "Origin not allowed" });
     }
   });
