@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { api } from "../lib/api";
 import type {
   Conversation,
   Message,
   UserInfo,
-  ChatResponse,
 } from "../types/chat";
 
 interface ChatState {
@@ -13,6 +12,7 @@ interface ChatState {
   messages: Message[];
   loading: boolean;
   sending: boolean;
+  streaming: boolean;
   userInfo: UserInfo | null;
 }
 
@@ -25,12 +25,14 @@ type Action =
   | { type: "SENDING"; sending: boolean }
   | { type: "ADD_OPTIMISTIC_USER_MESSAGE"; message: Message }
   | {
-      type: "MESSAGE_SENT";
+      type: "STREAM_PREAMBLE";
       conversationId: string;
       userMessage: Message;
-      assistantMessage: Message;
+      assistantMessageId: string;
       isNew: boolean;
     }
+  | { type: "STREAM_DELTA"; text: string }
+  | { type: "STREAM_DONE"; metadata: Message["metadata"] }
   | { type: "SEND_FAILED"; optimisticId: string }
   | { type: "REMOVE_CONVERSATION"; id: string }
   | { type: "LOADED" };
@@ -41,6 +43,7 @@ const initialState: ChatState = {
   messages: [],
   loading: true,
   sending: false,
+  streaming: false,
   userInfo: null,
 };
 
@@ -68,20 +71,21 @@ function reducer(state: ChatState, action: Action): ChatState {
         messages: [...state.messages, action.message],
         sending: true,
       };
-    case "MESSAGE_SENT": {
-      // Replace the optimistic user message with the real one, add assistant message
+
+    case "STREAM_PREAMBLE": {
+      // Replace optimistic user message with real one, add empty assistant message
       const withoutOptimistic = state.messages.filter(
         (m) => !m.id.startsWith("optimistic-"),
       );
-      const newMessages = [
-        ...withoutOptimistic,
-        action.userMessage,
-        action.assistantMessage,
-      ];
+      const assistantMessage: Message = {
+        id: action.assistantMessageId,
+        role: "ASSISTANT",
+        content: "",
+        createdAt: new Date().toISOString(),
+      };
 
       let conversations = state.conversations;
       if (action.isNew) {
-        // Add the new conversation to the top
         const newConv: Conversation = {
           id: action.conversationId,
           title: action.userMessage.content.substring(0, 60),
@@ -90,7 +94,6 @@ function reducer(state: ChatState, action: Action): ChatState {
         };
         conversations = [newConv, ...conversations];
       } else {
-        // Move conversation to top
         conversations = conversations
           .map((c) =>
             c.id === action.conversationId
@@ -107,11 +110,35 @@ function reducer(state: ChatState, action: Action): ChatState {
       return {
         ...state,
         activeConversationId: action.conversationId,
-        messages: newMessages,
+        messages: [...withoutOptimistic, action.userMessage, assistantMessage],
         conversations,
         sending: false,
+        streaming: true,
       };
     }
+
+    case "STREAM_DELTA": {
+      // Append text to the last (assistant) message
+      const msgs = [...state.messages];
+      const last = msgs[msgs.length - 1];
+      if (last && last.role === "ASSISTANT") {
+        msgs[msgs.length - 1] = {
+          ...last,
+          content: last.content + action.text,
+        };
+      }
+      return { ...state, messages: msgs };
+    }
+
+    case "STREAM_DONE": {
+      const msgs = [...state.messages];
+      const last = msgs[msgs.length - 1];
+      if (last && last.role === "ASSISTANT") {
+        msgs[msgs.length - 1] = { ...last, metadata: action.metadata };
+      }
+      return { ...state, messages: msgs, streaming: false };
+    }
+
     case "SEND_FAILED":
       return {
         ...state,
@@ -119,6 +146,7 @@ function reducer(state: ChatState, action: Action): ChatState {
           (m) => m.id !== action.optimisticId,
         ),
         sending: false,
+        streaming: false,
       };
     case "REMOVE_CONVERSATION": {
       const conversations = state.conversations.filter(
@@ -143,6 +171,8 @@ const STORAGE_KEY = "harbor_active_conversation";
 
 export function useChat() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const activeConvRef = useRef(state.activeConversationId);
+  activeConvRef.current = state.activeConversationId;
 
   useEffect(() => {
     Promise.all([
@@ -158,7 +188,6 @@ export function useChat() {
           conversations: convData.conversations,
         });
 
-        // Restore last active conversation from localStorage
         const savedId = localStorage.getItem(STORAGE_KEY);
         if (
           savedId &&
@@ -170,7 +199,7 @@ export function useChat() {
             )) as { messages: Message[] };
             dispatch({ type: "SET_ACTIVE", id: savedId, messages: data.messages });
           } catch {
-            // Conversation may have been deleted — just show welcome
+            // Conversation may have been deleted
           }
         }
 
@@ -181,9 +210,8 @@ export function useChat() {
       });
   }, []);
 
-  // Persist active conversation to localStorage (only after initial load)
   useEffect(() => {
-    if (state.loading) return; // Don't wipe localStorage before restore completes
+    if (state.loading) return;
     if (state.activeConversationId) {
       localStorage.setItem(STORAGE_KEY, state.activeConversationId);
     } else {
@@ -204,8 +232,9 @@ export function useChat() {
 
   const sendMessage = useCallback(
     async (text: string) => {
-      // Show the user message immediately (optimistic update)
       const optimisticId = `optimistic-${Date.now()}`;
+      const isNew = !activeConvRef.current;
+
       dispatch({
         type: "ADD_OPTIMISTIC_USER_MESSAGE",
         message: {
@@ -217,23 +246,64 @@ export function useChat() {
       });
 
       try {
-        const data = (await api.post("/api/chat", {
+        const res = await api.stream("/api/chat/stream", {
           message: text,
-          conversationId: state.activeConversationId ?? undefined,
-        })) as ChatResponse;
-
-        dispatch({
-          type: "MESSAGE_SENT",
-          conversationId: data.conversationId,
-          userMessage: data.userMessage,
-          assistantMessage: data.assistantMessage,
-          isNew: !state.activeConversationId,
+          conversationId: activeConvRef.current ?? undefined,
         });
+
+        if (!res.body) throw new Error("No response body");
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+
+            try {
+              const event = JSON.parse(jsonStr);
+
+              if (event.type === "preamble") {
+                dispatch({
+                  type: "STREAM_PREAMBLE",
+                  conversationId: event.data.conversationId,
+                  userMessage: {
+                    id: event.data.userMessageId,
+                    role: "USER",
+                    content: text,
+                    createdAt: new Date().toISOString(),
+                  },
+                  assistantMessageId: event.data.assistantMessageId,
+                  isNew,
+                });
+              } else if (event.type === "delta") {
+                dispatch({ type: "STREAM_DELTA", text: event.text });
+              } else if (event.type === "done") {
+                dispatch({ type: "STREAM_DONE", metadata: event.metadata });
+              } else if (event.type === "error") {
+                dispatch({ type: "STREAM_DELTA", text: event.error });
+                dispatch({ type: "STREAM_DONE", metadata: undefined });
+              }
+            } catch {
+              // Skip malformed JSON
+            }
+          }
+        }
       } catch {
         dispatch({ type: "SEND_FAILED", optimisticId });
       }
     },
-    [state.activeConversationId],
+    [],
   );
 
   const deleteConversation = useCallback(async (id: string) => {

@@ -133,6 +133,53 @@ async function generateHypotheticalDocument(query: string): Promise<string | nul
   }
 }
 
+// ─── HyDE Precompute / Warmup ────────────────────────────────────────────────
+
+const COMMON_QUERIES = [
+  "my child won't do homework",
+  "morning routine is a disaster",
+  "how to handle meltdowns",
+  "screen time is out of control",
+  "my child can't focus in school",
+  "bedtime battles every night",
+  "is this normal for ADHD",
+  "how to help with emotional regulation",
+  "should I medicate my child",
+  "my child has no friends",
+  "how to stop yelling at my child",
+  "chores and responsibility",
+  "I feel like I'm failing as a parent",
+  "how to talk to teachers about ADHD",
+  "transition between activities",
+];
+
+/**
+ * Pre-warm the HyDE cache with common parent queries.
+ * Call once on server startup (non-blocking). Runs sequentially
+ * with a small delay to avoid hammering the Gemini API.
+ */
+export async function warmHydeCache(): Promise<void> {
+  let warmed = 0;
+  for (const query of COMMON_QUERIES) {
+    const normalized = normalizeQuery(query);
+    // Skip if already cached
+    const existing = hydeCache.get(normalized);
+    if (existing && existing.expiresAt > Date.now()) continue;
+
+    try {
+      await generateHypotheticalDocument(normalized);
+      warmed++;
+      // Small delay between calls to stay under rate limits
+      await new Promise((r) => setTimeout(r, 200));
+    } catch {
+      // Best-effort — skip failures
+    }
+  }
+  if (warmed > 0) {
+    console.log(`[HyDE] Pre-warmed cache with ${warmed} common queries`);
+  }
+}
+
 export function rerankAndFilterSources(
   rows: Array<{
     entryId: string;

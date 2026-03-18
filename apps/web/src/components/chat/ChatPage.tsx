@@ -27,6 +27,7 @@ export default function ChatPage() {
     messages,
     loading,
     sending,
+    streaming,
     userInfo,
     selectConversation,
     sendMessage,
@@ -201,13 +202,13 @@ export default function ChatPage() {
 
         {/* Chat Content */}
         {hasMessages ? (
-          <ChatMessageList messages={messages} sending={sending} />
+          <ChatMessageList messages={messages} sending={sending} streaming={streaming} />
         ) : (
           <ChatWelcome childName={childName} onStarterClick={handleStarterClick} />
         )}
 
         {/* Input */}
-        <ChatInput onSend={sendMessage} disabled={sending} childName={childName} />
+        <ChatInput onSend={sendMessage} disabled={sending || streaming} childName={childName} />
 
         {/* Mobile bottom spacing for nav */}
         <div className="md:hidden h-16" />

@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { api } from "../../lib/api";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
+import MemoriesModal from "./MemoriesModal";
 
 interface ProfileUserInfo {
   id: string;
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const [userInfo, setUserInfo] = useState<ProfileUserInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showMemories, setShowMemories] = useState(false);
 
   useEffect(() => {
     api
@@ -51,6 +53,7 @@ export default function ProfilePage() {
   }
 
   const settingsItems = [
+    { icon: "psychology", label: "Harbor's Memory", action: "memories" as const, sub: "" },
     { icon: "person", label: "Personal Information", sub: "" },
     { icon: "notifications", label: "Notification Preferences", badge: "All On", sub: "" },
     { icon: "security", label: "Privacy & Security", sub: "" },
@@ -167,6 +170,7 @@ export default function ProfilePage() {
                 {settingsItems.map((item, i) => (
                   <button
                     key={item.label}
+                    onClick={"action" in item && item.action === "memories" ? () => setShowMemories(true) : undefined}
                     className={`flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer ${
                       i < settingsItems.length - 1 ? "border-b border-slate-50" : ""
                     }`}
@@ -266,6 +270,7 @@ export default function ProfilePage() {
                 <h2 className="text-base font-bold text-slate-900 mb-4">Account Settings</h2>
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                   {[
+                    { icon: "psychology",   label: "Harbor's Memory", sub: "What Harbor remembers about your family", action: "memories" as const },
                     { icon: "mail",         label: "Email Address",  sub: user?.email ?? "" },
                     { icon: "lock",         label: "Security",       sub: "Password and two-factor auth" },
                     { icon: "notifications",label: "Notifications",  sub: "Push, email, and daily reminders" },
@@ -273,6 +278,7 @@ export default function ProfilePage() {
                   ].map((item, i, arr) => (
                     <button
                       key={item.label}
+                      onClick={"action" in item && item.action === "memories" ? () => setShowMemories(true) : undefined}
                       className={`w-full flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-colors ${
                         i < arr.length - 1 ? "border-b border-slate-50" : ""
                       }`}
@@ -331,6 +337,8 @@ export default function ProfilePage() {
       </div>
 
       <BottomNav active="profile" />
+
+      {showMemories && <MemoriesModal onClose={() => setShowMemories(false)} />}
     </div>
   );
 }
