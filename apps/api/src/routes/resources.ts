@@ -7,13 +7,16 @@ import { reindexKnowledgeEntry } from "../services/ai/knowledgeIndex.js";
 import { invalidateRetrievalCaches } from "../services/ai/retrieval.js";
 import { createChatCompletion } from "../services/ai/geminiClient.js";
 
-/** Robustly extract a string value from a @fastify/multipart field */
+/** Robustly extract a string value from a @fastify/multipart field.
+ *  Handles: plain strings, { value: string } objects, and arrays of either. */
 function extractFieldValue(
   fields: Record<string, unknown>,
   name: string,
 ): string | undefined {
-  const field = fields[name];
+  let field = fields[name];
   if (!field) return undefined;
+  // @fastify/multipart may wrap fields in an array
+  if (Array.isArray(field)) field = field[0];
   if (typeof field === "string") return field.trim() || undefined;
   if (typeof field === "object" && field !== null) {
     // MultipartValue shape: { value: string, fieldname, ... }
