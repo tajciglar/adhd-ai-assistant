@@ -32,10 +32,12 @@ export default function ResourceUploadModal({
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    // Text fields MUST be appended before the file — @fastify/multipart
+    // with request.file() only exposes fields that precede the file part.
     formData.append("title", title.trim());
     formData.append("description", description.trim());
     formData.append("category", category.trim() || "Downloadable Resources");
+    formData.append("file", file);
 
     try {
       await onUpload(formData);
