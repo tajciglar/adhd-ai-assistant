@@ -320,8 +320,40 @@ export async function* streamGroundedAnswer({
       .catch(() => [] as UserMemory[]),
   ]);
 
+  // Helper: send preamble + error + save to DB for early-exit error paths
+  async function* yieldErrorWithPreamble(errorText: string) {
+    const assistantRow = await fastify.prisma.message.create({
+      data: { conversationId, role: "ASSISTANT", content: errorText },
+    });
+    yield {
+      type: "preamble" as const,
+      data: {
+        conversationId,
+        userMessageId,
+        assistantMessageId: assistantRow.id,
+        sourceCount: 0,
+        retrievalMs: 0,
+      },
+    };
+    yield { type: "delta" as const, text: errorText };
+    yield {
+      type: "done" as const,
+      metadata: {
+        model: AI_CHAT_MODEL,
+        grounded: false,
+        sources: [],
+        sourceCount: 0,
+        retrievalMs: 0,
+        providerMs: 0,
+        promptChars: 0,
+        latencyMs: Date.now() - start,
+      } as AssistantMetadata,
+      assistantMessageId: assistantRow.id,
+    };
+  }
+
   if (!retrievalResult) {
-    yield { type: "error", error: NO_CONTENT_RESPONSE };
+    yield* yieldErrorWithPreamble(NO_CONTENT_RESPONSE);
     return;
   }
 
@@ -329,7 +361,7 @@ export async function* streamGroundedAnswer({
   const sourceMetadata = toMetadataSources(sources);
 
   if (sources.length === 0) {
-    yield { type: "error", error: NO_CONTENT_RESPONSE };
+    yield* yieldErrorWithPreamble(NO_CONTENT_RESPONSE);
     return;
   }
 
