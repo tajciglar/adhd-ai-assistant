@@ -56,6 +56,9 @@ function reducer(state: ChatState, action: Action): ChatState {
     case "SET_MESSAGES":
       return { ...state, messages: action.messages };
     case "SET_ACTIVE":
+      // Don't overwrite messages while streaming or sending — the active
+      // session has fresher data than the initial fetch / conversation reload.
+      if (state.sending || state.streaming) return state;
       return {
         ...state,
         activeConversationId: action.id,
@@ -173,8 +176,15 @@ export function useChat() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const activeConvRef = useRef(state.activeConversationId);
   activeConvRef.current = state.activeConversationId;
+  const initRef = useRef(false);
 
   useEffect(() => {
+    // Guard against React StrictMode double-mount
+    if (initRef.current) return;
+    initRef.current = true;
+
+    let cancelled = false;
+
     Promise.all([
       api.get("/api/user/me") as Promise<UserInfo>,
       api.get("/api/conversations") as Promise<{
@@ -182,6 +192,8 @@ export function useChat() {
       }>,
     ])
       .then(async ([userInfo, convData]) => {
+        if (cancelled) return;
+
         dispatch({ type: "SET_USER_INFO", userInfo });
         dispatch({
           type: "SET_CONVERSATIONS",
@@ -197,17 +209,27 @@ export function useChat() {
             const data = (await api.get(
               `/api/conversations/${savedId}/messages`,
             )) as { messages: Message[] };
-            dispatch({ type: "SET_ACTIVE", id: savedId, messages: data.messages });
+            if (!cancelled) {
+              dispatch({ type: "SET_ACTIVE", id: savedId, messages: data.messages });
+            }
           } catch {
             // Conversation may have been deleted
           }
         }
 
-        dispatch({ type: "LOADED" });
+        if (!cancelled) {
+          dispatch({ type: "LOADED" });
+        }
       })
       .catch(() => {
-        dispatch({ type: "LOADED" });
+        if (!cancelled) {
+          dispatch({ type: "LOADED" });
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -301,10 +323,7 @@ export function useChat() {
           }
         }
 
-        // Stream ended cleanly. If preamble never arrived (server error before
-        // streaming started), keep the optimistic message and clear sending state
-        // so the UI isn't stuck. The message is saved server-side; reloading the
-        // conversation will pick it up.
+        // Stream ended. If preamble never arrived, clear sending state.
         if (!preambleReceived) {
           dispatch({ type: "SENDING", sending: false });
         }
