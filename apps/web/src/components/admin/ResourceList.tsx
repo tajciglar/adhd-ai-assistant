@@ -4,6 +4,7 @@ interface ResourceListProps {
   resources: Resource[];
   loading: boolean;
   onUpload: () => void;
+  onBulkUpload: () => void;
   onDelete: (id: string) => void;
 }
 
@@ -25,6 +26,7 @@ export default function ResourceList({
   resources,
   loading,
   onUpload,
+  onBulkUpload,
   onDelete,
 }: ResourceListProps) {
   if (loading) {
@@ -41,12 +43,20 @@ export default function ResourceList({
         <h3 className="text-sm font-semibold text-harbor-text">
           {resources.length} {resources.length === 1 ? "resource" : "resources"}
         </h3>
-        <button
-          onClick={onUpload}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer"
-        >
-          Upload PDF
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onBulkUpload}
+            className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+          >
+            Bulk Upload
+          </button>
+          <button
+            onClick={onUpload}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer"
+          >
+            Upload PDF
+          </button>
+        </div>
       </div>
 
       {resources.length === 0 ? (

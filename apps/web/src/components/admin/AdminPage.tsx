@@ -14,6 +14,7 @@ import ReportTemplateList from "./ReportTemplateList";
 import ReportTemplateEditor from "./ReportTemplateEditor";
 import ResourceList from "./ResourceList";
 import ResourceUploadModal from "./ResourceUploadModal";
+import BulkResourceUploadModal from "./BulkResourceUploadModal";
 import QuizAnalyticsDashboard from "./QuizAnalyticsDashboard";
 import TokenUsageDashboard from "./TokenUsageDashboard";
 import ConversationInsights from "./ConversationInsights";
@@ -67,6 +68,7 @@ export default function AdminPage() {
   const [showSmartImport, setShowSmartImport] = useState(false);
   const [showTestQuery, setShowTestQuery] = useState(false);
   const [showResourceUpload, setShowResourceUpload] = useState(false);
+  const [showBulkResourceUpload, setShowBulkResourceUpload] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<ReportTemplateRecord | null>(
     null,
   );
@@ -205,6 +207,7 @@ export default function AdminPage() {
             resources={resources}
             loading={resourcesLoading}
             onUpload={() => setShowResourceUpload(true)}
+            onBulkUpload={() => setShowBulkResourceUpload(true)}
             onDelete={deleteResource}
           />
         ) : activeSection === "templates" ? (
@@ -281,6 +284,16 @@ export default function AdminPage() {
           uploading={resourcesUploading}
           onUpload={uploadResource}
           onClose={() => setShowResourceUpload(false)}
+        />
+      )}
+
+      {showBulkResourceUpload && (
+        <BulkResourceUploadModal
+          onClose={() => setShowBulkResourceUpload(false)}
+          onComplete={() => {
+            // Refresh resources list
+            window.location.reload();
+          }}
         />
       )}
     </div>
