@@ -6,22 +6,17 @@ interface ChatWelcomeProps {
   onStarterClick: (message: string) => void;
 }
 
-const STARTERS = [
-  { icon: "school", label: "Homework & Focus", color: "text-sky-600", bg: "bg-sky-50" },
-  { icon: "wb_sunny", label: "Morning Routines", color: "text-amber-600", bg: "bg-amber-50" },
-  { icon: "devices", label: "Managing Screen Time", color: "text-emerald-600", bg: "bg-emerald-50" },
-  { icon: "favorite", label: "Emotional Regulation", color: "text-rose-500", bg: "bg-rose-50" },
-] as const;
-
 export default function ChatWelcome({ childName, onStarterClick }: ChatWelcomeProps) {
   const name = childName || "your child";
 
-  const starters = [
-    `How can I help ${name} with homework?`,
-    "Tips for morning routines",
-    "Managing screen time",
-    `Understanding ${name}'s emotions`,
+  const STARTERS = [
+    { icon: "school", label: `${name} won't start homework`, color: "text-sky-600", bg: "bg-sky-50" },
+    { icon: "wb_sunny", label: `Morning chaos with ${name}`, color: "text-amber-600", bg: "bg-amber-50" },
+    { icon: "sentiment_stressed", label: `${name} had a meltdown`, color: "text-rose-500", bg: "bg-rose-50" },
+    { icon: "bedtime", label: `${name} won't go to sleep`, color: "text-harbor-primary", bg: "bg-harbor-primary/10" },
   ];
+
+  const starters = STARTERS.map((s) => s.label);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-5 py-8">
