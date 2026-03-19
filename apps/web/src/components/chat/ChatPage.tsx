@@ -86,12 +86,12 @@ export default function ChatPage() {
                 key={conv.id}
                 className={`group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors ${
                   activeConversationId === conv.id
-                    ? "bg-slate-100 text-slate-900 border border-slate-200"
-                    : "text-slate-600 hover:bg-slate-50"
+                    ? "bg-white text-harbor-primary border border-harbor-primary/25 shadow-sm"
+                    : "bg-white/50 text-harbor-text/70 border border-harbor-orange/10 hover:bg-white hover:border-harbor-primary/15"
                 }`}
                 onClick={() => selectConversation(conv.id)}
               >
-                <span className="material-symbols-outlined text-lg">chat_bubble</span>
+                <span className={`material-symbols-outlined text-lg ${activeConversationId === conv.id ? "text-harbor-primary" : "text-harbor-primary/60"}`}>chat_bubble</span>
                 <div className="flex flex-col min-w-0 flex-1">
                   <p
                     className={`text-sm truncate ${
@@ -102,7 +102,7 @@ export default function ChatPage() {
                   </p>
                   <p
                     className={`text-[11px] ${
-                      activeConversationId === conv.id ? "opacity-70" : "text-slate-400"
+                      activeConversationId === conv.id ? "text-harbor-primary/60" : "text-slate-400"
                     }`}
                   >
                     {activeConversationId === conv.id ? "Active now" : timeAgo(conv.updatedAt)}
@@ -194,7 +194,7 @@ export default function ChatPage() {
         </header>
 
         {/* Chat Content */}
-        <div className="flex-1 flex flex-col min-h-0 bg-harbor-bg-alt">
+        <div className="flex-1 flex flex-col min-h-0 bg-harbor-bg">
           {hasMessages ? (
             <ChatMessageList messages={messages} sending={sending} streaming={streaming} />
           ) : (
