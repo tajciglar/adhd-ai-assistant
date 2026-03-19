@@ -47,7 +47,7 @@ export default function ChatMessageList({
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} streaming={streaming && msg === messages[messages.length - 1] && msg.role === "ASSISTANT"} />
         ))}
-        {sending && <TypingIndicator />}
+        {(sending || (streaming && (!messages.length || !messages[messages.length - 1]?.content))) && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>
     </div>
