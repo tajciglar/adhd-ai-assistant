@@ -67,18 +67,18 @@ export default function ChatMessage({ message, streaming }: ChatMessageProps) {
         </div>
       )}
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[80%] px-4 py-3 ${
           isUser
-            ? "bg-harbor-primary text-white rounded-br-md"
-            : "bg-white text-harbor-text rounded-bl-md shadow-sm"
+            ? "bg-harbor-primary text-white rounded-[20px] rounded-br-md"
+            : "bg-white text-harbor-text rounded-2xl rounded-bl-md border border-slate-100/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
         }`}
       >
         {isUser ? (
-          <p className="whitespace-pre-wrap leading-relaxed">
+          <p className="whitespace-pre-wrap" style={{ lineHeight: 1.6 }}>
             {message.content}
           </p>
         ) : (
-          <div className="chat-markdown leading-relaxed">
+          <div className="chat-markdown" style={{ lineHeight: 1.6 }}>
             {hasDownloadMarker(message.content)
               ? renderContentWithResources(message.content)
               : <ReactMarkdown>{message.content}</ReactMarkdown>}

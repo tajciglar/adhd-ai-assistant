@@ -22,9 +22,9 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
   const { signOut } = useAuth();
 
   return (
-    <aside className="hidden md:flex w-64 bg-white border-r border-slate-100 flex-col shrink-0 h-screen sticky top-0">
+    <aside className="hidden md:flex w-64 bg-[#F5F7F9] border-r border-slate-200/60 flex-col shrink-0 h-screen sticky top-0">
       {/* Logo */}
-      <div className="px-5 h-16 flex items-center border-b border-slate-50">
+      <div className="px-5 h-16 flex items-center border-b border-slate-200/40">
         <button
           className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate("/dashboard")}
@@ -44,8 +44,8 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
               onClick={() => navigate(item.path)}
               className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer w-full text-left ${
                 isActive
-                  ? "bg-harbor-surface-soft text-slate-900"
-                  : "text-harbor-text/70 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-harbor-orange/12 text-harbor-orange"
+                  : "text-harbor-text/60 hover:bg-white hover:text-slate-900"
               }`}
             >
               <span
@@ -88,7 +88,7 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-slate-50">
+      <div className="px-3 py-4 border-t border-slate-200/40">
         <button
           onClick={signOut}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer"
