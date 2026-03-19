@@ -8,8 +8,9 @@ function formatTime(dateStr: string): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// Matches [download:uuid:filename] markers injected by the AI
-const DOWNLOAD_MARKER_RE = /\[download:([a-f0-9-]+):([^\]]+)\]/g;
+// Matches [download:id:filename] markers injected by the AI
+// Permissive ID pattern to catch both UUIDs and any other ID format
+const DOWNLOAD_MARKER_RE = /\[download:([^\]:]+):([^\]]+)\]/g;
 
 function renderContentWithResources(content: string) {
   const parts: React.ReactNode[] = [];
@@ -47,7 +48,7 @@ function renderContentWithResources(content: string) {
 }
 
 function hasDownloadMarker(content: string): boolean {
-  return /\[download:[a-f0-9-]+:[^\]]+\]/.test(content);
+  return /\[download:[^\]:]+:[^\]]+\]/.test(content);
 }
 
 interface ChatMessageProps {
