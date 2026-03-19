@@ -34,8 +34,16 @@ export default function ChatMessageList({
   }, [messages.length, sending, lastContent]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="flex-1 overflow-y-auto px-4 py-6 relative">
+      {/* Background watermark mascot — reacts to conversation state */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <Mascot
+          size={200}
+          mood={sending ? "thinking" : streaming ? "thinking" : messages.length > 0 ? "happy" : "waving"}
+          className="opacity-[0.05] transition-opacity duration-500"
+        />
+      </div>
+      <div className="max-w-2xl mx-auto relative z-10">
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} streaming={streaming && msg === messages[messages.length - 1] && msg.role === "ASSISTANT"} />
         ))}
