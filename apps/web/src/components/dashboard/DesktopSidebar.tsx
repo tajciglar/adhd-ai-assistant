@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import Mascot from "../shared/Mascot";
 
-export type SidebarPage = "dashboard" | "chat" | "library" | "profile" | "admin";
+export type SidebarPage = "dashboard" | "chat" | "library" | "child" | "profile" | "admin";
 
 interface DesktopSidebarProps {
   active: SidebarPage;
@@ -14,6 +14,7 @@ const navItems: { id: SidebarPage; icon: string; label: string; path: string }[]
   { id: "dashboard", icon: "home",           label: "Home",    path: "/dashboard" },
   { id: "chat",      icon: "chat_bubble",   label: "Chat",    path: "/chat" },
   { id: "library",   icon: "library_books", label: "Library", path: "/resources" },
+  { id: "child",     icon: "child_care",    label: "Child",   path: "/child-profile" },
   { id: "profile",   icon: "person",        label: "Profile", path: "/profile" },
 ];
 
