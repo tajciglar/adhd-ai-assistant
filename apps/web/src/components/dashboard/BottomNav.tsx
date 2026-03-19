@@ -14,7 +14,7 @@ const navItems: { id: BottomNavTab; icon: string; label: string; path: string }[
   { id: "profile", icon: "account_circle", label: "Profile", path: "/profile" },
 ];
 
-export default function BottomNav({ active, isAdmin }: BottomNavProps) {
+export default function BottomNav({ active }: BottomNavProps) {
   const navigate = useNavigate();
 
   const items = navItems;
