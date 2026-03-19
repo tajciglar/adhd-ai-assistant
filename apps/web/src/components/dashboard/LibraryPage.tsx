@@ -1,13 +1,14 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import LoadingScreen from "../shared/LoadingScreen";
+import ResourcePreviewModal from "../shared/ResourcePreviewModal";
 import type { Resource } from "../../types/admin";
 
-// ── Resource Preview Modal ──────────────────────────────────────────
-function ResourcePreviewModal({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _InlineModal({
   resource,
   onClose,
 }: {
