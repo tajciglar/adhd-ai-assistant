@@ -152,7 +152,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
             "@adhd-ai-assistant/shared"
           );
           report = renderReportTemplate(
-            template.template as Parameters<typeof renderReportTemplate>[0],
+            template.template as unknown as Parameters<typeof renderReportTemplate>[0],
             {
               name: child.childName || "your child",
               gender: child.childGender || "Other",
