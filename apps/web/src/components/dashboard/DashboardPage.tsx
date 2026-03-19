@@ -6,6 +6,7 @@ import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import LoadingScreen from "../shared/LoadingScreen";
 import Mascot from "../shared/Mascot";
+import ResourcePreviewModal from "../shared/ResourcePreviewModal";
 import type { Resource } from "../../types/admin";
 
 interface DashboardUserInfo {
@@ -38,6 +39,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [userInfo, setUserInfo] = useState<DashboardUserInfo | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -238,7 +240,7 @@ export default function DashboardPage() {
                   return (
                     <button
                       key={resource.id}
-                      onClick={() => navigate("/resources")}
+                      onClick={() => resource.id.startsWith("p") ? navigate("/resources") : setSelectedResource(resource)}
                       className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 hover:border-slate-200 hover:shadow-md transition-all cursor-pointer text-left w-full"
                     >
                       <div className={`w-12 h-12 ${style.bg} rounded-xl flex items-center justify-center shrink-0`}>
@@ -264,6 +266,13 @@ export default function DashboardPage() {
       </div>
 
       <BottomNav active="home" isAdmin={isAdmin} />
+
+      {selectedResource && (
+        <ResourcePreviewModal
+          resource={selectedResource}
+          onClose={() => setSelectedResource(null)}
+        />
+      )}
     </div>
   );
 }
