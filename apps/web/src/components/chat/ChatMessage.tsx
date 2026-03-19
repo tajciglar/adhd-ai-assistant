@@ -60,10 +60,10 @@ export default function ChatMessage({ message, streaming }: ChatMessageProps) {
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
-      {/* Mascot avatar for assistant messages — thinking while streaming, default when done */}
+      {/* Mascot avatar for assistant messages */}
       {!isUser && (
-        <div className="shrink-0 mr-2 mt-1">
-          <Mascot size={28} mood={streaming ? "thinking" : "default"} />
+        <div className="shrink-0 mr-2.5 mt-1">
+          <Mascot size={36} mood={streaming ? "thinking" : "default"} />
         </div>
       )}
       <div
@@ -97,6 +97,12 @@ export default function ChatMessage({ message, streaming }: ChatMessageProps) {
           </p>
         )}
       </div>
+      {/* Parent avatar for user messages */}
+      {isUser && (
+        <div className="shrink-0 ml-2.5 mt-1 w-8 h-8 rounded-full bg-harbor-primary/15 flex items-center justify-center">
+          <span className="material-symbols-outlined text-harbor-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+        </div>
+      )}
     </div>
   );
 }

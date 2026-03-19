@@ -49,7 +49,7 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
               }`}
             >
               <span
-                className={`material-symbols-outlined text-[22px] ${isActive ? "text-harbor-orange" : "text-harbor-primary/60"}`}
+                className={`material-symbols-outlined text-[22px] ${isActive ? "text-harbor-orange" : "text-harbor-primary"}`}
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
                 {item.icon}
@@ -72,7 +72,7 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
             }`}
           >
             <span
-              className={`material-symbols-outlined text-[22px] ${active === "admin" ? "text-harbor-orange" : "text-harbor-primary/60"}`}
+              className={`material-symbols-outlined text-[22px] ${active === "admin" ? "text-harbor-orange" : "text-harbor-primary"}`}
               style={active === "admin" ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               admin_panel_settings
