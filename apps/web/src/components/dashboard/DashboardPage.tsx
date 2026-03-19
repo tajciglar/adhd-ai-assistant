@@ -116,7 +116,7 @@ export default function DashboardPage() {
         </header>
 
         {/* ── Desktop Header ── */}
-        <header className="hidden md:flex h-16 border-b border-harbor-orange/10 bg-gradient-to-r from-harbor-bg-alt to-white items-center justify-between px-8 shrink-0">
+        <header className="hidden md:flex h-16 border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white items-center justify-between px-8 shrink-0">
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-harbor-primary/40 text-lg">search</span>

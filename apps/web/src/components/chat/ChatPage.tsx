@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useChat } from "../../hooks/useChat";
 import { useAuth } from "../../hooks/useAuth";
@@ -48,6 +48,8 @@ export default function ChatPage() {
         .join(" ")
     : "";
   const isAdmin = userInfo?.role === "admin";
+
+  const [showMobileHistory, setShowMobileHistory] = useState(false);
 
   const handleStarterClick = useCallback(
     (message: string) => sendMessage(message),
@@ -144,13 +146,70 @@ export default function ChatPage() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => navigate("/profile")}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-harbor-primary/10 transition-colors"
-          >
-            <span className="material-symbols-outlined text-slate-600">settings</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={newConversation}
+              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-harbor-primary/10 transition-colors"
+              title="New Chat"
+            >
+              <span className="material-symbols-outlined text-harbor-primary/70 text-[22px]">add</span>
+            </button>
+            <button
+              onClick={() => setShowMobileHistory(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-harbor-primary/10 transition-colors"
+              title="Chat History"
+            >
+              <span className="material-symbols-outlined text-harbor-primary/70 text-[22px]">history</span>
+            </button>
+          </div>
         </header>
+
+        {/* Mobile Conversation Drawer */}
+        {showMobileHistory && (
+          <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMobileHistory(false)}>
+            <div className="absolute inset-0 bg-black/30" />
+            <div
+              className="absolute right-0 top-0 bottom-0 w-72 bg-gradient-to-b from-harbor-bg-alt to-white shadow-xl flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-4 border-b border-harbor-orange/15 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-harbor-primary font-display">Conversations</h3>
+                <button
+                  onClick={() => setShowMobileHistory(false)}
+                  className="p-1 rounded-lg hover:bg-harbor-primary/10 text-harbor-primary/60"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+                {conversations.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-8">No conversations yet</p>
+                ) : (
+                  conversations.map((conv: Conversation) => (
+                    <button
+                      key={conv.id}
+                      onClick={() => {
+                        selectConversation(conv.id);
+                        setShowMobileHistory(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-colors cursor-pointer ${
+                        activeConversationId === conv.id
+                          ? "bg-white text-harbor-primary border border-harbor-primary/20 shadow-sm"
+                          : "bg-white/50 text-harbor-text/70 border border-harbor-orange/10 hover:bg-white"
+                      }`}
+                    >
+                      <span className={`material-symbols-outlined text-[16px] ${activeConversationId === conv.id ? "text-harbor-primary" : "text-harbor-primary/50"}`}>chat_bubble</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate font-medium">{conv.title}</p>
+                        <p className="text-[10px] text-slate-400">{timeAgo(conv.updatedAt)}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Desktop Header */}
         <header className="hidden md:flex h-16 border-b border-harbor-primary/10 bg-white items-center justify-between px-8 shrink-0">
