@@ -145,12 +145,12 @@ export default function DashboardPage() {
               className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
             >
               <div className="text-right">
-                <p className="text-xs font-bold leading-tight text-slate-900">
+                <p className="text-sm font-bold leading-tight text-slate-900">
                   {childName ? `${childName}'s Parent` : user?.email?.split("@")[0] ?? "Parent"}
                 </p>
-                <p className="text-[10px] text-slate-400">Parent Member</p>
+                <p className="text-xs text-slate-400">Parent Member</p>
               </div>
-              <Mascot size={36} className="rounded-full" />
+              <Mascot size={42} className="rounded-full" />
             </button>
           </div>
         </header>

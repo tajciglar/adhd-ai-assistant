@@ -24,7 +24,7 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
   return (
     <aside className="hidden md:flex w-64 bg-white border-r border-slate-100 flex-col shrink-0 h-screen sticky top-0">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-slate-50">
+      <div className="px-5 h-16 flex items-center border-b border-slate-50">
         <button
           className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate("/dashboard")}
@@ -42,14 +42,14 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer w-full text-left ${
+              className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer w-full text-left ${
                 isActive
                   ? "bg-harbor-surface-soft text-slate-900"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  : "text-harbor-text/70 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               <span
-                className={`material-symbols-outlined text-[20px] ${isActive ? "text-harbor-orange" : ""}`}
+                className={`material-symbols-outlined text-[22px] ${isActive ? "text-harbor-orange" : "text-harbor-primary/60"}`}
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
                 {item.icon}
@@ -65,14 +65,14 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
         {isAdmin && (
           <button
             onClick={() => navigate("/admin")}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer w-full text-left ${
+            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer w-full text-left ${
               active === "admin"
                 ? "bg-harbor-surface-soft text-slate-900"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                : "text-harbor-text/70 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >
             <span
-              className={`material-symbols-outlined text-[20px] ${active === "admin" ? "text-harbor-orange" : ""}`}
+              className={`material-symbols-outlined text-[22px] ${active === "admin" ? "text-harbor-orange" : "text-harbor-primary/60"}`}
               style={active === "admin" ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               admin_panel_settings
