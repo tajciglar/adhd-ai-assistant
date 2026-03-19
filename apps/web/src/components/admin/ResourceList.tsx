@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Resource } from "../../types/admin";
 
 interface ResourceListProps {
@@ -6,6 +7,10 @@ interface ResourceListProps {
   onUpload: () => void;
   onBulkUpload: () => void;
   onDelete: (id: string) => void;
+  onUpdate: (
+    id: string,
+    updates: { title?: string; description?: string; category?: string },
+  ) => Promise<void>;
 }
 
 function formatSize(bytes: number): string {
@@ -22,13 +27,142 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function EditModal({
+  resource,
+  onSave,
+  onClose,
+}: {
+  resource: Resource;
+  onSave: (updates: {
+    title: string;
+    description: string;
+    category: string;
+  }) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState(resource.title);
+  const [description, setDescription] = useState(resource.description);
+  const [category, setCategory] = useState(resource.category);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await onSave({ title: title.trim(), description: description.trim(), category: category.trim() });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
+        <div className="px-6 py-4 border-b border-harbor-text/10 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-harbor-text">
+              Edit Resource
+            </h2>
+            <p className="text-xs text-harbor-text/50 mt-0.5">
+              {resource.originalName}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-harbor-text/40 hover:text-harbor-text/70 p-1 rounded-lg hover:bg-harbor-bg transition-colors cursor-pointer"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-harbor-text/70 mb-1.5">
+              Title
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-harbor-text/70 mb-1.5">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40 resize-none"
+              placeholder="Helps AI recommend this resource to parents"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-harbor-text/70 mb-1.5">
+              Category
+            </label>
+            <input
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40"
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-harbor-error">{error}</p>
+          )}
+
+          <div className="flex gap-3 justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg text-sm text-harbor-text/60 hover:bg-harbor-bg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function ResourceList({
   resources,
   loading,
   onUpload,
   onBulkUpload,
   onDelete,
+  onUpdate,
 }: ResourceListProps) {
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center text-harbor-text/40">
@@ -110,16 +244,32 @@ export default function ResourceList({
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => onDelete(resource.id)}
-                  className="text-xs text-harbor-error/60 hover:text-harbor-error transition-colors cursor-pointer flex-shrink-0"
-                >
-                  Delete
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setEditingResource(resource)}
+                    className="text-xs text-harbor-accent/60 hover:text-harbor-accent transition-colors cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(resource.id)}
+                    className="text-xs text-harbor-error/60 hover:text-harbor-error transition-colors cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {editingResource && (
+        <EditModal
+          resource={editingResource}
+          onSave={(updates) => onUpdate(editingResource.id, updates)}
+          onClose={() => setEditingResource(null)}
+        />
       )}
     </div>
   );

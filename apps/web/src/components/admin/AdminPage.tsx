@@ -58,6 +58,7 @@ export default function AdminPage() {
     loading: resourcesLoading,
     uploading: resourcesUploading,
     uploadResource,
+    updateResource,
     deleteResource,
   } = useResources();
 
@@ -208,6 +209,7 @@ export default function AdminPage() {
             loading={resourcesLoading}
             onUpload={() => setShowResourceUpload(true)}
             onBulkUpload={() => setShowBulkResourceUpload(true)}
+            onUpdate={updateResource}
             onDelete={deleteResource}
           />
         ) : activeSection === "templates" ? (
