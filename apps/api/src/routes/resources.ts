@@ -447,6 +447,87 @@ export default async function resourceRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // ── Update resource metadata ──
+  fastify.patch<{
+    Params: { id: string };
+    Body: { title?: string; description?: string; category?: string };
+  }>(
+    "/admin/resources/:id",
+    { preHandler: adminPreHandler, config: writeRateLimitConfig },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { title, description, category } = request.body;
+
+      const resource = await fastify.prisma.resource.findUnique({
+        where: { id },
+      });
+      if (!resource) {
+        return reply.status(404).send({ error: "Resource not found" });
+      }
+
+      const updatedTitle = title?.trim() || resource.title;
+      const updatedDescription =
+        description !== undefined ? description.trim() : resource.description;
+      const updatedCategory = category?.trim() || resource.category;
+
+      // Update the Resource row
+      const updated = await fastify.prisma.resource.update({
+        where: { id },
+        data: {
+          title: updatedTitle,
+          description: updatedDescription,
+          category: updatedCategory,
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          category: true,
+          filename: true,
+          originalName: true,
+          sizeBytes: true,
+          createdAt: true,
+        },
+      });
+
+      // Update companion KnowledgeEntry so RAG stays in sync
+      if (resource.knowledgeEntryId) {
+        const companionContent = buildCompanionContent(
+          resource.id,
+          resource.filename,
+          updatedTitle,
+          updatedDescription,
+        );
+
+        const knowledgeEntry = await fastify.prisma.knowledgeEntry.update({
+          where: { id: resource.knowledgeEntryId },
+          data: {
+            title: `PDF Resource: ${updatedTitle}`,
+            content: companionContent,
+            category: updatedCategory,
+          },
+        });
+
+        // Re-index so vector embeddings reflect the new metadata
+        await reindexKnowledgeEntry(fastify, {
+          id: knowledgeEntry.id,
+          title: knowledgeEntry.title,
+          category: knowledgeEntry.category,
+          content: knowledgeEntry.content,
+        });
+
+        invalidateRetrievalCaches();
+      }
+
+      await audit(request.user.id, "admin.resource.update", "resource", id, {
+        title: updatedTitle,
+        category: updatedCategory,
+      });
+
+      return reply.send({ resource: updated });
+    },
+  );
+
   // ── Delete resource ──
   fastify.delete<{ Params: { id: string } }>(
     "/admin/resources/:id",

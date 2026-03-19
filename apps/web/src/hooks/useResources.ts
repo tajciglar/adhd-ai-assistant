@@ -11,6 +11,7 @@ interface ResourcesState {
 type Action =
   | { type: "SET_RESOURCES"; resources: Resource[] }
   | { type: "ADD_RESOURCE"; resource: Resource }
+  | { type: "UPDATE_RESOURCE"; resource: Resource }
   | { type: "REMOVE_RESOURCE"; id: string }
   | { type: "UPLOADING"; uploading: boolean }
   | { type: "LOADED" };
@@ -30,6 +31,13 @@ function reducer(state: ResourcesState, action: Action): ResourcesState {
         ...state,
         resources: [action.resource, ...state.resources],
         uploading: false,
+      };
+    case "UPDATE_RESOURCE":
+      return {
+        ...state,
+        resources: state.resources.map((r) =>
+          r.id === action.resource.id ? action.resource : r,
+        ),
       };
     case "REMOVE_RESOURCE":
       return {
@@ -75,6 +83,19 @@ export function useResources() {
     }
   }, []);
 
+  const updateResource = useCallback(
+    async (
+      id: string,
+      updates: { title?: string; description?: string; category?: string },
+    ) => {
+      const data = (await api.patch(`/api/admin/resources/${id}`, updates)) as {
+        resource: Resource;
+      };
+      dispatch({ type: "UPDATE_RESOURCE", resource: data.resource });
+    },
+    [],
+  );
+
   const deleteResource = useCallback(async (id: string) => {
     try {
       await api.delete(`/api/admin/resources/${id}`);
@@ -87,6 +108,7 @@ export function useResources() {
   return {
     ...state,
     uploadResource,
+    updateResource,
     deleteResource,
   };
 }
