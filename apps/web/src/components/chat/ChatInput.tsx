@@ -38,8 +38,8 @@ export default function ChatInput({ onSend, disabled, childName }: ChatInputProp
   }, []);
 
   const placeholder = childName
-    ? `Ask Harbor anything about ${childName}…`
-    : "Ask Harbor anything…";
+    ? `Ask Harbor about ${childName}...`
+    : "Ask Harbor anything...";
 
   const hasText = text.trim().length > 0;
 

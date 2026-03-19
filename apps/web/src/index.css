@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand */
+  /* Brand — purple is CTA-only, orange is the accent */
   --color-harbor-primary: #7040CA;
+  --color-harbor-orange: #F5841F;
   --color-harbor-secondary: #4CC9F0;
   --color-harbor-success: #3DDC97;
   --color-harbor-highlight: #F9C74F;
@@ -10,19 +11,21 @@
 
   /* Backgrounds */
   --color-harbor-bg: #FAF7FC;
+  --color-harbor-bg-alt: #FFF8F0;
   --color-harbor-surface: #FFFFFF;
-  --color-harbor-surface-soft: #F2EDF9;
+  --color-harbor-surface-soft: #FFF0DB;
 
   /* Text */
-  --color-harbor-text: #1F2933;
+  --color-harbor-text: #3E4C59;
 
-  /* Legacy aliases — kept for backward compat */
-  --color-harbor-accent: #9B59B6;
-  --color-harbor-primary-light: #9B59B6;
-  --color-harbor-accent-light: #C39BD3;
+  /* Accent aliases — orange from logo */
+  --color-harbor-accent: #F5841F;
+  --color-harbor-primary-light: #F5841F;
+  --color-harbor-accent-light: #FACB9E;
 
-  /* Typography */
-  --font-family-sans: "Inter", system-ui, sans-serif;
+  /* Typography — Nunito for everything (rounded, warm, ADHD-friendly) */
+  --font-family-sans: "Nunito", system-ui, sans-serif;
+  --font-family-display: "Nunito", system-ui, sans-serif;
   --font-size-2xs: 0.625rem;   /* 10px */
   --font-size-xs:  0.75rem;    /* 12px */
   --font-size-sm:  0.875rem;   /* 14px */
@@ -59,7 +62,7 @@ html, body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2d9f3;
+  background: #f0d9b8;
   border-radius: 10px;
 }
 
@@ -168,7 +171,7 @@ html, body {
 .chat-markdown h2 {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-harbor-primary);
+  color: var(--color-harbor-text);
   margin-top: 0.75rem;
   margin-bottom: 0.35rem;
 }
@@ -177,7 +180,7 @@ html, body {
 .chat-markdown h4 {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-harbor-primary);
+  color: var(--color-harbor-text);
   margin-top: 0.6rem;
   margin-bottom: 0.25rem;
 }

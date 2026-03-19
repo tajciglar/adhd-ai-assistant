@@ -176,13 +176,8 @@ export function useChat() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const activeConvRef = useRef(state.activeConversationId);
   activeConvRef.current = state.activeConversationId;
-  const initRef = useRef(false);
 
   useEffect(() => {
-    // Guard against React StrictMode double-mount
-    if (initRef.current) return;
-    initRef.current = true;
-
     let cancelled = false;
 
     Promise.all([

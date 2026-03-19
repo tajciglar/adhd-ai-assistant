@@ -7,6 +7,8 @@ import ChatMessageList from "./ChatMessageList";
 import ChatInput from "./ChatInput";
 import BottomNav from "../dashboard/BottomNav";
 import DesktopSidebar from "../dashboard/DesktopSidebar";
+import LoadingScreen from "../shared/LoadingScreen";
+import Mascot from "../shared/Mascot";
 import type { Conversation } from "../../types/chat";
 
 function timeAgo(dateStr: string): string {
@@ -53,14 +55,7 @@ export default function ChatPage() {
   );
 
   if (loading) {
-    return (
-      <div className="h-screen bg-harbor-bg flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-harbor-primary mb-2">Harbor</h1>
-          <p className="text-harbor-text/40">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const hasMessages = activeConversationId || messages.length > 0;
@@ -72,7 +67,7 @@ export default function ChatPage() {
         <div className="px-4 py-2 border-t border-harbor-primary/5 flex flex-col flex-1 overflow-hidden">
           <div className="flex items-center justify-between mb-2 px-3">
             <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-              Conversation History
+              Conversations
             </h3>
             <button
               onClick={newConversation}
@@ -133,12 +128,10 @@ export default function ChatPage() {
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between px-4 py-4 border-b border-harbor-primary/10 bg-white/80 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-harbor-primary text-white shadow-lg shadow-harbor-primary/20">
-              <span className="material-symbols-outlined text-2xl">neurology</span>
-            </div>
+            <Mascot size={40} />
             <div>
-              <h1 className="text-base font-bold leading-tight tracking-tight text-slate-900">
-                Harbor AI
+              <h1 className="text-base font-bold leading-tight tracking-tight text-harbor-primary font-display">
+                Harbor
               </h1>
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-2 w-2">
@@ -201,11 +194,13 @@ export default function ChatPage() {
         </header>
 
         {/* Chat Content */}
-        {hasMessages ? (
-          <ChatMessageList messages={messages} sending={sending} streaming={streaming} />
-        ) : (
-          <ChatWelcome childName={childName} onStarterClick={handleStarterClick} />
-        )}
+        <div className="flex-1 flex flex-col min-h-0 bg-harbor-bg-alt">
+          {hasMessages ? (
+            <ChatMessageList messages={messages} sending={sending} streaming={streaming} />
+          ) : (
+            <ChatWelcome childName={childName} onStarterClick={handleStarterClick} />
+          )}
+        </div>
 
         {/* Input */}
         <ChatInput onSend={sendMessage} disabled={sending || streaming} childName={childName} />
@@ -214,7 +209,7 @@ export default function ChatPage() {
         <div className="md:hidden h-16" />
       </div>
 
-      <BottomNav active="chat" />
+      <BottomNav active="chat" isAdmin={isAdmin} />
     </div>
   );
 }

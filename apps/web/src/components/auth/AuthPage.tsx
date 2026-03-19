@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
+import Mascot from "../shared/Mascot";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -38,11 +39,12 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-harbor-bg flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-harbor-primary mb-2">
+        <div className="text-center mb-10 flex flex-col items-center">
+          <Mascot size={100} className="mb-3" />
+          <h1 className="text-3xl font-extrabold text-harbor-primary mb-1 font-display">
             Harbor
           </h1>
-          <p className="text-harbor-text/60 text-lg">
+          <p className="text-slate-400 text-sm">
             A calm space in the chaos.
           </p>
         </div>
@@ -66,7 +68,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full p-3 rounded-xl border-2 border-harbor-primary/15 focus:border-harbor-accent focus:ring-2 focus:ring-harbor-accent/20 bg-harbor-bg text-harbor-text outline-none transition-all"
+                className="w-full p-3 rounded-xl border border-slate-200 focus:border-harbor-orange/40 focus:ring-2 focus:ring-harbor-orange/20 bg-white text-harbor-text outline-none transition-all"
                 placeholder="you@example.com"
               />
             </div>
@@ -85,9 +87,18 @@ export default function AuthPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full p-3 rounded-xl border-2 border-harbor-primary/15 focus:border-harbor-accent focus:ring-2 focus:ring-harbor-accent/20 bg-harbor-bg text-harbor-text outline-none transition-all"
+                className="w-full p-3 rounded-xl border border-slate-200 focus:border-harbor-orange/40 focus:ring-2 focus:ring-harbor-orange/20 bg-white text-harbor-text outline-none transition-all"
                 placeholder="At least 6 characters"
               />
+              {!isSignUp && (
+                <button
+                  type="button"
+                  className="text-harbor-orange text-xs mt-1 hover:underline cursor-pointer"
+                  onClick={() => {/* TODO: password reset flow */}}
+                >
+                  Forgot password?
+                </button>
+              )}
             </div>
 
             {error && (

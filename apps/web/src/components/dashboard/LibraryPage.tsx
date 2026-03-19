@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
+import LoadingScreen from "../shared/LoadingScreen";
 import type { Resource } from "../../types/admin";
 
 const FILTERS = ["All", "PDFs", "Articles", "Checklists"] as const;
@@ -14,17 +15,19 @@ interface ResourceStyle {
   color: string;
   label: string;
   cardAccent: string;
+  thumbBg: string;
+  thumbIcon: string;
 }
 
 function getResourceStyle(resource: Resource): ResourceStyle {
   const cat = (resource.category ?? "").toLowerCase();
   if (cat.includes("video"))
-    return { icon: "play_circle", bg: "bg-emerald-50", color: "text-emerald-600", label: "Video", cardAccent: "border-t-emerald-200" };
+    return { icon: "play_circle", bg: "bg-emerald-50", color: "text-emerald-600", label: "Video", cardAccent: "border-t-emerald-200", thumbBg: "bg-emerald-100", thumbIcon: "play_circle" };
   if (cat.includes("article"))
-    return { icon: "article", bg: "bg-sky-50", color: "text-sky-600", label: "Article", cardAccent: "border-t-sky-200" };
+    return { icon: "article", bg: "bg-sky-50", color: "text-sky-600", label: "Article", cardAccent: "border-t-sky-200", thumbBg: "bg-sky-100", thumbIcon: "article" };
   if (cat.includes("checklist") || cat.includes("printable"))
-    return { icon: "task_alt", bg: "bg-harbor-surface-soft", color: "text-harbor-primary", label: "Checklist", cardAccent: "border-t-harbor-primary/20" };
-  return { icon: "picture_as_pdf", bg: "bg-red-50", color: "text-red-500", label: "PDF", cardAccent: "border-t-red-200" };
+    return { icon: "task_alt", bg: "bg-harbor-surface-soft", color: "text-harbor-primary", label: "Checklist", cardAccent: "border-t-harbor-primary/20", thumbBg: "bg-amber-100", thumbIcon: "checklist" };
+  return { icon: "picture_as_pdf", bg: "bg-red-50", color: "text-red-500", label: "PDF", cardAccent: "border-t-red-200", thumbBg: "bg-rose-100", thumbIcon: "description" };
 }
 
 function formatFileSize(bytes: number): string {
@@ -78,11 +81,7 @@ export default function LibraryPage() {
   });
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-harbor-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -98,7 +97,7 @@ export default function LibraryPage() {
           >
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>
-          <h2 className="text-slate-900 text-base font-bold flex-1 text-center">Library</h2>
+          <h2 className="text-harbor-primary text-base font-bold flex-1 text-center font-display">Library</h2>
           <button className="flex items-center justify-center rounded-full w-9 h-9 text-slate-500 hover:bg-slate-100 transition-colors">
             <span className="material-symbols-outlined text-[20px]">bookmark</span>
           </button>
@@ -110,7 +109,7 @@ export default function LibraryPage() {
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
               <input
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-200 outline-none transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40 outline-none transition-all"
                 placeholder="Search guides, articles, and reports…"
                 type="text"
                 value={searchQuery}
@@ -128,7 +127,7 @@ export default function LibraryPage() {
           <div className="flex items-center bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden h-10">
             <span className="material-symbols-outlined text-slate-400 pl-3 text-[20px]">search</span>
             <input
-              className="flex-1 bg-transparent px-2 h-full focus:outline-none text-sm placeholder:text-slate-400"
+              className="flex-1 bg-transparent px-2 h-full focus:outline-none text-sm placeholder:text-slate-400 focus:ring-harbor-orange/20 focus:border-harbor-orange/40"
               placeholder="Search resources…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -144,7 +143,7 @@ export default function LibraryPage() {
               onClick={() => setActiveFilter(f)}
               className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all cursor-pointer ${
                 activeFilter === f
-                  ? "bg-slate-800 text-white shadow-sm"
+                  ? "bg-harbor-orange text-white shadow-sm"
                   : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
               }`}
             >
@@ -165,14 +164,14 @@ export default function LibraryPage() {
               return (
                 <button
                   key={resource.id}
-                  className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all cursor-pointer text-left w-full"
+                  className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer text-left w-full"
                 >
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${style.bg}`}>
+                  <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-xl ${style.thumbBg}`}>
                     <span
-                      className={`material-symbols-outlined text-2xl ${style.color}`}
+                      className={`material-symbols-outlined text-3xl ${style.color}`}
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
-                      {style.icon}
+                      {style.thumbIcon}
                     </span>
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
@@ -191,7 +190,7 @@ export default function LibraryPage() {
           {/* Desktop grid */}
           <div className="hidden md:block p-8">
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Library</h2>
+              <h2 className="text-xl font-bold text-harbor-primary font-display">Library</h2>
               <p className="text-sm text-slate-500 mt-1">
                 Your personalized guides and saved resources
               </p>
@@ -203,17 +202,17 @@ export default function LibraryPage() {
                 return (
                   <button
                     key={resource.id}
-                    className="group flex flex-col bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-slate-200/80 hover:border-slate-200 transition-all cursor-pointer text-left"
+                    className="group flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:shadow-slate-200/80 hover:border-slate-300 transition-all cursor-pointer text-left"
                   >
                     {/* Thumbnail area — consistent neutral background */}
                     <div className="aspect-[3/4] relative bg-harbor-bg flex flex-col items-center justify-center p-6">
                       {/* Large icon */}
-                      <div className={`w-16 h-16 ${style.bg} rounded-2xl flex items-center justify-center mb-3 shadow-sm`}>
+                      <div className={`w-16 h-16 ${style.thumbBg} rounded-2xl flex items-center justify-center mb-3 shadow-sm`}>
                         <span
                           className={`material-symbols-outlined text-4xl ${style.color}`}
                           style={{ fontVariationSettings: "'FILL' 1" }}
                         >
-                          {style.icon}
+                          {style.thumbIcon}
                         </span>
                       </div>
                       {/* Category badge */}
@@ -256,7 +255,7 @@ export default function LibraryPage() {
         </div>
       </div>
 
-      <BottomNav active="library" />
+      <BottomNav active="library" isAdmin={isAdmin} />
     </div>
   );
 }

@@ -42,6 +42,7 @@ export default function AdminPage() {
     classifyEntry,
     parseDocument,
     checkDuplicates,
+    refetch,
   } = useAdmin();
 
   const navigate = useNavigate();
@@ -122,11 +123,9 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="h-screen bg-harbor-bg flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-harbor-primary mb-2">
-            Harbor
-          </h1>
-          <p className="text-harbor-text/40">Loading admin panel...</p>
+        <div className="text-center space-y-3">
+          <img src="/mascot.svg" alt="Harbor" width="64" height="64" className="mx-auto" />
+          <p className="text-harbor-text/40 text-sm">Loading admin panel...</p>
         </div>
       </div>
     );
@@ -147,6 +146,7 @@ export default function AdminPage() {
         onAddEntry={handleAddEntry}
         onAddTemplate={handleAddTemplate}
         onBackToChat={() => navigate("/chat")}
+        onCategoryRenamed={() => refetch()}
       />
 
       <div className="flex-1 flex flex-col">
@@ -156,13 +156,13 @@ export default function AdminPage() {
             {activeSection === "knowledge" ? (
               <>
                 <div>
-                  <span className="text-2xl font-bold text-harbor-primary">
+                  <span className="text-2xl font-bold text-harbor-text">
                     {stats?.totalEntries ?? 0}
                   </span>
                   <span className="text-xs text-harbor-text/40 ml-1.5">entries</span>
                 </div>
                 <div>
-                  <span className="text-2xl font-bold text-harbor-accent">
+                  <span className="text-2xl font-bold text-harbor-orange">
                     {categories.length}
                   </span>
                   <span className="text-xs text-harbor-text/40 ml-1.5">

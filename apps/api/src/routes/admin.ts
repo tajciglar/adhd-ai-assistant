@@ -527,6 +527,46 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // ── Rename Category (bulk update all entries) ─────────────────────────
+  fastify.patch<{ Body: { oldName: string; newName: string } }>(
+    "/admin/entries/rename-category",
+    { preHandler: basePreHandler, config: writeRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { oldName, newName } = request.body as {
+        oldName: string;
+        newName: string;
+      };
+
+      if (!oldName?.trim() || !newName?.trim()) {
+        return reply
+          .status(400)
+          .send({ error: "Both oldName and newName are required" });
+      }
+
+      const trimmedOld = oldName.trim();
+      const trimmedNew = newName.trim();
+
+      if (trimmedOld === trimmedNew) {
+        return reply.send({ success: true, updated: 0 });
+      }
+
+      const { count } = await fastify.prisma.knowledgeEntry.updateMany({
+        where: { category: trimmedOld },
+        data: { category: trimmedNew },
+      });
+
+      await audit(
+        request.user.id,
+        "admin.rename_category",
+        "knowledge_entry",
+        undefined,
+        { oldName: trimmedOld, newName: trimmedNew, entriesUpdated: count },
+      );
+
+      return reply.send({ success: true, updated: count });
+    },
+  );
+
   // ── AI Classification ──────────────────────────────────────────────────
   fastify.post(
     "/admin/entries/classify",
