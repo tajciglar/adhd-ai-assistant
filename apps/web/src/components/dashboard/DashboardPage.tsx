@@ -121,7 +121,7 @@ export default function DashboardPage() {
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-harbor-primary/40 text-lg">search</span>
               <input
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/30 outline-none transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2.5 text-sm shadow-inner shadow-slate-100/50 focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/30 focus:shadow-none outline-none transition-all"
                 placeholder="Search resources, tips, or guides…"
                 type="text"
                 value={searchQuery}
@@ -197,14 +197,17 @@ export default function DashboardPage() {
           <div className="px-4 md:px-8 mb-6">
             <div className="bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm">
               <span
-                className="material-symbols-outlined text-harbor-orange text-[20px]"
+                className="material-symbols-outlined text-harbor-orange text-[20px] animate-pulse"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 local_fire_department
               </span>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-semibold text-slate-900">{streakDays} Day Streak</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-900">{streakDays} Day Streak</p>
+                    <span className="text-[10px] text-harbor-success font-medium">Active now</span>
+                  </div>
                   <p className="text-xs text-slate-400">{completedCount}/7 this week</p>
                 </div>
                 <div className="w-full bg-white rounded-full h-1.5">
