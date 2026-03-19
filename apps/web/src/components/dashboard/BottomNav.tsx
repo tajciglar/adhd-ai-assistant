@@ -20,7 +20,7 @@ export default function BottomNav({ active }: BottomNavProps) {
   const items = navItems;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 px-2 pb-safe-area-inset-bottom pt-1 z-50 flex">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-harbor-bg-alt to-white/95 backdrop-blur-md border-t border-harbor-orange/10 px-2 pb-safe-area-inset-bottom pt-1 z-50 flex">
       {items.map((item) => {
         const isActive = active === item.id;
         return (

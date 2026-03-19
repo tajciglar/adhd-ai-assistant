@@ -22,9 +22,9 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
   const { signOut } = useAuth();
 
   return (
-    <aside className="hidden md:flex w-64 bg-[#F5F7F9] border-r border-slate-200/60 flex-col shrink-0 h-screen sticky top-0">
+    <aside className="hidden md:flex w-64 bg-gradient-to-b from-harbor-bg-alt to-white border-r border-harbor-orange/10 flex-col shrink-0 h-screen sticky top-0">
       {/* Logo */}
-      <div className="px-5 h-16 flex items-center border-b border-slate-200/40">
+      <div className="px-5 h-16 flex items-center border-b border-harbor-orange/15">
         <button
           className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate("/dashboard")}
@@ -68,7 +68,7 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
             className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer w-full text-left ${
               active === "admin"
                 ? "bg-harbor-surface-soft text-slate-900"
-                : "text-harbor-text/70 hover:bg-slate-50 hover:text-slate-900"
+                : "text-harbor-text/70 hover:bg-white hover:text-slate-900"
             }`}
           >
             <span
@@ -88,10 +88,10 @@ export default function DesktopSidebar({ active, isAdmin, children }: DesktopSid
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-slate-200/40">
+      <div className="px-3 py-4 border-t border-harbor-orange/15">
         <button
           onClick={signOut}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer"
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-harbor-primary/50 hover:text-harbor-primary hover:bg-harbor-primary/10 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-[20px]">logout</span>
           <span>Sign Out</span>
