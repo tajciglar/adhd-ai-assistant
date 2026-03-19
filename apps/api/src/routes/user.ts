@@ -100,6 +100,80 @@ export default async function userRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // ── Child Report ───────────────────────────────────────────────────
+  fastify.get(
+    "/user/child-report",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { id: userId } = request.user;
+
+      const profile = await fastify.prisma.userProfile.findUnique({
+        where: { userId },
+        include: {
+          children: {
+            select: {
+              id: true,
+              childName: true,
+              childAge: true,
+              childGender: true,
+              traitProfile: true,
+              onboardingCompleted: true,
+            },
+          },
+        },
+      });
+
+      const child = profile?.children?.[0];
+      if (!child || !child.traitProfile) {
+        return reply.send({
+          child: null,
+          traitProfile: null,
+          report: null,
+        });
+      }
+
+      const tp = child.traitProfile as {
+        scores: Record<string, number>;
+        archetypeId: string;
+        archetypeName?: string;
+        archetypeTypeName?: string;
+      };
+
+      // Fetch the report template for this archetype
+      let report = null;
+      if (tp.archetypeId) {
+        const template = await fastify.prisma.reportTemplate.findUnique({
+          where: { archetypeId: tp.archetypeId },
+        });
+
+        if (template?.template) {
+          // Render with child's name and gender
+          const { renderReportTemplate } = await import(
+            "@adhd-ai-assistant/shared/templateRenderer"
+          );
+          report = renderReportTemplate(
+            template.template as Parameters<typeof renderReportTemplate>[0],
+            {
+              name: child.childName || "your child",
+              gender: child.childGender || "Other",
+            },
+          );
+        }
+      }
+
+      return reply.send({
+        child: {
+          id: child.id,
+          name: child.childName,
+          age: child.childAge,
+          gender: child.childGender,
+        },
+        traitProfile: tp,
+        report,
+      });
+    },
+  );
+
   // ── Memory Management ───────────────────────────────────────────────
 
   // GET /user/memories — list all memories for the authenticated user

@@ -13,6 +13,7 @@ const DashboardPage = lazy(() => import("./components/dashboard/DashboardPage"))
 const ChatPage = lazy(() => import("./components/chat/ChatPage"));
 const LibraryPage = lazy(() => import("./components/dashboard/LibraryPage"));
 const ProfilePage = lazy(() => import("./components/dashboard/ProfilePage"));
+const ChildProfilePage = lazy(() => import("./components/dashboard/ChildProfilePage"));
 const AdminPage = lazy(() => import("./components/admin/AdminPage"));
 
 // ── Dev-only preview bypass ──────────────────────────────────────────────────
@@ -154,6 +155,12 @@ function AppRoutes() {
           path="/profile"
           element={
             session ? <ProfilePage /> : <Navigate to="/auth" />
+          }
+        />
+        <Route
+          path="/child-profile"
+          element={
+            session ? <ChildProfilePage /> : <Navigate to="/auth" />
           }
         />
         <Route
