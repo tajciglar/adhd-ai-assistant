@@ -149,7 +149,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
         if (template?.template) {
           // Render with child's name and gender
           const { renderReportTemplate } = await import(
-            "@adhd-ai-assistant/shared/templateRenderer"
+            "@adhd-ai-assistant/shared"
           );
           report = renderReportTemplate(
             template.template as Parameters<typeof renderReportTemplate>[0],
