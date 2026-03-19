@@ -4,6 +4,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { api } from "../../lib/api";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
+import LoadingScreen from "../shared/LoadingScreen";
+import Mascot from "../shared/Mascot";
 import type { Resource } from "../../types/admin";
 
 interface DashboardUserInfo {
@@ -61,31 +63,12 @@ export default function DashboardPage() {
   const isAdmin = userInfo?.role === "admin";
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="w-10 h-10 bg-harbor-primary rounded-2xl flex items-center justify-center mx-auto">
-            <span className="material-symbols-outlined text-white">psychology</span>
-          </div>
-          <p className="text-harbor-text/40 text-sm">Loading…</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Streak data (placeholder — will be dynamic later)
   const streakDays = 12;
-  const weekDays = [
-    { label: "M", completed: true },
-    { label: "T", completed: true },
-    { label: "W", completed: true, isToday: true },
-    { label: "T", completed: false },
-    { label: "F", completed: false },
-    { label: "S", completed: false },
-    { label: "S", completed: false },
-  ];
-  const completedCount = weekDays.filter((d) => d.completed).length;
-  const todayIndex = weekDays.findIndex((d) => d.isToday);
+  const completedCount = 3;
 
   const displayResources: Resource[] =
     resources.length > 0
@@ -104,22 +87,30 @@ export default function DashboardPage() {
         {/* ── Mobile Header ── */}
         <header className="md:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-harbor-primary rounded-xl flex items-center justify-center shadow-sm shadow-harbor-primary/30">
-              <span className="material-symbols-outlined text-white text-[18px]">psychology</span>
-            </div>
-            <span className="text-base font-bold tracking-tight text-slate-900">Harbor</span>
+            <Mascot size={32} />
+            <span className="text-base font-bold tracking-tight text-harbor-primary font-display">Harbor</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigate("/resources")}
+              className="flex items-center justify-center w-9 h-9 text-harbor-primary/70 hover:text-harbor-primary hover:bg-harbor-primary/5 rounded-xl transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">search</span>
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => navigate("/admin")}
+                className="flex items-center justify-center w-9 h-9 text-harbor-primary/70 hover:text-harbor-primary hover:bg-harbor-primary/5 rounded-xl transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+              </button>
+            )}
             <button
               onClick={() => navigate("/chat")}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-harbor-primary text-white rounded-xl text-sm font-semibold shadow-sm shadow-harbor-primary/25 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-harbor-orange/30 text-harbor-orange rounded-xl text-sm font-semibold hover:bg-harbor-orange/5 active:scale-95 transition-all cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">chat_bubble</span>
+              <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble</span>
               <span>Chat</span>
-            </button>
-            <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative">
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-harbor-error rounded-full border-2 border-white" />
             </button>
           </div>
         </header>
@@ -128,9 +119,9 @@ export default function DashboardPage() {
         <header className="hidden md:flex h-16 border-b border-slate-100 bg-white items-center justify-between px-8 shrink-0">
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             <div className="relative w-full">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-harbor-primary/40 text-lg">search</span>
               <input
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-200 outline-none transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/30 outline-none transition-all"
                 placeholder="Search resources, tips, or guides…"
                 type="text"
                 value={searchQuery}
@@ -139,12 +130,12 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-slate-50 text-slate-500 transition-colors border border-slate-100">
+            <button className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-harbor-primary/5 text-harbor-primary/60 hover:text-harbor-primary transition-colors border border-harbor-primary/10">
               <span className="material-symbols-outlined text-[20px]">notifications</span>
             </button>
             <button
               onClick={() => navigate("/profile")}
-              className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-slate-50 text-slate-500 transition-colors border border-slate-100"
+              className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-harbor-primary/5 text-harbor-primary/60 hover:text-harbor-primary transition-colors border border-harbor-primary/10"
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
             </button>
@@ -159,170 +150,81 @@ export default function DashboardPage() {
                 </p>
                 <p className="text-[10px] text-slate-400">Parent Member</p>
               </div>
-              <div className="w-9 h-9 rounded-full bg-harbor-surface-soft border-2 border-white shadow-sm flex items-center justify-center">
-                <span className="material-symbols-outlined text-harbor-primary text-[18px]">person</span>
-              </div>
+              <Mascot size={36} className="rounded-full" />
             </button>
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto pb-28 md:pb-10">
-          {/* Mobile Search */}
-          <div className="md:hidden px-4 pt-4 pb-2">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-              <input
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm focus:ring-2 focus:ring-slate-200 text-sm outline-none transition-all"
-                placeholder="Search resources, tips, or guides…"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
           {/* Mobile greeting */}
           <div className="md:hidden px-4 pt-4 pb-2">
             <p className="text-slate-500 text-sm">Good morning</p>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-xl font-bold text-slate-900 font-display">
               {childName ? `${childName}'s Parent` : user?.email?.split("@")[0] ?? "Welcome back"}
             </h1>
           </div>
 
           {/* Desktop greeting */}
           <div className="hidden md:block px-8 pt-8 pb-4">
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold text-harbor-primary font-display">
               {childName ? `Welcome back, ${childName}'s parent` : "Welcome back!"}
             </h1>
             <p className="text-sm text-slate-500 mt-1">Here's your parenting snapshot for today.</p>
           </div>
 
-          {/* ── AI Consultation CTA ── */}
+          {/* ── Chat CTA ── */}
           <div className="px-4 md:px-8 mb-6">
-            <div className="relative overflow-hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              {/* Left accent bar */}
-              <div className="absolute left-0 top-4 bottom-4 w-1 bg-harbor-primary rounded-r-full" />
-
-              {/* Content */}
-              <div className="relative z-10 flex flex-col gap-2 pl-4 max-w-[75%] md:max-w-md">
-                <span className="bg-harbor-primary/10 text-harbor-primary w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                  AI Coach
-                </span>
-                <h2 className="text-xl font-bold leading-snug text-slate-900">
-                  Start AI Consultation
-                </h2>
-                <p className="text-slate-500 text-sm leading-relaxed mb-3">
-                  Get personalized strategies tailored for{childName ? ` ${childName}'s` : " your child's"} unique needs.
+            <button
+              onClick={() => navigate("/chat")}
+              className="relative w-full overflow-hidden bg-harbor-bg-alt border border-harbor-orange/15 rounded-2xl p-5 flex items-center gap-4 hover:shadow-md active:scale-[0.99] transition-all cursor-pointer text-left group"
+            >
+              <Mascot size={56} mood="waving" className="shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-bold text-slate-900 leading-snug font-display">
+                  {childName ? `Need help with ${childName}?` : "Need parenting support?"}
                 </p>
-                <button
-                  onClick={() => navigate("/chat")}
-                  className="bg-harbor-primary text-white font-bold py-2.5 px-5 rounded-xl w-fit flex items-center gap-2 active:scale-95 transition-transform cursor-pointer text-sm shadow-sm shadow-harbor-primary/20"
-                >
-                  <span>Begin Session</span>
-                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </button>
+                <p className="text-slate-500 text-sm mt-0.5">
+                  Chat with Harbor for personalized ADHD strategies
+                </p>
               </div>
+              <span className="material-symbols-outlined text-harbor-orange text-[24px] shrink-0 group-hover:translate-x-0.5 transition-transform">
+                arrow_forward
+              </span>
+            </button>
+          </div>
 
-              {/* Decorative icon */}
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-[0.04] pointer-events-none select-none">
-                <span
-                  className="material-symbols-outlined text-slate-900"
-                  style={{ fontSize: "140px", fontVariationSettings: "'FILL' 1" }}
-                >
-                  neurology
-                </span>
+          {/* ── Streak bar (compact) ── */}
+          <div className="px-4 md:px-8 mb-6">
+            <div className="bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm">
+              <span
+                className="material-symbols-outlined text-harbor-orange text-[20px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                local_fire_department
+              </span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-semibold text-slate-900">{streakDays} Day Streak</p>
+                  <p className="text-xs text-slate-400">{completedCount}/7 this week</p>
+                </div>
+                <div className="w-full bg-white rounded-full h-1.5">
+                  <div
+                    className="h-1.5 rounded-full bg-harbor-orange transition-all"
+                    style={{ width: `${(completedCount / 7) * 100}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ── Two-column layout on desktop ── */}
-          <div className="md:grid md:grid-cols-2 md:gap-6 md:px-8">
-            {/* Weekly Momentum */}
-            <section className="px-4 md:px-0 mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-bold text-slate-900">Weekly Momentum</h3>
-                <span className="flex items-center gap-1 text-harbor-highlight text-sm font-bold">
-                  <span
-                    className="material-symbols-outlined text-[16px]"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    local_fire_department
-                  </span>
-                  {streakDays} Day Streak
-                </span>
-              </div>
-
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                {/* Day circles */}
-                <div className="relative flex justify-between items-center mb-5">
-                  {/* Progress line */}
-                  <div className="absolute top-5 left-5 right-5 h-px bg-slate-100" />
-                  <div
-                    className="absolute top-5 left-5 h-px bg-harbor-success/40 transition-all"
-                    style={{ width: `calc(${(todayIndex / (weekDays.length - 1)) * 100}% - 0px)` }}
-                  />
-
-                  {weekDays.map((day, i) => (
-                    <div key={i} className="flex flex-col items-center gap-2 z-10">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{day.label}</span>
-                      {day.isToday ? (
-                        <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white shadow-md shadow-slate-900/20">
-                          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                            bolt
-                          </span>
-                        </div>
-                      ) : day.completed ? (
-                        <div className="w-10 h-10 rounded-full bg-harbor-success/15 text-harbor-success flex items-center justify-center">
-                          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                            check_circle
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-slate-200 bg-slate-50/80 flex items-center justify-center" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Progress bar */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-[11px] text-slate-400 mb-1.5">
-                    <span>{completedCount} of 7 days</span>
-                    <span>{Math.round((completedCount / 7) * 100)}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div
-                      className="h-1.5 rounded-full bg-slate-800 transition-all"
-                      style={{ width: `${(completedCount / 7) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Milestone */}
-                <div className="flex items-center gap-3 p-3 bg-harbor-highlight/10 rounded-xl border border-harbor-highlight/20">
-                  <div className="w-8 h-8 bg-harbor-highlight/20 rounded-lg flex items-center justify-center shrink-0">
-                    <span
-                      className="material-symbols-outlined text-harbor-highlight text-[18px]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      emoji_events
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Next Milestone: 14 Days</p>
-                    <p className="text-[11px] text-slate-500">2 more days to unlock "Focus Pro"</p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Recent Resources */}
+          {/* ── Resources ── */}
+          <div className="md:px-8">
             <section className="px-4 md:px-0">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-bold text-slate-900">Recent Resources</h3>
+                <h3 className="text-base font-bold text-harbor-primary font-display">Recent Resources</h3>
                 <button
                   onClick={() => navigate("/resources")}
-                  className="text-slate-500 text-sm font-semibold cursor-pointer hover:text-slate-800 hover:underline transition-colors"
+                  className="text-harbor-orange text-sm font-semibold cursor-pointer hover:text-harbor-orange/80 hover:underline transition-colors"
                 >
                   View All
                 </button>
@@ -358,7 +260,7 @@ export default function DashboardPage() {
         </main>
       </div>
 
-      <BottomNav active="home" />
+      <BottomNav active="home" isAdmin={isAdmin} />
     </div>
   );
 }

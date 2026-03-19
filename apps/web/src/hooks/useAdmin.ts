@@ -290,5 +290,6 @@ export function useAdmin() {
     classifyEntry,
     parseDocument,
     checkDuplicates,
+    refetch: fetchData,
   };
 }

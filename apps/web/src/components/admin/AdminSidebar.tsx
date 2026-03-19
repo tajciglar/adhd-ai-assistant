@@ -1,3 +1,6 @@
+import { useState, useRef, useCallback } from "react";
+import { api } from "../../lib/api";
+
 export type AdminSection = "knowledge" | "resources" | "templates" | "analytics" | "token-usage" | "insights";
 
 interface AdminSidebarProps {
@@ -13,6 +16,95 @@ interface AdminSidebarProps {
   onAddEntry: () => void;
   onAddTemplate: () => void;
   onBackToChat: () => void;
+  onCategoryRenamed?: (oldName: string, newName: string) => void;
+}
+
+function EditableCategory({
+  name,
+  count,
+  isActive,
+  onClick,
+  onRename,
+}: {
+  name: string;
+  count: number;
+  isActive: boolean;
+  onClick: () => void;
+  onRename: (oldName: string, newName: string) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(name);
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSave = async () => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === name) {
+      setValue(name);
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onRename(name, trimmed);
+      setEditing(false);
+    } catch {
+      setValue(name);
+      setEditing(false);
+    }
+    setSaving(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1 px-4 py-1.5">
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSave();
+            if (e.key === "Escape") {
+              setValue(name);
+              setEditing(false);
+            }
+          }}
+          onBlur={handleSave}
+          disabled={saving}
+          className="flex-1 text-sm px-2 py-1 rounded-lg border border-harbor-orange/30 focus:ring-2 focus:ring-harbor-orange/20 outline-none bg-white min-w-0"
+          autoFocus
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex items-center">
+      <button
+        onClick={onClick}
+        className={`flex-1 text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+          isActive
+            ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+            : "text-harbor-text/70 hover:bg-harbor-bg"
+        }`}
+      >
+        <span className="truncate block pr-8">{name}</span>
+        <span className="float-right text-xs text-harbor-text/30 -mt-5">
+          {count}
+        </span>
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setEditing(true);
+        }}
+        className="opacity-0 group-hover:opacity-100 p-1 mr-2 text-harbor-text/30 hover:text-harbor-orange transition-all cursor-pointer rounded"
+        title="Rename category"
+      >
+        <span className="material-symbols-outlined text-[14px]">edit</span>
+      </button>
+    </div>
+  );
 }
 
 export default function AdminSidebar({
@@ -28,14 +120,46 @@ export default function AdminSidebar({
   onAddEntry,
   onAddTemplate,
   onBackToChat,
+  onCategoryRenamed,
 }: AdminSidebarProps) {
+  const [width, setWidth] = useState(256);
+  const dragging = useRef(false);
+
+  const handleMouseDown = useCallback(() => {
+    dragging.current = true;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      const newWidth = Math.max(200, Math.min(480, e.clientX));
+      setWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      dragging.current = false;
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  const handleRenameCategory = async (oldName: string, newName: string) => {
+    await api.patch("/api/admin/entries/rename-category", { oldName, newName });
+    onCategoryRenamed?.(oldName, newName);
+  };
+
   return (
-    <div className="w-64 bg-white border-r border-harbor-text/10 flex flex-col h-full">
+    <div
+      className="bg-white border-r border-harbor-text/10 flex flex-col h-full relative shrink-0"
+      style={{ width }}
+    >
       <div className="p-4 border-b border-harbor-text/10">
-        <h2 className="text-lg font-bold text-harbor-primary mb-1">
+        <h2 className="text-lg font-bold text-harbor-primary font-display mb-1">
           Admin Panel
         </h2>
-        <p className="text-xs text-harbor-text/40">Manage Products</p>
+        <p className="text-xs text-harbor-text/40">Manage content & resources</p>
       </div>
 
       <div className="p-3 pt-2 space-y-2">
@@ -112,14 +236,14 @@ export default function AdminSidebar({
           {activeSection === "knowledge" ? (
             <button
               onClick={onAddEntry}
-              className="w-full py-2.5 rounded-xl bg-harbor-accent text-white text-sm font-medium hover:bg-harbor-accent-light transition-colors cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-sm font-medium hover:opacity-90 transition-colors cursor-pointer"
             >
               + Add Entry
             </button>
           ) : (
             <button
               onClick={onAddTemplate}
-              className="w-full py-2.5 rounded-xl bg-harbor-accent text-white text-sm font-medium hover:bg-harbor-accent-light transition-colors cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-sm font-medium hover:opacity-90 transition-colors cursor-pointer"
             >
               + Add Template
             </button>
@@ -145,20 +269,14 @@ export default function AdminSidebar({
             </button>
 
             {categories.map((cat) => (
-              <button
+              <EditableCategory
                 key={cat}
+                name={cat}
+                count={entriesByCategory[cat] || 0}
+                isActive={activeFilter === cat}
                 onClick={() => onFilterChange(cat)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                  activeFilter === cat
-                    ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-                    : "text-harbor-text/70 hover:bg-harbor-bg"
-                }`}
-              >
-                <span className="truncate block pr-8">{cat}</span>
-                <span className="float-right text-xs text-harbor-text/30 -mt-5">
-                  {entriesByCategory[cat] || 0}
-                </span>
-              </button>
+                onRename={handleRenameCategory}
+              />
             ))}
           </>
         ) : activeSection === "resources" ? (
@@ -202,6 +320,12 @@ export default function AdminSidebar({
           Back to Chat
         </button>
       </div>
+
+      {/* Drag handle */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-harbor-orange/20 transition-colors"
+      />
     </div>
   );
 }

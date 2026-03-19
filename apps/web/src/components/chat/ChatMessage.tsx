@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import type { Message } from "../../types/chat";
 import ResourceDownloadCard from "./ResourceDownloadCard";
+import Mascot from "../shared/Mascot";
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
@@ -59,6 +60,12 @@ export default function ChatMessage({ message, streaming }: ChatMessageProps) {
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
+      {/* Mascot avatar for assistant messages — thinking while streaming, default when done */}
+      {!isUser && (
+        <div className="shrink-0 mr-2 mt-1">
+          <Mascot size={28} mood={streaming ? "thinking" : "default"} />
+        </div>
+      )}
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-3 ${
           isUser

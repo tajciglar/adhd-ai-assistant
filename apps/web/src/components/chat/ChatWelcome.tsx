@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import Mascot from "../shared/Mascot";
 
 interface ChatWelcomeProps {
   childName: string;
@@ -25,7 +26,7 @@ export default function ChatWelcome({ childName, onStarterClick }: ChatWelcomePr
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-5 py-8">
       <div className="w-full max-w-md">
-        {/* Harbor AI avatar */}
+        {/* Harbor avatar */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -33,14 +34,7 @@ export default function ChatWelcome({ childName, onStarterClick }: ChatWelcomePr
           className="flex flex-col items-center mb-8"
         >
           <div className="relative mb-5">
-            <div className="w-16 h-16 bg-harbor-primary rounded-2xl flex items-center justify-center shadow-lg shadow-harbor-primary/25">
-              <span
-                className="material-symbols-outlined text-white text-3xl"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                neurology
-              </span>
-            </div>
+            <Mascot size={64} mood="waving" />
             {/* Active status dot */}
             <div className="absolute -bottom-1 -right-1 flex items-center justify-center">
               <span className="relative flex h-4 w-4">
@@ -56,9 +50,9 @@ export default function ChatWelcome({ childName, onStarterClick }: ChatWelcomePr
             transition={{ duration: 0.4, delay: 0.15 }}
             className="text-center"
           >
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">Hi there!</h1>
+            <h1 className="text-2xl font-bold text-slate-900 mb-1 font-display">Hi! I'm Harbor.</h1>
             <p className="text-slate-500 text-base leading-relaxed">
-              Ready to talk about {name}? I'm here to help.
+              How can I help with {name}?
             </p>
           </motion.div>
         </motion.div>

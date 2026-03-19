@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Parent figure (purple) -->
+  <!-- Head -->
+  <circle cx="52" cy="28" r="16" fill="#7040CA"/>
+  <!-- Eyes -->
+  <circle cx="46" cy="26" r="2.5" fill="white"/>
+  <circle cx="58" cy="26" r="2.5" fill="white"/>
+  <!-- Smile -->
+  <path d="M46 33 Q52 39 58 33" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Body -->
+  <path d="M36 44 Q36 38 44 38 L60 38 Q68 38 68 44 L68 72 Q68 80 60 80 L44 80 Q36 80 36 72 Z" fill="#7040CA" rx="8"/>
+  <!-- Arms -->
+  <path d="M36 50 Q28 48 24 56" stroke="#7040CA" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M68 50 Q76 48 80 56" stroke="#7040CA" stroke-width="6" stroke-linecap="round" fill="none"/>
+
+  <!-- Child figure (orange) -->
+  <!-- Head -->
+  <circle cx="82" cy="52" r="12" fill="#F5841F"/>
+  <!-- Eyes -->
+  <circle cx="77" cy="50" r="2" fill="white"/>
+  <circle cx="87" cy="50" r="2" fill="white"/>
+  <!-- Smile -->
+  <path d="M78 56 Q82 60 86 56" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Body -->
+  <path d="M72 64 Q72 60 76 60 L88 60 Q92 60 92 64 L92 82 Q92 88 88 88 L76 88 Q72 88 72 82 Z" fill="#F5841F" rx="6"/>
+
+  <!-- Heart between them -->
+  <path d="M62 62 C62 58 68 56 68 60 C68 56 74 58 74 62 C74 68 68 72 68 72 C68 72 62 68 62 62Z" fill="#FACB9E"/>
+</svg>
