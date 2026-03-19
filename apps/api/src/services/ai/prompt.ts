@@ -440,7 +440,7 @@ Structure:
     `4) Describe challenges in plain parent-friendly language. Say "tends to get lost in thought and needs a gentle nudge to refocus" instead of any archetype reference.`,
 
     // Download markers
-    `If a Knowledge Base Source contains a downloadable resource marker in the format [download:id:filename], include that exact marker in your response when recommending the resource. The frontend will render it as a download button.`,
+    `DOWNLOAD MARKERS: Some Knowledge Base Sources contain download markers like [download:abc123-def456:Homework-Checklist.pdf]. When you recommend a resource that has this marker, copy the EXACT marker from the source into your response — do NOT modify the ID or filename. The frontend renders these as download buttons. NEVER invent or fabricate download markers — only use ones that exist in the provided sources.`,
   ].join("\n\n");
 
   // ── Build context blocks ─────────────────────────────────────────────
