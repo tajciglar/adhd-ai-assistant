@@ -130,14 +130,14 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-harbor-primary/5 text-harbor-primary/60 hover:text-harbor-primary transition-colors border border-harbor-primary/10">
-              <span className="material-symbols-outlined text-[20px]">notifications</span>
+            <button className="flex items-center justify-center rounded-xl h-10 w-10 hover:bg-harbor-primary/10 text-harbor-primary transition-colors border border-harbor-primary/15">
+              <span className="material-symbols-outlined text-[22px]">notifications</span>
             </button>
             <button
               onClick={() => navigate("/profile")}
-              className="flex items-center justify-center rounded-xl h-9 w-9 hover:bg-harbor-primary/5 text-harbor-primary/60 hover:text-harbor-primary transition-colors border border-harbor-primary/10"
+              className="flex items-center justify-center rounded-xl h-10 w-10 hover:bg-harbor-primary/10 text-harbor-primary transition-colors border border-harbor-primary/15"
             >
-              <span className="material-symbols-outlined text-[20px]">settings</span>
+              <span className="material-symbols-outlined text-[22px]">settings</span>
             </button>
             <div className="w-px h-6 bg-slate-100 mx-1" />
             <button
