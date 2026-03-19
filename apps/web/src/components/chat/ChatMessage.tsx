@@ -59,6 +59,9 @@ interface ChatMessageProps {
 export default function ChatMessage({ message, streaming }: ChatMessageProps) {
   const isUser = message.role === "USER";
 
+  // Hide empty assistant messages (streaming hasn't sent content yet)
+  if (!isUser && !message.content && streaming) return null;
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
       {/* Mascot avatar for assistant messages */}
