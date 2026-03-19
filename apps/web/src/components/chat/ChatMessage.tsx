@@ -86,9 +86,6 @@ export default function ChatMessage({ message, streaming }: ChatMessageProps) {
             {hasDownloadMarker(message.content)
               ? renderContentWithResources(message.content)
               : <ReactMarkdown>{message.content}</ReactMarkdown>}
-            {streaming && (
-              <span className="inline-block w-0.5 h-4 bg-harbor-primary/60 animate-pulse ml-0.5 align-text-bottom" />
-            )}
           </div>
         )}
         {!streaming && (
