@@ -296,7 +296,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       // reply.header() stores on Fastify's internal map and never reaches
       // reply.raw when we bypass reply.send() with raw writes.
       const origin = request.headers.origin;
-      if (origin) {
+      if (origin && fastify.isOriginAllowed(origin)) {
         reply.raw.setHeader("Access-Control-Allow-Origin", origin);
         reply.raw.setHeader("Access-Control-Allow-Credentials", "true");
       }

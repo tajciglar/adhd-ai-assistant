@@ -1,4 +1,10 @@
 import Fastify, { type FastifyError } from "fastify";
+
+declare module "fastify" {
+  interface FastifyInstance {
+    isOriginAllowed: (origin: string) => boolean;
+  }
+}
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
@@ -51,6 +57,9 @@ async function buildServer() {
     if (/^https:\/\/adhd-ai-assistant[a-z0-9-]*-tajciglars-projects\.vercel\.app$/.test(origin)) return true;
     return false;
   }
+
+  // Expose to routes (e.g. SSE streaming needs to validate origin manually)
+  server.decorate("isOriginAllowed", isOriginAllowed);
 
   await server.register(helmet, {
     global: true,
