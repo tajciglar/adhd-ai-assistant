@@ -67,7 +67,7 @@ export default function ConversationInsights() {
       const result = await api.get(`/api/admin/conversation-insights?days=${days}`);
       setData(result as InsightsData);
     } catch (err) {
-      console.error("Failed to fetch insights:", err);
+      void err; // error displayed via empty data state
     } finally {
       setLoading(false);
     }
