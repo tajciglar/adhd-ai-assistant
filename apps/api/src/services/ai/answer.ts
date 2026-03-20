@@ -49,6 +49,25 @@ export interface AnswerResult {
 const NO_CONTENT_RESPONSE =
   "I don't have enough information in your current Harbor knowledge base to answer that confidently. Please upload content about this topic so I can help.";
 
+// Strip fabricated download markers that don't match any retrieved source
+const DOWNLOAD_MARKER_RE = /\[download:([^\]:]+):([^\]]+)\]/g;
+
+function stripFakeDownloadMarkers(content: string, sources: RetrievedSource[]): string {
+  // Collect all real resource IDs from the source texts
+  const realIds = new Set<string>();
+  for (const source of sources) {
+    const matches = source.text.matchAll(/\[download:([^\]:]+):[^\]]+\]/g);
+    for (const m of matches) {
+      realIds.add(m[1]);
+    }
+  }
+
+  // Remove any marker whose ID isn't in the real set
+  return content.replace(DOWNLOAD_MARKER_RE, (full, id) => {
+    return realIds.has(id) ? full : "";
+  });
+}
+
 function toMetadataSources(sources: RetrievedSource[]): SourceMetadata[] {
   return sources.map((source) => ({
     entryId: source.entryId,
@@ -218,8 +237,11 @@ export async function generateGroundedAnswer({
       fastify.log.warn({ err }, "insight.extraction.failed"),
     );
 
+    // Strip any download markers the AI fabricated (ID not in retrieved sources)
+    const cleanContent = stripFakeDownloadMarkers(content, sources);
+
     return {
-      content,
+      content: cleanContent,
       metadata: {
         model: AI_CHAT_MODEL,
         grounded: true,
@@ -450,7 +472,8 @@ export async function* streamGroundedAnswer({
   }
 
   const providerMs = Date.now() - providerStart;
-  const content = fullContent.trim() || NO_CONTENT_RESPONSE;
+  // Strip fabricated download markers before saving
+  const content = stripFakeDownloadMarkers(fullContent.trim() || NO_CONTENT_RESPONSE, sources);
 
   // Update the assistant message with the full content + metadata
   const metadata: AssistantMetadata = {
