@@ -401,7 +401,7 @@ Type 7 (Crisis, 50-100w): Immediate action (2-3 sentences MAX) → One next step
     `4) Describe challenges in plain parent-friendly language. Say "tends to get lost in thought and needs a gentle nudge to refocus" instead of any archetype reference.`,
 
     // Download markers
-    `DOWNLOAD MARKERS: If (and ONLY if) a Knowledge Base Source above contains a marker like [download:uuid:filename.pdf], copy it EXACTLY into your response. Fabricated markers show an error to the parent — the system verifies every ID. If NO source has a download marker, do NOT create one. Just mention the topic naturally.`,
+    `DOWNLOAD MARKERS: Some Knowledge Base Sources contain download markers in square brackets. If you see one in a source, copy the ENTIRE marker exactly as-is into your response. Do NOT create, modify, or invent download markers yourself — the system validates every one and fake markers cause errors visible to parents. If no source has a marker, just recommend the topic without one.`,
   ].join("\n\n");
 
   // ── Build context blocks ─────────────────────────────────────────────
