@@ -64,7 +64,7 @@ export default function EntryList({
               <span className="material-symbols-outlined text-base">
                 upload_file
               </span>
-              Import Spreadsheet
+              Bulk Import
             </span>
           </button>
         </div>
