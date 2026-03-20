@@ -370,7 +370,7 @@ export default function ProfilePage() {
 
       <div className="flex-1 flex flex-col">
         {/* ── Mobile Header ── */}
-        <div className="md:hidden flex items-center bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-3 justify-between sticky top-0 z-10">
+        <div className="md:hidden flex items-center bg-gradient-to-b from-harbor-bg-alt to-white/80 backdrop-blur-md border-b border-harbor-orange/10 px-4 py-3 justify-between sticky top-0 z-10">
           <button
             onClick={() => navigate(-1)}
             className="flex w-9 h-9 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 cursor-pointer text-slate-700 transition-colors"
@@ -382,7 +382,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Desktop Header ── */}
-        <header className="hidden md:flex h-16 border-b border-slate-100 bg-white items-center px-8 shrink-0">
+        <header className="hidden md:flex h-16 border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white items-center px-8 shrink-0">
           <h2 className="text-lg font-bold text-harbor-primary font-display">Account Settings</h2>
         </header>
 
