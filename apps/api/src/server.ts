@@ -32,7 +32,6 @@ const envToLogger: Record<string, object | boolean> = {
       },
     },
   },
-  production: true,
   test: false,
 };
 
