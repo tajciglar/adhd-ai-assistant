@@ -2,21 +2,27 @@ import { useState, useRef } from "react";
 
 interface ResourceUploadModalProps {
   uploading: boolean;
+  categories: string[];
   onUpload: (formData: FormData) => Promise<void>;
   onClose: () => void;
 }
 
 export default function ResourceUploadModal({
   uploading,
+  categories,
   onUpload,
   onClose,
 }: ResourceUploadModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Downloadable Resources");
+  const [category, setCategory] = useState(categories[0] ?? "Downloadable Resources");
+  const [customCategory, setCustomCategory] = useState("");
+  const [isCustom, setIsCustom] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const effectiveCategory = isCustom ? customCategory.trim() : category;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +36,15 @@ export default function ResourceUploadModal({
       setError("Title is required");
       return;
     }
+    if (!effectiveCategory) {
+      setError("Category is required");
+      return;
+    }
 
     const formData = new FormData();
-    // Text fields MUST be appended before the file — @fastify/multipart
-    // with request.file() only exposes fields that precede the file part.
     formData.append("title", title.trim());
     formData.append("description", description.trim());
-    formData.append("category", category.trim() || "Downloadable Resources");
+    formData.append("category", effectiveCategory);
     formData.append("file", file);
 
     try {
@@ -66,7 +74,7 @@ export default function ResourceUploadModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
         <div className="px-6 py-4 border-b border-harbor-text/10">
-          <h2 className="text-lg font-bold text-harbor-primary">
+          <h2 className="text-lg font-bold text-harbor-primary font-display">
             Upload PDF Resource
           </h2>
           <p className="text-xs text-harbor-text/50 mt-0.5">
@@ -82,7 +90,7 @@ export default function ResourceUploadModal({
             </label>
             <div
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-harbor-text/15 rounded-xl px-4 py-6 text-center cursor-pointer hover:border-harbor-accent/30 transition-colors"
+              className="border-2 border-dashed border-harbor-text/15 rounded-xl px-4 py-6 text-center cursor-pointer hover:border-harbor-orange/30 transition-colors"
             >
               {file ? (
                 <p className="text-sm text-harbor-text">
@@ -116,7 +124,7 @@ export default function ResourceUploadModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Morning Routine Checklist"
-              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:border-harbor-accent"
+              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40"
             />
           </div>
 
@@ -133,22 +141,54 @@ export default function ResourceUploadModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="e.g., Step-by-step morning routine checklist for ADHD children ages 5-10"
-              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:border-harbor-accent resize-none"
+              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40 resize-none"
             />
           </div>
 
-          {/* Category */}
+          {/* Category — dropdown with "create new" option */}
           <div>
             <label className="block text-sm font-medium text-harbor-text mb-1">
-              Category
+              Folder / Category
             </label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Downloadable Resources"
-              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:border-harbor-accent"
-            />
+            {isCustom ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="New folder name..."
+                  autoFocus
+                  className="flex-1 px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setIsCustom(false); setCustomCategory(""); }}
+                  className="px-3 py-2 text-xs text-harbor-text/50 hover:text-harbor-text rounded-lg hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <select
+                value={category}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setIsCustom(true);
+                  } else {
+                    setCategory(e.target.value);
+                  }
+                }}
+                className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40 bg-white"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+                {categories.length === 0 && (
+                  <option value="Downloadable Resources">Downloadable Resources</option>
+                )}
+                <option value="__new__">+ Create new folder...</option>
+              </select>
+            )}
           </div>
 
           {error && (
@@ -165,8 +205,8 @@ export default function ResourceUploadModal({
             </button>
             <button
               type="submit"
-              disabled={uploading || !file || !title.trim()}
-              className="px-6 py-2 rounded-lg text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={uploading || !file || !title.trim() || !effectiveCategory}
+              className="px-6 py-2 rounded-lg text-sm font-medium bg-harbor-primary text-white hover:opacity-90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {uploading ? "Uploading..." : "Upload"}
             </button>
