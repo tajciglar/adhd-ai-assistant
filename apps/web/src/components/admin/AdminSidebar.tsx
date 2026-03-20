@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { api } from "../../lib/api";
 
 export type AdminSection = "knowledge" | "resources" | "templates" | "analytics" | "token-usage" | "insights";
@@ -107,7 +107,25 @@ function EditableCategory({
   );
 }
 
-export default function AdminSidebar({
+const sectionLabels: Record<AdminSection, string> = {
+  knowledge: "Q&A Topics",
+  resources: "Parent Resources",
+  templates: "Child Reports",
+  analytics: "Quiz Results",
+  "token-usage": "AI Usage & Costs",
+  insights: "Parent Conversations",
+};
+
+const sectionIcons: Record<AdminSection, string> = {
+  knowledge: "quiz",
+  resources: "description",
+  templates: "assignment",
+  analytics: "bar_chart",
+  "token-usage": "monitoring",
+  insights: "forum",
+};
+
+function SidebarContent({
   activeSection,
   onSectionChange,
   categories,
@@ -121,114 +139,66 @@ export default function AdminSidebar({
   onAddTemplate,
   onBackToChat,
   onCategoryRenamed,
-}: AdminSidebarProps) {
-  const [width, setWidth] = useState(256);
-  const dragging = useRef(false);
-
-  const handleMouseDown = useCallback(() => {
-    dragging.current = true;
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragging.current) return;
-      const newWidth = Math.max(200, Math.min(480, e.clientX));
-      setWidth(newWidth);
-    };
-    const handleMouseUp = () => {
-      dragging.current = false;
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  }, []);
-
+  onCloseMobile,
+}: AdminSidebarProps & { onCloseMobile?: () => void }) {
   const handleRenameCategory = async (oldName: string, newName: string) => {
     await api.patch("/api/admin/entries/rename-category", { oldName, newName });
     onCategoryRenamed?.(oldName, newName);
   };
 
+  const handleSectionClick = (section: AdminSection) => {
+    onSectionChange(section);
+    onCloseMobile?.();
+  };
+
+  const sections: { key: AdminSection; count?: number }[] = [
+    { key: "knowledge" },
+    { key: "resources", count: totalResources },
+    { key: "templates", count: totalTemplates },
+    { key: "analytics" },
+    { key: "token-usage" },
+    { key: "insights" },
+  ];
+
   return (
-    <div
-      className="bg-white border-r border-harbor-text/10 flex flex-col h-full relative shrink-0"
-      style={{ width }}
-    >
-      <div className="p-4 border-b border-harbor-text/10">
-        <h2 className="text-lg font-bold text-harbor-primary font-display mb-1">
-          Admin Panel
-        </h2>
-        <p className="text-xs text-harbor-text/40">Manage content & resources</p>
+    <div className="bg-white border-r border-harbor-text/10 flex flex-col h-full w-[240px] shrink-0">
+      <div className="p-4 border-b border-harbor-text/10 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-harbor-primary font-display mb-1">
+            Admin Panel
+          </h2>
+          <p className="text-xs text-harbor-text/40">Manage content & resources</p>
+        </div>
+        {onCloseMobile && (
+          <button
+            onClick={onCloseMobile}
+            className="md:hidden p-1 rounded-lg text-harbor-text/40 hover:text-harbor-text hover:bg-harbor-bg transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+        )}
       </div>
 
-      <div className="p-3 pt-2 space-y-2">
-        <button
-          onClick={() => onSectionChange("knowledge")}
-          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
-            activeSection === "knowledge"
-              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-              : "text-harbor-text/70 hover:bg-harbor-bg"
-          }`}
-        >
-          Knowledge Entries
-        </button>
-        <button
-          onClick={() => onSectionChange("resources")}
-          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
-            activeSection === "resources"
-              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-              : "text-harbor-text/70 hover:bg-harbor-bg"
-          }`}
-        >
-          PDF Resources
-          <span className="float-right text-xs text-harbor-text/30">
-            {totalResources}
-          </span>
-        </button>
-        <button
-          onClick={() => onSectionChange("templates")}
-          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
-            activeSection === "templates"
-              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-              : "text-harbor-text/70 hover:bg-harbor-bg"
-          }`}
-        >
-          Report Templates
-          <span className="float-right text-xs text-harbor-text/30">
-            {totalTemplates}
-          </span>
-        </button>
-        <button
-          onClick={() => onSectionChange("analytics")}
-          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
-            activeSection === "analytics"
-              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-              : "text-harbor-text/70 hover:bg-harbor-bg"
-          }`}
-        >
-          Quiz Analytics
-        </button>
-        <button
-          onClick={() => onSectionChange("token-usage")}
-          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
-            activeSection === "token-usage"
-              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-              : "text-harbor-text/70 hover:bg-harbor-bg"
-          }`}
-        >
-          Token Usage
-        </button>
-        <button
-          onClick={() => onSectionChange("insights")}
-          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer ${
-            activeSection === "insights"
-              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-              : "text-harbor-text/70 hover:bg-harbor-bg"
-          }`}
-        >
-          Conversation Insights
-        </button>
+      <div className="p-3 pt-2 space-y-1">
+        {sections.map(({ key, count }) => (
+          <button
+            key={key}
+            onClick={() => handleSectionClick(key)}
+            className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors cursor-pointer flex items-center gap-2.5 ${
+              activeSection === key
+                ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+                : "text-harbor-text/70 hover:bg-harbor-bg"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {sectionIcons[key]}
+            </span>
+            <span className="flex-1">{sectionLabels[key]}</span>
+            {count !== undefined && (
+              <span className="text-xs text-harbor-text/30">{count}</span>
+            )}
+          </button>
+        ))}
       </div>
 
       {(activeSection === "knowledge" || activeSection === "templates") && (
@@ -320,12 +290,46 @@ export default function AdminSidebar({
           Back to Chat
         </button>
       </div>
-
-      {/* Drag handle */}
-      <div
-        onMouseDown={handleMouseDown}
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-harbor-orange/20 transition-colors"
-      />
     </div>
+  );
+}
+
+export default function AdminSidebar(props: AdminSidebarProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden fixed top-3 left-3 z-40 p-2 rounded-xl bg-white shadow-lg border border-harbor-text/10 text-harbor-primary hover:bg-harbor-bg transition-colors cursor-pointer"
+        aria-label="Open admin menu"
+      >
+        <span className="material-symbols-outlined text-xl">menu</span>
+      </button>
+
+      {/* Desktop sidebar — always visible */}
+      <div className="hidden md:block">
+        <SidebarContent {...props} />
+      </div>
+
+      {/* Mobile drawer overlay */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 transition-opacity"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer */}
+          <div className="relative z-10 animate-slide-in-left">
+            <SidebarContent
+              {...props}
+              onCloseMobile={() => setMobileOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
