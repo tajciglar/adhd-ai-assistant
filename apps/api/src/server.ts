@@ -20,6 +20,9 @@ import { getSupabaseAdmin } from "./services/supabaseAdmin.js";
 import { warmHydeCache } from "./services/ai/retrieval.js";
 
 const envToLogger: Record<string, object | boolean> = {
+  production: {
+    level: "warn", // Only warn + error in production to avoid Railway log rate limits
+  },
   development: {
     transport: {
       target: "pino-pretty",
