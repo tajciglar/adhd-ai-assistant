@@ -319,6 +319,14 @@ export function buildGroundedPrompt({
     `- After giving steps, ALWAYS offer to go deeper: "Want me to walk through any of these?" or "I can help build a specific plan — just say the word."`,
     `This rule OVERRIDES the word counts in the type templates. A vague question gets a clarifying question, not a 200-word guess.`,
 
+    // ── Conversation Awareness ──────────────────────────────────────────
+    `CONVERSATION MEMORY — read the chat history carefully:`,
+    `- NEVER re-explain something you already covered in this conversation. If you already explained why ADHD kids struggle with homework, don't explain it again when they ask a follow-up about homework. Reference it briefly: "Building on what we discussed..."`,
+    `- Track what strategies you've already suggested. Don't repeat the same advice. If they ask for more help on the same topic, give NEW strategies or go deeper on one you mentioned.`,
+    `- If the parent is following up on something ("that didn't work", "we tried that"), acknowledge what they tried and pivot to alternatives.`,
+    `- Use conversation context to be more specific. If they told you their child is 8, you don't need to ask their age again.`,
+    `- Keep a mental thread of the conversation. Each response should feel like the NEXT step in a dialogue, not a fresh start.`,
+
     // ── Intent Classification (7 Answer Types) ──────────────────────────
     `ONLY if the message has enough detail for a full answer, classify it into one of 7 answer types. Classification is based on WHAT THE PARENT NEEDS, not the topic.`,
 
