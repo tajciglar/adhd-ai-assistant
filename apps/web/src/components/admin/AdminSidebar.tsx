@@ -161,7 +161,7 @@ function SidebarContent({
   ];
 
   return (
-    <div className="bg-white border-r border-harbor-text/10 flex flex-col h-full w-[240px] shrink-0">
+    <div className="bg-white border-r border-harbor-text/10 flex flex-col h-full w-full shrink-0">
       <div className="p-4 border-b border-harbor-text/10 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-harbor-primary font-display mb-1">
@@ -296,6 +296,28 @@ function SidebarContent({
 
 export default function AdminSidebar(props: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(260);
+  const dragging = useRef(false);
+
+  const handleMouseDown = () => {
+    dragging.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      const newWidth = Math.max(200, Math.min(480, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      dragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
 
   return (
     <>
@@ -308,9 +330,16 @@ export default function AdminSidebar(props: AdminSidebarProps) {
         <span className="material-symbols-outlined text-xl">menu</span>
       </button>
 
-      {/* Desktop sidebar — always visible */}
-      <div className="hidden md:block">
-        <SidebarContent {...props} />
+      {/* Desktop sidebar — resizable */}
+      <div className="hidden md:flex relative" style={{ width: sidebarWidth }}>
+        <div className="flex-1 overflow-hidden">
+          <SidebarContent {...props} />
+        </div>
+        {/* Resize handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-harbor-orange/30 active:bg-harbor-orange/50 transition-colors z-10"
+        />
       </div>
 
       {/* Mobile drawer overlay */}
