@@ -11,6 +11,7 @@ export default function ResourceDownloadCard({
   filename,
 }: ResourceDownloadCardProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   const displayName = filename
     .replace(/\.pdf$/i, "")
@@ -18,13 +19,14 @@ export default function ResourceDownloadCard({
 
   const handleDownload = async () => {
     setLoading(true);
+    setError(false);
     try {
       const data = (await api.get(
         `/api/resources/${resourceId}/download`,
       )) as { url: string; filename: string };
       window.open(data.url, "_blank");
     } catch {
-      // silently fail — resource may have been deleted
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -34,14 +36,18 @@ export default function ResourceDownloadCard({
     <button
       onClick={handleDownload}
       disabled={loading}
-      className="flex items-center gap-3 w-full my-2 px-4 py-3 bg-white rounded-xl border border-harbor-primary/15 shadow-sm hover:shadow-md hover:border-harbor-primary/25 transition-all cursor-pointer text-left group"
+      className={`flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl border shadow-sm transition-all cursor-pointer text-left group ${
+        error
+          ? "bg-red-50/50 border-red-200"
+          : "bg-white border-harbor-primary/15 hover:shadow-md hover:border-harbor-primary/25"
+      }`}
     >
-      <div className="flex-shrink-0 w-11 h-11 bg-rose-50 rounded-xl flex items-center justify-center">
+      <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${error ? "bg-red-100" : "bg-rose-50"}`}>
         <span
-          className="material-symbols-outlined text-rose-500 text-[22px]"
+          className={`material-symbols-outlined text-[22px] ${error ? "text-red-400" : "text-rose-500"}`}
           style={{ fontVariationSettings: "'FILL' 1" }}
         >
-          picture_as_pdf
+          {error ? "error" : "picture_as_pdf"}
         </span>
       </div>
       <div className="flex-1 min-w-0">
@@ -49,12 +55,14 @@ export default function ResourceDownloadCard({
           {displayName}
         </p>
         <p className="text-[11px] text-slate-400">
-          {loading ? "Opening..." : "PDF Resource — tap to view"}
+          {loading ? "Opening..." : error ? "Resource not available — it may have been removed" : "PDF Resource — tap to view"}
         </p>
       </div>
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-harbor-orange/10 flex items-center justify-center group-hover:bg-harbor-orange/20 transition-colors">
-        <span className="material-symbols-outlined text-harbor-orange text-[18px]">
-          {loading ? "hourglass_empty" : "download"}
+      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+        error ? "bg-red-100" : "bg-harbor-orange/10 group-hover:bg-harbor-orange/20"
+      }`}>
+        <span className={`material-symbols-outlined text-[18px] ${error ? "text-red-400" : "text-harbor-orange"}`}>
+          {loading ? "hourglass_empty" : error ? "warning" : "download"}
         </span>
       </div>
     </button>
