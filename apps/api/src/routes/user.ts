@@ -100,6 +100,60 @@ export default async function userRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // ── Update Profile ─────────────────────────────────────────────────
+  fastify.patch<{
+    Body: {
+      parentGender?: string;
+      parentAgeRange?: string;
+      householdStructure?: string;
+      childName?: string;
+      childAge?: number;
+      childGender?: string;
+    };
+  }>(
+    "/user/profile",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { id: userId } = request.user;
+      const body = request.body ?? {};
+
+      // Update parent profile fields
+      const parentData: Record<string, string> = {};
+      if (body.parentGender !== undefined) parentData.parentGender = body.parentGender;
+      if (body.parentAgeRange !== undefined) parentData.parentAgeRange = body.parentAgeRange;
+      if (body.householdStructure !== undefined) parentData.householdStructure = body.householdStructure;
+
+      if (Object.keys(parentData).length > 0) {
+        await fastify.prisma.userProfile.update({
+          where: { userId },
+          data: parentData,
+        });
+      }
+
+      // Update child profile fields
+      const childData: Record<string, string | number> = {};
+      if (body.childName !== undefined) childData.childName = body.childName;
+      if (body.childAge !== undefined) childData.childAge = body.childAge;
+      if (body.childGender !== undefined) childData.childGender = body.childGender;
+
+      if (Object.keys(childData).length > 0) {
+        const profile = await fastify.prisma.userProfile.findUnique({
+          where: { userId },
+          include: { children: { select: { id: true } } },
+        });
+        const childId = profile?.children?.[0]?.id;
+        if (childId) {
+          await fastify.prisma.childProfile.update({
+            where: { id: childId },
+            data: childData,
+          });
+        }
+      }
+
+      return reply.send({ success: true });
+    },
+  );
+
   // ── Child Report ───────────────────────────────────────────────────
   fastify.get(
     "/user/child-report",
