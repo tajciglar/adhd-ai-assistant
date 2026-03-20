@@ -92,7 +92,7 @@ export default function LibraryPage() {
 
       <div className="flex-1 flex flex-col">
         {/* ── Mobile Header ── */}
-        <div className="md:hidden flex items-center bg-white px-4 py-3 justify-between sticky top-0 z-10 border-b border-slate-100">
+        <div className="md:hidden flex items-center bg-gradient-to-b from-harbor-bg-alt to-white/80 backdrop-blur-md px-4 py-3 justify-between sticky top-0 z-10 border-b border-harbor-orange/10">
           <button
             onClick={() => navigate(-1)}
             className="text-slate-600 flex w-9 h-9 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 cursor-pointer transition-colors"
@@ -106,7 +106,7 @@ export default function LibraryPage() {
         </div>
 
         {/* ── Desktop Header ── */}
-        <header className="hidden md:flex h-16 border-b border-slate-100 bg-white items-center justify-between px-8 shrink-0">
+        <header className="hidden md:flex h-16 border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white items-center justify-between px-8 shrink-0">
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>

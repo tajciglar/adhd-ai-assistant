@@ -1,4 +1,10 @@
 import Fastify, { type FastifyError } from "fastify";
+
+declare module "fastify" {
+  interface FastifyInstance {
+    isOriginAllowed: (origin: string) => boolean;
+  }
+}
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
@@ -14,6 +20,9 @@ import { getSupabaseAdmin } from "./services/supabaseAdmin.js";
 import { warmHydeCache } from "./services/ai/retrieval.js";
 
 const envToLogger: Record<string, object | boolean> = {
+  production: {
+    level: "warn", // Only warn + error in production to avoid Railway log rate limits
+  },
   development: {
     transport: {
       target: "pino-pretty",
@@ -51,6 +60,9 @@ async function buildServer() {
     if (/^https:\/\/adhd-ai-assistant[a-z0-9-]*-tajciglars-projects\.vercel\.app$/.test(origin)) return true;
     return false;
   }
+
+  // Expose to routes (e.g. SSE streaming needs to validate origin manually)
+  server.decorate("isOriginAllowed", isOriginAllowed);
 
   await server.register(helmet, {
     global: true,

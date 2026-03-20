@@ -68,18 +68,7 @@ export default function DashboardPage() {
     return <LoadingScreen />;
   }
 
-  // Streak data (placeholder — will be dynamic later)
-  const streakDays = 12;
-  const completedCount = 3;
-
-  const displayResources: Resource[] =
-    resources.length > 0
-      ? resources
-      : ([
-          { id: "p1", title: "Evening Routine Guide", category: "PDF", sizeBytes: 1228800 } as Resource,
-          { id: "p2", title: "Managing Meltdowns", category: "Video", sizeBytes: 0 } as Resource,
-          { id: "p3", title: "Nutrition & ADHD Symptoms", category: "Article", sizeBytes: 0 } as Resource,
-        ]);
+  const displayResources: Resource[] = resources;
 
   return (
     <div className="flex min-h-screen bg-harbor-bg">
@@ -195,30 +184,20 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* ── Streak bar (compact) ── */}
+          {/* ── Quick actions ── */}
           <div className="px-4 md:px-8 mb-6">
-            <div className="bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm">
+            <div className="bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm cursor-pointer hover:bg-harbor-bg-alt/80 transition-colors" onClick={() => navigate("/chat")}>
               <span
-                className="material-symbols-outlined text-harbor-orange text-[20px] animate-pulse"
+                className="material-symbols-outlined text-harbor-orange text-[20px]"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
-                local_fire_department
+                chat_bubble
               </span>
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-900">{streakDays} Day Streak</p>
-                    <span className="text-[10px] text-harbor-success font-medium">Active now</span>
-                  </div>
-                  <p className="text-xs text-slate-400">{completedCount}/7 this week</p>
-                </div>
-                <div className="w-full bg-white rounded-full h-1.5">
-                  <div
-                    className="h-1.5 rounded-full bg-harbor-orange transition-all"
-                    style={{ width: `${(completedCount / 7) * 100}%` }}
-                  />
-                </div>
+                <p className="text-sm font-semibold text-slate-900">Continue your conversation</p>
+                <p className="text-xs text-slate-400">Pick up where you left off with Harbor</p>
               </div>
+              <span className="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
             </div>
           </div>
 

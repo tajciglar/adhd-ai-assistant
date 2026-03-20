@@ -128,7 +128,7 @@ export default function ChatPage() {
       {/* ── Main Chat Area ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between px-4 py-4 border-b border-harbor-primary/10 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white/80 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <Mascot size={40} />
             <div>
@@ -212,7 +212,7 @@ export default function ChatPage() {
         )}
 
         {/* Desktop Header */}
-        <header className="hidden md:flex h-16 border-b border-harbor-primary/10 bg-white items-center justify-between px-8 shrink-0">
+        <header className="hidden md:flex h-16 border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white items-center justify-between px-8 shrink-0">
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             <div className="relative w-full">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">

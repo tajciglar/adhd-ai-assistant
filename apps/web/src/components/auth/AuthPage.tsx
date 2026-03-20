@@ -94,7 +94,18 @@ export default function AuthPage() {
                 <button
                   type="button"
                   className="text-harbor-orange text-xs mt-1 hover:underline cursor-pointer"
-                  onClick={() => {/* TODO: password reset flow */}}
+                  onClick={async () => {
+                    if (!email.trim()) {
+                      setError("Enter your email first, then click Forgot password.");
+                      return;
+                    }
+                    setLoading(true);
+                    setError(null);
+                    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim());
+                    setLoading(false);
+                    if (err) setError(err.message);
+                    else setMessage("Password reset link sent — check your email.");
+                  }}
                 >
                   Forgot password?
                 </button>
