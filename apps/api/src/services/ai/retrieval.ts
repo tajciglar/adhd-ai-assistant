@@ -7,7 +7,7 @@ const DEFAULT_TOP_K = 8;
 const MIN_SCORE = 0.35;
 const EMBEDDING_CACHE_TTL_MS = 60_000;
 const RETRIEVAL_CACHE_TTL_MS = 30_000;
-const HYDE_CACHE_TTL_MS = 120_000;
+const HYDE_CACHE_TTL_MS = 900_000; // 15 min — parents ask similar questions within a session
 const MAX_EMBEDDING_CACHE = 2_000;
 const MAX_RETRIEVAL_CACHE = 2_000;
 const MAX_HYDE_CACHE = 500;
@@ -227,7 +227,7 @@ export function rerankAndFilterSources(
   return deduped.slice(0, topK);
 }
 
-async function getQueryEmbedding(normalizedQuery: string): Promise<{
+async function getQueryEmbedding(normalizedQuery: string, skipHyDE = false): Promise<{
   embedding: number[];
   cacheHit: boolean;
 }> {
@@ -240,7 +240,8 @@ async function getQueryEmbedding(normalizedQuery: string): Promise<{
   }
 
   // HyDE: generate a hypothetical document to enrich the embedding
-  const hydeDoc = await generateHypotheticalDocument(normalizedQuery);
+  // Skip for follow-up messages where context is already established
+  const hydeDoc = skipHyDE ? null : await generateHypotheticalDocument(normalizedQuery);
   const textToEmbed = hydeDoc
     ? `${normalizedQuery}\n\n${hydeDoc}`
     : normalizedQuery;
@@ -264,6 +265,7 @@ export async function retrieveRelevantKnowledge(
   fastify: FastifyInstance,
   query: string,
   topK = DEFAULT_TOP_K,
+  { skipHyDE = false }: { skipHyDE?: boolean } = {},
 ): Promise<RetrievalResult> {
   const start = Date.now();
   const normalizedQuery = normalizeQuery(query);
@@ -281,7 +283,7 @@ export async function retrieveRelevantKnowledge(
   }
 
   const { embedding: queryEmbedding, cacheHit: embeddingCacheHit } =
-    await getQueryEmbedding(normalizedQuery);
+    await getQueryEmbedding(normalizedQuery, skipHyDE);
   if (queryEmbedding.length === 0) {
     return {
       sources: [],

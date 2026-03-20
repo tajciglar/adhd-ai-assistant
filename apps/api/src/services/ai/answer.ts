@@ -71,8 +71,10 @@ export async function generateGroundedAnswer({
   let retrievalCacheHit = false;
 
   // ── Parallel: retrieval + profile + memories all at once ────────────
+  // Skip HyDE for follow-up messages (history > 0) — the query is already contextual
+  const isFollowUp = history.length > 0;
   const [retrievalResult, profile, memoriesResult] = await Promise.all([
-    retrieveRelevantKnowledge(fastify, question, 8).catch((error) => {
+    retrieveRelevantKnowledge(fastify, question, 8, { skipHyDE: isFollowUp }).catch((error) => {
       fastify.log.error(
         { err: error instanceof Error ? error : new Error(String(error)) },
         "retrieval.failed",
@@ -288,8 +290,10 @@ export async function* streamGroundedAnswer({
   const start = Date.now();
 
   // ── Parallel: retrieval + profile + memories ────────────────────────
+  // Skip HyDE for follow-up messages — saves 1-3s of latency
+  const isFollowUp = history.length > 0;
   const [retrievalResult, profile, memoriesResult] = await Promise.all([
-    retrieveRelevantKnowledge(fastify, question, 8).catch((error) => {
+    retrieveRelevantKnowledge(fastify, question, 8, { skipHyDE: isFollowUp }).catch((error) => {
       fastify.log.error(
         { err: error instanceof Error ? error : new Error(String(error)) },
         "retrieval.failed",
