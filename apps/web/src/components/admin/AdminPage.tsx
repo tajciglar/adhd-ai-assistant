@@ -284,6 +284,7 @@ export default function AdminPage() {
       {showResourceUpload && (
         <ResourceUploadModal
           uploading={resourcesUploading}
+          categories={[...new Set(resources.map((r) => r.category).filter(Boolean))]}
           onUpload={uploadResource}
           onClose={() => setShowResourceUpload(false)}
         />
