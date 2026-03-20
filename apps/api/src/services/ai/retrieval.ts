@@ -239,12 +239,10 @@ async function getQueryEmbedding(normalizedQuery: string, skipHyDE = false): Pro
     return { embedding: cached.value, cacheHit: true };
   }
 
-  // HyDE: generate a hypothetical document to enrich the embedding
-  // Skip for follow-up messages where context is already established
-  const hydeDoc = skipHyDE ? null : await generateHypotheticalDocument(normalizedQuery);
-  const textToEmbed = hydeDoc
-    ? `${normalizedQuery}\n\n${hydeDoc}`
-    : normalizedQuery;
+  // HyDE disabled — at current scale (<5K chunks) raw query embeddings
+  // find the right content, and HyDE adds 1-3s latency per query.
+  // Re-enable when knowledge base exceeds ~10K chunks.
+  const textToEmbed = normalizedQuery;
 
   const [queryEmbedding] = await embedTexts([textToEmbed]);
   if (!queryEmbedding || queryEmbedding.length === 0) {
