@@ -20,6 +20,48 @@ import TokenUsageDashboard from "./TokenUsageDashboard";
 import ConversationInsights from "./ConversationInsights";
 import type { KnowledgeEntry, ReportTemplateRecord } from "../../types/admin";
 
+const helpBanners: Record<AdminSection, string> = {
+  knowledge:
+    "These are the questions and answers Harbor uses to help parents. Each topic becomes searchable by the AI.",
+  resources:
+    "PDFs, checklists, and guides that Harbor can recommend to parents during conversations.",
+  templates:
+    "Templates for the child assessment reports generated after the quiz.",
+  analytics:
+    "Track how parents progress through the onboarding quiz.",
+  "token-usage":
+    "Monitor how much the AI is being used and estimated API costs.",
+  insights:
+    "See what topics parents are asking about most.",
+};
+
+
+function HelpBanner({
+  section,
+  onDismiss,
+}: {
+  section: AdminSection;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="mx-4 md:mx-6 mt-4 px-4 py-3 bg-harbor-bg-alt/50 rounded-xl flex items-start gap-3">
+      <span className="material-symbols-outlined text-harbor-orange text-lg mt-0.5 shrink-0">
+        lightbulb
+      </span>
+      <p className="flex-1 text-sm text-harbor-text/70 leading-relaxed">
+        {helpBanners[section]}
+      </p>
+      <button
+        onClick={onDismiss}
+        className="shrink-0 p-0.5 rounded text-harbor-text/30 hover:text-harbor-text/60 transition-colors cursor-pointer"
+        aria-label="Dismiss help banner"
+      >
+        <span className="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const {
     stats,
@@ -73,6 +115,16 @@ export default function AdminPage() {
   const [showBulkResourceUpload, setShowBulkResourceUpload] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<ReportTemplateRecord | null>(
     null,
+  );
+  const [dismissedBanners, setDismissedBanners] = useState<Set<AdminSection>>(
+    new Set(),
+  );
+
+  const handleDismissBanner = useCallback(
+    (section: AdminSection) => {
+      setDismissedBanners((prev) => new Set(prev).add(section));
+    },
+    [],
   );
 
   const handleAddEntry = useCallback(() => {
@@ -149,17 +201,17 @@ export default function AdminPage() {
         onCategoryRenamed={() => refetch()}
       />
 
-      <div className="flex-1 flex flex-col">
-        {/* Stats bar — only for knowledge and templates */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Stats bar -- only for knowledge and templates */}
         {(activeSection === "knowledge" || activeSection === "templates") && (
-          <div className="px-6 py-4 bg-white border-b border-harbor-text/10 flex items-center gap-6">
+          <div className="px-4 md:px-6 py-4 bg-white border-b border-harbor-text/10 flex items-center gap-6">
             {activeSection === "knowledge" ? (
               <>
                 <div>
                   <span className="text-2xl font-bold text-harbor-text">
                     {stats?.totalEntries ?? 0}
                   </span>
-                  <span className="text-xs text-harbor-text/40 ml-1.5">entries</span>
+                  <span className="text-xs text-harbor-text/40 ml-1.5">topics</span>
                 </div>
                 <div>
                   <span className="text-2xl font-bold text-harbor-orange">
@@ -169,7 +221,7 @@ export default function AdminPage() {
                     categories
                   </span>
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <span className="text-2xl font-bold text-harbor-primary-light">
                     {stats?.totalUsers ?? 0}
                   </span>
@@ -184,7 +236,7 @@ export default function AdminPage() {
                   </span>
                   <span className="text-xs text-harbor-text/40 ml-1.5">templates</span>
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <span className="text-sm text-harbor-text/60">
                     Templates are loaded by archetype ID and override shared defaults.
                   </span>
@@ -192,6 +244,14 @@ export default function AdminPage() {
               </>
             )}
           </div>
+        )}
+
+        {/* Help banner */}
+        {!dismissedBanners.has(activeSection) && (
+          <HelpBanner
+            section={activeSection}
+            onDismiss={() => handleDismissBanner(activeSection)}
+          />
         )}
 
         {activeSection === "knowledge" ? (
