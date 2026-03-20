@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Resource } from "../../types/admin";
 
 interface ResourceListProps {
@@ -27,12 +27,16 @@ function formatDate(dateStr: string): string {
   });
 }
 
+const ALL_FOLDERS = "__all__";
+
 function EditModal({
   resource,
+  categories,
   onSave,
   onClose,
 }: {
   resource: Resource;
+  categories: string[];
   onSave: (updates: {
     title: string;
     description: string;
@@ -43,8 +47,27 @@ function EditModal({
   const [title, setTitle] = useState(resource.title);
   const [description, setDescription] = useState(resource.description);
   const [category, setCategory] = useState(resource.category);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const handleCategoryChange = (value: string) => {
+    if (value === "__create_new__") {
+      setIsCreatingNew(true);
+      setNewCategory("");
+    } else {
+      setIsCreatingNew(false);
+      setCategory(value);
+    }
+  };
+
+  const handleNewCategoryConfirm = () => {
+    if (newCategory.trim()) {
+      setCategory(newCategory.trim());
+      setIsCreatingNew(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,10 +75,19 @@ function EditModal({
       setError("Title is required");
       return;
     }
+    if (isCreatingNew && !newCategory.trim()) {
+      setError("Please enter a category name");
+      return;
+    }
+    const finalCategory = isCreatingNew ? newCategory.trim() : category.trim();
     setSaving(true);
     setError("");
     try {
-      await onSave({ title: title.trim(), description: description.trim(), category: category.trim() });
+      await onSave({
+        title: title.trim(),
+        description: description.trim(),
+        category: finalCategory,
+      });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
@@ -82,10 +114,7 @@ function EditModal({
             onClick={onClose}
             className="text-harbor-text/40 hover:text-harbor-text/70 p-1 rounded-lg hover:bg-harbor-bg transition-colors cursor-pointer"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <span className="material-symbols-outlined text-xl">close</span>
           </button>
         </div>
 
@@ -119,17 +148,57 @@ function EditModal({
             <label className="block text-xs font-semibold text-harbor-text/70 mb-1.5">
               Category
             </label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40"
-            />
+            {isCreatingNew ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleNewCategoryConfirm();
+                    }
+                  }}
+                  placeholder="New category name"
+                  autoFocus
+                  className="flex-1 px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40"
+                />
+                <button
+                  type="button"
+                  onClick={handleNewCategoryConfirm}
+                  className="px-3 py-2 rounded-lg text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingNew(false);
+                    setCategory(resource.category);
+                  }}
+                  className="px-3 py-2 rounded-lg text-sm text-harbor-text/60 hover:bg-harbor-bg transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <select
+                value={category}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40 bg-white"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+                <option value="__create_new__">+ Create new...</option>
+              </select>
+            )}
           </div>
 
-          {error && (
-            <p className="text-xs text-harbor-error">{error}</p>
-          )}
+          {error && <p className="text-xs text-harbor-error">{error}</p>}
 
           <div className="flex gap-3 justify-end pt-2">
             <button
@@ -153,6 +222,113 @@ function EditModal({
   );
 }
 
+function FolderSidebar({
+  categories,
+  selectedFolder,
+  resourceCountByCategory,
+  totalCount,
+  onSelectFolder,
+  onCreateFolder,
+  onDrop,
+  dragOverFolder,
+  onDragOver,
+  onDragLeave,
+}: {
+  categories: string[];
+  selectedFolder: string;
+  resourceCountByCategory: Record<string, number>;
+  totalCount: number;
+  onSelectFolder: (folder: string) => void;
+  onCreateFolder: () => void;
+  onDrop: (folder: string) => void;
+  dragOverFolder: string | null;
+  onDragOver: (folder: string) => void;
+  onDragLeave: () => void;
+}) {
+  return (
+    <div className="w-[200px] flex-shrink-0 border-r border-harbor-text/10 flex flex-col bg-harbor-bg/30">
+      <div className="px-3 py-3 border-b border-harbor-text/10">
+        <p className="text-[10px] font-semibold text-harbor-text/40 uppercase tracking-wider">
+          Folders
+        </p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-1">
+        {/* All Resources */}
+        <button
+          onClick={() => onSelectFolder(ALL_FOLDERS)}
+          className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
+            selectedFolder === ALL_FOLDERS
+              ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+              : "text-harbor-text/70 hover:bg-harbor-bg hover:text-harbor-text"
+          }`}
+        >
+          <span className="material-symbols-outlined text-lg">folder_open</span>
+          <span className="flex-1 truncate">All Resources</span>
+          <span
+            className={`text-xs tabular-nums ${
+              selectedFolder === ALL_FOLDERS
+                ? "text-harbor-accent/70"
+                : "text-harbor-text/40"
+            }`}
+          >
+            {totalCount}
+          </span>
+        </button>
+
+        {/* Category folders */}
+        {categories.map((cat) => {
+          const isActive = selectedFolder === cat;
+          const isDragOver = dragOverFolder === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => onSelectFolder(cat)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                onDragOver(cat);
+              }}
+              onDragLeave={onDragLeave}
+              onDrop={(e) => {
+                e.preventDefault();
+                onDrop(cat);
+              }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
+                isDragOver
+                  ? "bg-harbor-accent/20 ring-2 ring-harbor-accent/40 ring-inset"
+                  : isActive
+                    ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+                    : "text-harbor-text/70 hover:bg-harbor-bg hover:text-harbor-text"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">folder</span>
+              <span className="flex-1 truncate">{cat}</span>
+              <span
+                className={`text-xs tabular-nums ${
+                  isActive ? "text-harbor-accent/70" : "text-harbor-text/40"
+                }`}
+              >
+                {resourceCountByCategory[cat] || 0}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Create Folder button */}
+      <div className="px-3 py-3 border-t border-harbor-text/10">
+        <button
+          onClick={onCreateFolder}
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-harbor-accent/70 hover:text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-base">create_new_folder</span>
+          <span>Create Folder</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ResourceList({
   resources,
   loading,
@@ -162,6 +338,56 @@ export default function ResourceList({
   onUpdate,
 }: ResourceListProps) {
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<string>(ALL_FOLDERS);
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const [draggingResourceId, setDraggingResourceId] = useState<string | null>(null);
+
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    resources.forEach((r) => {
+      if (r.category) cats.add(r.category);
+    });
+    return Array.from(cats).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" }),
+    );
+  }, [resources]);
+
+  const resourceCountByCategory = useMemo(() => {
+    const counts: Record<string, number> = {};
+    resources.forEach((r) => {
+      counts[r.category] = (counts[r.category] || 0) + 1;
+    });
+    return counts;
+  }, [resources]);
+
+  const filteredResources = useMemo(() => {
+    if (selectedFolder === ALL_FOLDERS) return resources;
+    return resources.filter((r) => r.category === selectedFolder);
+  }, [resources, selectedFolder]);
+
+  const handleCreateFolder = () => {
+    const name = window.prompt("Enter new folder (category) name:");
+    if (!name || !name.trim()) return;
+    // We don't persist empty folders -- they exist only when resources are in them.
+    // So we just switch to "All" and the user can assign resources to the new category via edit.
+    // However, we can set the selected folder to the new name for UX continuity.
+    setSelectedFolder(name.trim());
+  };
+
+  const handleFolderDrop = (targetCategory: string) => {
+    setDragOverFolder(null);
+    if (!draggingResourceId) return;
+    const resource = resources.find((r) => r.id === draggingResourceId);
+    if (!resource || resource.category === targetCategory) {
+      setDraggingResourceId(null);
+      return;
+    }
+    onUpdate(draggingResourceId, { category: targetCategory });
+    setDraggingResourceId(null);
+  };
+
+  const isPdf = (filename: string) =>
+    filename.toLowerCase().endsWith(".pdf");
 
   if (loading) {
     return (
@@ -172,101 +398,156 @@ export default function ResourceList({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-harbor-text/10">
-        <h3 className="text-sm font-semibold text-harbor-text">
-          {resources.length} {resources.length === 1 ? "resource" : "resources"}
-        </h3>
-        <div className="flex gap-2">
-          <button
-            onClick={onBulkUpload}
-            className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
-          >
-            Bulk Upload
-          </button>
-          <button
-            onClick={onUpload}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer"
-          >
-            Upload PDF
-          </button>
-        </div>
-      </div>
+    <div className="flex-1 flex overflow-hidden">
+      {/* Folder Sidebar */}
+      <FolderSidebar
+        categories={categories}
+        selectedFolder={selectedFolder}
+        resourceCountByCategory={resourceCountByCategory}
+        totalCount={resources.length}
+        onSelectFolder={setSelectedFolder}
+        onCreateFolder={handleCreateFolder}
+        onDrop={handleFolderDrop}
+        dragOverFolder={dragOverFolder}
+        onDragOver={setDragOverFolder}
+        onDragLeave={() => setDragOverFolder(null)}
+      />
 
-      {resources.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-20 text-harbor-text/40">
-          <p className="text-lg font-medium mb-1">No resources yet</p>
-          <p className="text-sm">
-            Upload PDF checklists, worksheets, or guides for parents
-          </p>
-        </div>
-      ) : (
-        <div className="divide-y divide-harbor-text/5">
-          {resources.map((resource) => (
-            <div
-              key={resource.id}
-              className="px-6 py-4 hover:bg-harbor-bg/50 transition-colors"
+      {/* Resource List */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-harbor-text/10">
+          <h3 className="text-sm font-semibold text-harbor-text">
+            {selectedFolder === ALL_FOLDERS
+              ? `All Resources (${resources.length})`
+              : `${selectedFolder} (${filteredResources.length})`}
+          </h3>
+          <div className="flex gap-2">
+            <button
+              onClick={onBulkUpload}
+              className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 min-w-0 flex-1">
-                  <div className="flex-shrink-0 w-10 h-10 bg-harbor-accent/10 rounded-lg flex items-center justify-center mt-0.5">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-harbor-accent"
-                    >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-harbor-text truncate">
-                      {resource.title}
-                    </p>
-                    {resource.description && (
-                      <p className="text-xs text-harbor-text/50 mt-0.5 line-clamp-1">
-                        {resource.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 mt-1.5 text-xs text-harbor-text/40">
-                      <span className="bg-harbor-accent/10 text-harbor-accent px-2 py-0.5 rounded-full">
-                        {resource.category}
+              Bulk Upload
+            </button>
+            <button
+              onClick={onUpload}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer"
+            >
+              Upload PDF
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {filteredResources.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-20 text-harbor-text/40">
+              <span className="material-symbols-outlined text-4xl mb-3 text-harbor-text/20">
+                folder_open
+              </span>
+              <p className="text-lg font-medium mb-1">
+                {resources.length === 0
+                  ? "No resources yet"
+                  : "No resources in this folder"}
+              </p>
+              <p className="text-sm">
+                {resources.length === 0
+                  ? "Upload PDF checklists, worksheets, or guides for parents"
+                  : "Drag resources here or upload new ones"}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-harbor-text/5">
+              {filteredResources.map((resource) => (
+                <div
+                  key={resource.id}
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggingResourceId(resource.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", resource.id);
+                  }}
+                  onDragEnd={() => {
+                    setDraggingResourceId(null);
+                    setDragOverFolder(null);
+                  }}
+                  className={`px-6 py-4 hover:bg-harbor-bg/50 transition-colors ${
+                    draggingResourceId === resource.id ? "opacity-40" : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      {/* Drag handle */}
+                      <span className="material-symbols-outlined text-harbor-text/25 hover:text-harbor-text/50 cursor-grab active:cursor-grabbing mt-2.5 text-lg flex-shrink-0">
+                        drag_indicator
                       </span>
-                      <span>{resource.originalName}</span>
-                      <span>{formatSize(resource.sizeBytes)}</span>
-                      <span>{formatDate(resource.createdAt)}</span>
+
+                      {/* File icon */}
+                      <div
+                        className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center mt-0.5 ${
+                          isPdf(resource.filename)
+                            ? "bg-rose-50"
+                            : "bg-harbor-accent/10"
+                        }`}
+                      >
+                        <span
+                          className={`material-symbols-outlined text-xl ${
+                            isPdf(resource.filename)
+                              ? "text-rose-500"
+                              : "text-harbor-accent"
+                          }`}
+                        >
+                          picture_as_pdf
+                        </span>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-harbor-text truncate">
+                          {resource.title}
+                        </p>
+                        {resource.description && (
+                          <p className="text-xs text-harbor-text/50 mt-0.5 line-clamp-1">
+                            {resource.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-harbor-text/40">
+                          <span className="bg-harbor-accent/10 text-harbor-accent px-2 py-0.5 rounded-full">
+                            {resource.category}
+                          </span>
+                          <span>{resource.originalName}</span>
+                          <span>{formatSize(resource.sizeBytes)}</span>
+                          <span>{formatDate(resource.createdAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => setEditingResource(resource)}
+                        className="p-1.5 rounded-lg text-harbor-accent/50 hover:text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+                        title="Edit"
+                      >
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                      <button
+                        onClick={() => onDelete(resource.id)}
+                        className="p-1.5 rounded-lg text-harbor-error/50 hover:text-harbor-error hover:bg-harbor-error/5 transition-colors cursor-pointer"
+                        title="Delete"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => setEditingResource(resource)}
-                    className="text-xs text-harbor-accent/60 hover:text-harbor-accent transition-colors cursor-pointer"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => onDelete(resource.id)}
-                    className="text-xs text-harbor-error/60 hover:text-harbor-error transition-colors cursor-pointer"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
+      </div>
 
+      {/* Edit Modal */}
       {editingResource && (
         <EditModal
           resource={editingResource}
+          categories={categories}
           onSave={(updates) => onUpdate(editingResource.id, updates)}
           onClose={() => setEditingResource(null)}
         />
