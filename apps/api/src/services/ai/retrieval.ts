@@ -176,7 +176,9 @@ export async function warmHydeCache(): Promise<void> {
     }
   }
   if (warmed > 0) {
-    console.log(`[HyDE] Pre-warmed cache with ${warmed} common queries`);
+    // Log is intentionally via process.stdout since this runs at startup
+    // before any Fastify request context is available
+    process.stdout.write(`[HyDE] Pre-warmed cache with ${warmed} common queries\n`);
   }
 }
 

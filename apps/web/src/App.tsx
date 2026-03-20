@@ -76,7 +76,7 @@ function AppRoutes() {
   }
 
   const isAdmin = userRole === "admin";
-  const canUseChat = true; // TODO: restore: isAdmin || hasChatAccess === true;
+  const canUseChat = isAdmin || hasChatAccess === true;
   const homePath = canUseChat ? "/dashboard" : "/no-access";
 
   const pageFallback = (
