@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { api } from "../../lib/api";
 
-export type AdminSection = "knowledge" | "resources" | "templates" | "analytics" | "token-usage" | "insights";
+export type AdminSection = "knowledge" | "resources" | "templates" | "analytics" | "token-usage" | "insights" | "feedback";
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
@@ -114,6 +114,7 @@ const sectionLabels: Record<AdminSection, string> = {
   analytics: "Quiz Results",
   "token-usage": "AI Usage & Costs",
   insights: "Parent Conversations",
+  feedback: "User Feedback",
 };
 
 const sectionIcons: Record<AdminSection, string> = {
@@ -123,6 +124,7 @@ const sectionIcons: Record<AdminSection, string> = {
   analytics: "bar_chart",
   "token-usage": "monitoring",
   insights: "forum",
+  feedback: "thumb_up",
 };
 
 function SidebarContent({
@@ -158,6 +160,7 @@ function SidebarContent({
     { key: "analytics" },
     { key: "token-usage" },
     { key: "insights" },
+    { key: "feedback" },
   ];
 
   return (

@@ -7,6 +7,7 @@ interface ChatMessageListProps {
   messages: Message[];
   sending?: boolean;
   streaming?: boolean;
+  onFeedback?: (messageId: string, rating: number) => void;
 }
 
 function TypingIndicator() {
@@ -24,6 +25,7 @@ export default function ChatMessageList({
   messages,
   sending,
   streaming,
+  onFeedback,
 }: ChatMessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastContent = messages[messages.length - 1]?.content;
@@ -45,7 +47,7 @@ export default function ChatMessageList({
       </div>
       <div className="max-w-2xl mx-auto relative z-10">
         {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} streaming={streaming && msg === messages[messages.length - 1] && msg.role === "ASSISTANT"} />
+          <ChatMessage key={msg.id} message={msg} streaming={streaming && msg === messages[messages.length - 1] && msg.role === "ASSISTANT"} onFeedback={onFeedback} />
         ))}
         {(sending || (streaming && (!messages.length || !messages[messages.length - 1]?.content))) && <TypingIndicator />}
         <div ref={bottomRef} />

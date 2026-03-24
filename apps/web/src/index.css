@@ -76,6 +76,16 @@ html, body {
 }
 
 /* ── Chat Markdown Styles ── */
+.chat-markdown {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.chat-markdown pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
 .chat-markdown p {
   margin-bottom: 0.5rem;
 }

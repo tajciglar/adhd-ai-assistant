@@ -35,6 +35,7 @@ type Action =
   | { type: "STREAM_DONE"; metadata: Message["metadata"] }
   | { type: "SEND_FAILED"; optimisticId: string }
   | { type: "REMOVE_CONVERSATION"; id: string }
+  | { type: "UPDATE_FEEDBACK"; messageId: string; feedback: { rating: number } | null }
   | { type: "LOADED" };
 
 const initialState: ChatState = {
@@ -163,6 +164,13 @@ function reducer(state: ChatState, action: Action): ChatState {
         messages: isActive ? [] : state.messages,
       };
     }
+    case "UPDATE_FEEDBACK":
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.id === action.messageId ? { ...m, feedback: action.feedback } : m,
+        ),
+      };
     case "LOADED":
       return { ...state, loading: false };
     default:
@@ -377,11 +385,41 @@ export function useChat() {
     dispatch({ type: "NEW_CONVERSATION" });
   }, []);
 
+  const submitFeedback = useCallback(
+    async (messageId: string, rating: number) => {
+      const currentMsg = state.messages.find((m) => m.id === messageId);
+      const currentRating = currentMsg?.feedback?.rating;
+
+      if (currentRating === rating) {
+        dispatch({ type: "UPDATE_FEEDBACK", messageId, feedback: null });
+        try {
+          await api.delete(`/api/messages/${messageId}/feedback`);
+        } catch {
+          dispatch({ type: "UPDATE_FEEDBACK", messageId, feedback: { rating } });
+        }
+        return;
+      }
+
+      dispatch({ type: "UPDATE_FEEDBACK", messageId, feedback: { rating } });
+      try {
+        await api.post(`/api/messages/${messageId}/feedback`, { rating });
+      } catch {
+        dispatch({
+          type: "UPDATE_FEEDBACK",
+          messageId,
+          feedback: currentRating ? { rating: currentRating } : null,
+        });
+      }
+    },
+    [state.messages],
+  );
+
   return {
     ...state,
     selectConversation,
     sendMessage,
     deleteConversation,
     newConversation,
+    submitFeedback,
   };
 }

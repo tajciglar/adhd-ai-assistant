@@ -96,6 +96,15 @@ export function useResources() {
     [],
   );
 
+  const refreshResources = useCallback(async () => {
+    try {
+      const data = (await api.get("/api/admin/resources")) as { resources: Resource[] };
+      dispatch({ type: "SET_RESOURCES", resources: data.resources });
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const deleteResource = useCallback(async (id: string) => {
     try {
       await api.delete(`/api/admin/resources/${id}`);
@@ -110,5 +119,6 @@ export function useResources() {
     uploadResource,
     updateResource,
     deleteResource,
+    refreshResources,
   };
 }

@@ -66,7 +66,7 @@ async function buildServer() {
   await server.register(helmet, {
     global: true,
     contentSecurityPolicy: false, // API only
-    hsts: environment === "production",
+    hsts: environment === "production" ? { maxAge: 31536000, includeSubDomains: true } : false,
     hidePoweredBy: true,
     crossOriginResourcePolicy: { policy: "same-site" },
   });

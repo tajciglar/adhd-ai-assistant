@@ -11,6 +11,8 @@ export interface AdminStats {
   totalEntries: number;
   totalUsers: number;
   entriesByCategory: Record<string, number>;
+  totalLikes: number;
+  totalDislikes: number;
 }
 
 export interface TestQuerySource {

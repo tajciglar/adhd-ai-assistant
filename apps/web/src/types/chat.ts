@@ -31,6 +31,7 @@ export interface Message {
       score: number;
     }>;
   };
+  feedback?: { rating: number } | null;
   createdAt: string;
 }
 

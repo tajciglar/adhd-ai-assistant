@@ -280,7 +280,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     "/admin/stats",
     { preHandler: basePreHandler, config: readRateLimitConfig },
     async (_request: FastifyRequest, reply: FastifyReply) => {
-      const [totalEntries, totalUsers, categoryCounts] = await Promise.all([
+      const [totalEntries, totalUsers, categoryCounts, totalLikes, totalDislikes] = await Promise.all([
         fastify.prisma.knowledgeEntry.count(),
         fastify.prisma.user.count(),
         fastify.prisma.knowledgeEntry.groupBy({
@@ -288,6 +288,8 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           _count: { category: true },
           orderBy: { category: "asc" },
         }),
+        fastify.prisma.messageFeedback.count({ where: { rating: 1 } }),
+        fastify.prisma.messageFeedback.count({ where: { rating: -1 } }),
       ]);
 
       const entriesByCategory: Record<string, number> = {};
@@ -295,7 +297,36 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         entriesByCategory[row.category] = row._count.category;
       }
 
-      return reply.send({ totalEntries, totalUsers, entriesByCategory });
+      return reply.send({ totalEntries, totalUsers, entriesByCategory, totalLikes, totalDislikes });
+    },
+  );
+
+  // GET /admin/feedback — recent feedback with message context
+  fastify.get(
+    "/admin/feedback",
+    { preHandler: basePreHandler, config: readRateLimitConfig },
+    async (_request: FastifyRequest, reply: FastifyReply) => {
+      const recentFeedback = await fastify.prisma.messageFeedback.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          rating: true,
+          createdAt: true,
+          userId: true,
+          message: {
+            select: {
+              content: true,
+              role: true,
+              conversation: {
+                select: { title: true },
+              },
+            },
+          },
+        },
+      });
+
+      return reply.send({ feedback: recentFeedback });
     },
   );
 
