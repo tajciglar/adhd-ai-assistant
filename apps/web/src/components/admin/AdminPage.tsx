@@ -34,6 +34,8 @@ const helpBanners: Record<AdminSection, string> = {
     "Monitor how much the AI is being used and estimated API costs.",
   insights:
     "See what topics parents are asking about most.",
+  feedback:
+    "Review thumbs-up and thumbs-down ratings parents leave on AI responses.",
 };
 
 
