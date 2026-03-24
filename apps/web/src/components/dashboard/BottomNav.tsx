@@ -21,7 +21,7 @@ export default function BottomNav({ active }: BottomNavProps) {
   const items = navItems;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-harbor-bg-alt to-white/95 backdrop-blur-md border-t border-harbor-orange/10 px-2 pb-safe-area-inset-bottom pt-1 z-50 flex">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-harbor-bg-alt to-white/95 backdrop-blur-md border-t border-harbor-orange/10 px-2 pt-1 z-50 flex" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 0.25rem)" }}>
       {items.map((item) => {
         const isActive = active === item.id;
 
@@ -60,7 +60,7 @@ export default function BottomNav({ active }: BottomNavProps) {
             className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 cursor-pointer transition-colors"
           >
             <div
-              className={`flex items-center justify-center w-10 h-8 rounded-xl transition-all ${
+              className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${
                 isActive ? "bg-harbor-orange/10" : ""
               }`}
             >

@@ -18,6 +18,7 @@ import BulkResourceUploadModal from "./BulkResourceUploadModal";
 import QuizAnalyticsDashboard from "./QuizAnalyticsDashboard";
 import TokenUsageDashboard from "./TokenUsageDashboard";
 import ConversationInsights from "./ConversationInsights";
+import FeedbackDashboard from "./FeedbackDashboard";
 import type { KnowledgeEntry, ReportTemplateRecord } from "../../types/admin";
 
 const helpBanners: Record<AdminSection, string> = {
@@ -103,6 +104,7 @@ export default function AdminPage() {
     uploadResource,
     updateResource,
     deleteResource,
+    refreshResources,
   } = useResources();
 
   const [activeSection, setActiveSection] = useState<AdminSection>("knowledge");
@@ -285,6 +287,8 @@ export default function AdminPage() {
           <TokenUsageDashboard />
         ) : activeSection === "insights" ? (
           <ConversationInsights />
+        ) : activeSection === "feedback" ? (
+          <FeedbackDashboard stats={stats ?? null} />
         ) : null}
       </div>
 
@@ -354,8 +358,7 @@ export default function AdminPage() {
         <BulkResourceUploadModal
           onClose={() => setShowBulkResourceUpload(false)}
           onComplete={() => {
-            // Refresh resources list
-            window.location.reload();
+            refreshResources();
           }}
         />
       )}

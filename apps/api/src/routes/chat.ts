@@ -10,6 +10,12 @@ const chatBodySchema = z.object({
 
 type ChatBody = z.infer<typeof chatBodySchema>;
 
+const feedbackBodySchema = z.object({
+  rating: z.union([z.literal(1), z.literal(-1)]),
+});
+
+type FeedbackBody = z.infer<typeof feedbackBodySchema>;
+
 const MAX_MESSAGES_PER_CONVERSATION = 200;
 
 export default async function chatRoutes(fastify: FastifyInstance) {
@@ -71,10 +77,21 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           content: true,
           metadata: true,
           createdAt: true,
+          feedbacks: {
+            where: { userId },
+            select: { rating: true },
+            take: 1,
+          },
         },
       });
 
-      return reply.send({ messages });
+      const messagesWithFeedback = messages.map((m) => ({
+        ...m,
+        feedback: m.feedbacks[0] ?? null,
+        feedbacks: undefined,
+      }));
+
+      return reply.send({ messages: messagesWithFeedback });
     },
   );
 
@@ -307,6 +324,12 @@ export default async function chatRoutes(fastify: FastifyInstance) {
       reply.raw.setHeader("Vary", "Origin");
       reply.raw.writeHead(200);
 
+      // Track client disconnects to stop streaming early
+      let clientDisconnected = false;
+      request.raw.on("close", () => {
+        clientDisconnected = true;
+      });
+
       const stream = streamGroundedAnswer({
         fastify,
         userId,
@@ -318,19 +341,80 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 
       try {
         for await (const event of stream) {
+          if (clientDisconnected) break;
           const data = JSON.stringify(event);
           reply.raw.write(`data: ${data}\n\n`);
         }
       } catch (err) {
-        const errorEvent = JSON.stringify({
-          type: "error",
-          error: "Stream interrupted",
-        });
-        reply.raw.write(`data: ${errorEvent}\n\n`);
+        if (!clientDisconnected) {
+          const errorEvent = JSON.stringify({
+            type: "error",
+            error: "Stream interrupted",
+          });
+          reply.raw.write(`data: ${errorEvent}\n\n`);
+        }
       }
 
-      reply.raw.write("data: [DONE]\n\n");
+      if (!clientDisconnected) {
+        reply.raw.write("data: [DONE]\n\n");
+      }
       reply.raw.end();
+    },
+  );
+
+  // POST /messages/:messageId/feedback — submit like/dislike
+  fastify.post<{ Params: { messageId: string }; Body: FeedbackBody }>(
+    "/messages/:messageId/feedback",
+    { preHandler: [fastify.authenticate, requireChatAccess] },
+    async (request: FastifyRequest<{ Params: { messageId: string } }>, reply: FastifyReply) => {
+      const parsed = feedbackBodySchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: "Validation failed",
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      const userId = request.user.id;
+      const { messageId } = request.params;
+      const { rating } = parsed.data;
+
+      const message = await fastify.prisma.message.findFirst({
+        where: {
+          id: messageId,
+          conversation: { userId },
+        },
+      });
+
+      if (!message) {
+        return reply.status(404).send({ error: "Message not found" });
+      }
+
+      const feedback = await fastify.prisma.messageFeedback.upsert({
+        where: {
+          messageId_userId: { messageId, userId },
+        },
+        create: { messageId, userId, rating },
+        update: { rating },
+      });
+
+      return reply.send({ success: true, rating: feedback.rating });
+    },
+  );
+
+  // DELETE /messages/:messageId/feedback — remove feedback
+  fastify.delete<{ Params: { messageId: string } }>(
+    "/messages/:messageId/feedback",
+    { preHandler: [fastify.authenticate, requireChatAccess] },
+    async (request: FastifyRequest<{ Params: { messageId: string } }>, reply: FastifyReply) => {
+      const userId = request.user.id;
+      const { messageId } = request.params;
+
+      await fastify.prisma.messageFeedback.deleteMany({
+        where: { messageId, userId },
+      });
+
+      return reply.send({ success: true });
     },
   );
 }

@@ -35,6 +35,7 @@ export default function ChatPage() {
     sendMessage,
     deleteConversation,
     newConversation,
+    submitFeedback,
   } = useChat();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -169,7 +170,7 @@ export default function ChatPage() {
           <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMobileHistory(false)}>
             <div className="absolute inset-0 bg-black/30" />
             <div
-              className="absolute right-0 top-0 bottom-0 w-72 bg-gradient-to-b from-harbor-bg-alt to-white shadow-xl flex flex-col"
+              className="absolute right-0 top-0 bottom-0 w-72 max-w-[85vw] bg-gradient-to-b from-harbor-bg-alt to-white shadow-xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-4 py-4 border-b border-harbor-orange/15 flex items-center justify-between">
@@ -255,7 +256,7 @@ export default function ChatPage() {
         {/* Chat Content */}
         <div className="flex-1 flex flex-col min-h-0 bg-harbor-bg">
           {hasMessages ? (
-            <ChatMessageList messages={messages} sending={sending} streaming={streaming} />
+            <ChatMessageList messages={messages} sending={sending} streaming={streaming} onFeedback={submitFeedback} />
           ) : (
             <ChatWelcome childName={childName} onStarterClick={handleStarterClick} />
           )}
