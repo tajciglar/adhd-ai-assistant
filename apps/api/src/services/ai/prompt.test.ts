@@ -30,8 +30,8 @@ test("buildGroundedPrompt limits sources and history length", () => {
   assert.ok(promptText.includes("Category: cat"));
   // Should include the system instructions
   assert.ok(promptText.includes("Harbor"));
-  // Should include the Acknowledge/Advise/Encourage pattern
-  assert.ok(promptText.includes("Acknowledge"));
+  // Should include answer structure guidance
+  assert.ok(promptText.includes("ANSWER STRUCTURES"));
   // History should be truncated (6 turns max + system messages + few-shot + question)
   assert.ok(prompt.length < 20);
 });
@@ -100,9 +100,10 @@ test("buildGroundedPrompt includes archetype context when provided", () => {
   // Should contain child profile with age-aware development
   assert.ok(promptText.includes("Max"));
   assert.ok(promptText.includes("Early elementary"));
-  // Should NOT contain archetype name
-  assert.ok(!promptText.includes("Hummingbird"));
-  assert.ok(!promptText.includes("Flash"));
+  // Should include the instruction to hide archetype naming from parents
+  assert.ok(promptText.includes("NEVER reveal archetype names"));
+  assert.ok(promptText.includes("Hummingbird"));
+  assert.ok(promptText.includes("Flash"));
 });
 
 test("buildGroundedPrompt includes memories when provided", () => {
@@ -130,4 +131,31 @@ test("buildGroundedPrompt includes memories when provided", () => {
   assert.ok(promptText.includes("WHAT I REMEMBER"));
   assert.ok(promptText.includes("bedtime transitions"));
   assert.ok(promptText.includes("Visual timers"));
+});
+
+test("buildGroundedPrompt instructs Harbor to clarify once then coach on short follow-ups", () => {
+  const prompt = buildGroundedPrompt({
+    question: "he argues",
+    sources: [],
+    child: null,
+    history: [
+      {
+        role: "USER",
+        content: "won't start homework",
+      },
+      {
+        role: "ASSISTANT",
+        content: "What happens when it's homework time — does he refuse to start, get distracted, or melt down?",
+      },
+    ],
+    reportTemplate: null,
+    memories: [],
+  });
+
+  const promptText = prompt.map((m) => m.content).join("\n");
+  assert.ok(promptText.includes("If you JUST asked a clarifying question"));
+  assert.ok(promptText.includes("STOP interviewing"));
+  assert.ok(promptText.includes("Never ask more than 2 clarification questions in a row"));
+  assert.ok(promptText.includes('Short replies like "he argues," "how long it takes,"'));
+  assert.ok(promptText.includes("do not ask another broad diagnostic question"));
 });
