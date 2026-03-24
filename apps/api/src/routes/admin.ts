@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { reindexKnowledgeEntry } from "../services/ai/knowledgeIndex.js";
+import { generateGroundedAnswer } from "../services/ai/answer.js";
 import {
   invalidateRetrievalCaches,
   retrieveRelevantKnowledge,
@@ -542,12 +543,22 @@ export default async function adminRoutes(fastify: FastifyInstance) {
 
       try {
         const result = await retrieveRelevantKnowledge(fastify, query, 8);
+        const answerPreview = await generateGroundedAnswer({
+          fastify,
+          userId: request.user.id,
+          question: query,
+          history: [],
+          enablePostProcessing: false,
+        });
+
         return reply.send({
           query,
           sources: result.sources,
           totalRetrieved: result.sources.length,
           retrievalMs: result.retrievalMs,
           cacheHit: result.cacheHit,
+          answerPreview: answerPreview.content,
+          answerMetadata: answerPreview.metadata,
         });
       } catch (error) {
         fastify.log.error({ error }, "admin.test_query_failed");

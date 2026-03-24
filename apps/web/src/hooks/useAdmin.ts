@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { api } from "../lib/api";
-import type { KnowledgeEntry, AdminStats, TestQueryResult } from "../types/admin";
+import type {
+  KnowledgeEntry,
+  AdminStats,
+  TestQueryResult,
+  AdminImportJob,
+} from "../types/admin";
 
 interface AdminState {
   entries: KnowledgeEntry[];
@@ -11,6 +16,7 @@ interface AdminState {
   filter: string | null;
   testQueryResults: TestQueryResult | null;
   testQuerying: boolean;
+  importJob: AdminImportJob | null;
 }
 
 type Action =
@@ -24,7 +30,8 @@ type Action =
   | { type: "REMOVE_ENTRY"; id: string }
   | { type: "LOADED" }
   | { type: "SET_TEST_RESULTS"; results: TestQueryResult | null }
-  | { type: "TEST_QUERYING"; querying: boolean };
+  | { type: "TEST_QUERYING"; querying: boolean }
+  | { type: "SET_IMPORT_JOB"; job: AdminImportJob | null };
 
 const initialState: AdminState = {
   entries: [],
@@ -35,6 +42,7 @@ const initialState: AdminState = {
   filter: null,
   testQueryResults: null,
   testQuerying: false,
+  importJob: null,
 };
 
 function reducer(state: AdminState, action: Action): AdminState {
@@ -78,6 +86,8 @@ function reducer(state: AdminState, action: Action): AdminState {
       return { ...state, testQueryResults: action.results, testQuerying: false };
     case "TEST_QUERYING":
       return { ...state, testQuerying: action.querying };
+    case "SET_IMPORT_JOB":
+      return { ...state, importJob: action.job, saving: !!action.job && !["completed", "completed_with_errors", "failed"].includes(action.job.status) };
     default:
       return state;
   }
@@ -85,6 +95,14 @@ function reducer(state: AdminState, action: Action): AdminState {
 
 export function useAdmin() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const importPollTimeoutRef = useRef<number | null>(null);
+
+  const stopImportPolling = useCallback(() => {
+    if (importPollTimeoutRef.current !== null) {
+      window.clearTimeout(importPollTimeoutRef.current);
+      importPollTimeoutRef.current = null;
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -105,6 +123,10 @@ export function useAdmin() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    return () => stopImportPolling();
+  }, [stopImportPolling]);
 
   const setFilter = useCallback((filter: string | null) => {
     dispatch({ type: "SET_FILTER", filter });
@@ -168,20 +190,68 @@ export function useAdmin() {
     async (
       entries: { category: string; title: string; content: string }[],
     ) => {
+      stopImportPolling();
       dispatch({ type: "SAVING", saving: true });
       try {
-        await api.post("/api/admin/entries/bulk", { entries });
-        // Refetch everything
-        await fetchData();
-        dispatch({ type: "SAVING", saving: false });
+        const result = (await api.post("/api/admin/entries/bulk", { entries })) as {
+          jobId: string;
+          status: AdminImportJob["status"];
+          total: number;
+        };
+
+        const pollJob = async (jobId: string) => {
+          try {
+            const jobResult = (await api.get(`/api/admin/jobs/${jobId}`)) as {
+              job: AdminImportJob;
+            };
+            const job = jobResult.job;
+            dispatch({ type: "SET_IMPORT_JOB", job });
+
+            if (job.status === "queued" || job.status === "processing") {
+              importPollTimeoutRef.current = window.setTimeout(() => {
+                void pollJob(jobId);
+              }, 1200);
+              return;
+            }
+
+            await fetchData();
+          } catch {
+            dispatch({ type: "SAVING", saving: false });
+          }
+        };
+
+        dispatch({
+          type: "SET_IMPORT_JOB",
+          job: {
+            id: result.jobId,
+            status: result.status,
+            total: result.total,
+            processed: 0,
+            succeeded: 0,
+            failed: 0,
+            error: null,
+            startedAt: null,
+            finishedAt: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: "",
+          },
+        });
+        void pollJob(result.jobId);
         return true;
       } catch {
         dispatch({ type: "SAVING", saving: false });
         return false;
       }
     },
-    [fetchData],
+    [fetchData, stopImportPolling],
   );
+
+  const clearImportJob = useCallback(() => {
+    stopImportPolling();
+    dispatch({ type: "SET_IMPORT_JOB", job: null });
+    dispatch({ type: "SAVING", saving: false });
+  }, [stopImportPolling]);
 
   const testQuery = useCallback(async (query: string) => {
     dispatch({ type: "TEST_QUERYING", querying: true });
@@ -290,6 +360,7 @@ export function useAdmin() {
     classifyEntry,
     parseDocument,
     checkDuplicates,
+    clearImportJob,
     refetch: fetchData,
   };
 }

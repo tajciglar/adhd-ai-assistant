@@ -1,7 +1,15 @@
 import { useState, useRef } from "react";
 import { api } from "../../lib/api";
 
-export type AdminSection = "knowledge" | "resources" | "templates" | "analytics" | "token-usage" | "insights" | "feedback";
+export type AdminSection =
+  | "overview"
+  | "knowledge"
+  | "resources"
+  | "templates"
+  | "analytics"
+  | "token-usage"
+  | "insights"
+  | "feedback";
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
@@ -108,23 +116,25 @@ function EditableCategory({
 }
 
 const sectionLabels: Record<AdminSection, string> = {
-  knowledge: "Q&A Topics",
-  resources: "Parent Resources",
-  templates: "Child Reports",
-  analytics: "Quiz Results",
-  "token-usage": "AI Usage & Costs",
-  insights: "Parent Conversations",
-  feedback: "User Feedback",
+  overview: "Overview",
+  knowledge: "AI Answers",
+  resources: "Parent Downloads",
+  templates: "Quiz Reports",
+  analytics: "Quiz Funnel",
+  "token-usage": "AI Costs",
+  insights: "Parent Needs",
+  feedback: "Answer Ratings",
 };
 
 const sectionIcons: Record<AdminSection, string> = {
-  knowledge: "quiz",
-  resources: "description",
+  overview: "dashboard",
+  knowledge: "psychology",
+  resources: "folder_open",
   templates: "assignment",
   analytics: "bar_chart",
   "token-usage": "monitoring",
-  insights: "forum",
-  feedback: "thumb_up",
+  insights: "insights",
+  feedback: "thumb_down",
 };
 
 function SidebarContent({
@@ -154,6 +164,7 @@ function SidebarContent({
   };
 
   const sections: { key: AdminSection; count?: number }[] = [
+    { key: "overview" },
     { key: "knowledge" },
     { key: "resources", count: totalResources },
     { key: "templates", count: totalTemplates },
@@ -168,9 +179,9 @@ function SidebarContent({
       <div className="p-4 border-b border-harbor-text/10 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-harbor-primary font-display mb-1">
-            Admin Panel
+            Harbor Admin
           </h2>
-          <p className="text-xs text-harbor-text/40">Manage content & resources</p>
+          <p className="text-xs text-harbor-text/40">Manage content, files, and AI quality</p>
         </div>
         {onCloseMobile && (
           <button
@@ -211,21 +222,28 @@ function SidebarContent({
               onClick={onAddEntry}
               className="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-sm font-medium hover:opacity-90 transition-colors cursor-pointer"
             >
-              + Add Entry
+              + Add AI Answer
             </button>
           ) : (
             <button
               onClick={onAddTemplate}
               className="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-sm font-medium hover:opacity-90 transition-colors cursor-pointer"
             >
-              + Add Template
+              + Add Report Template
             </button>
           )}
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto py-1">
-        {activeSection === "knowledge" ? (
+        {activeSection === "overview" ? (
+          <div className="px-4 py-2">
+            <p className="text-xs text-harbor-text/50 leading-relaxed">
+              Start here for the main admin tasks. Use the sections below when you need to manage
+              a specific part of Harbor.
+            </p>
+          </div>
+        ) : activeSection === "knowledge" ? (
           <>
             <button
               onClick={() => onFilterChange(null)}
@@ -255,31 +273,37 @@ function SidebarContent({
         ) : activeSection === "resources" ? (
           <div className="px-4 py-2">
             <p className="text-xs text-harbor-text/50 leading-relaxed">
-              Upload PDF checklists, worksheets, and guides. The AI will recommend them to parents when relevant.
+              Upload PDF checklists, worksheets, and guides that Harbor can recommend to parents.
             </p>
           </div>
         ) : activeSection === "templates" ? (
           <div className="px-4 py-2">
             <p className="text-xs text-harbor-text/50 leading-relaxed">
-              Edit archetype report templates used by the report page and PDF/email generation.
+              Edit the templates used to generate post-quiz child reports.
             </p>
           </div>
         ) : activeSection === "analytics" ? (
           <div className="px-4 py-2">
             <p className="text-xs text-harbor-text/50 leading-relaxed">
-              View quiz funnel analytics, step dropoff rates, archetype distribution, and recent submissions.
+              View quiz completion, drop-off points, archetype distribution, and recent submissions.
             </p>
           </div>
         ) : activeSection === "token-usage" ? (
           <div className="px-4 py-2">
             <p className="text-xs text-harbor-text/50 leading-relaxed">
-              Monitor Gemini API token usage and estimated costs across all AI assistant responses.
+              Monitor Gemini token usage and estimated spend across Harbor responses.
             </p>
           </div>
         ) : activeSection === "insights" ? (
           <div className="px-4 py-2">
             <p className="text-xs text-harbor-text/50 leading-relaxed">
-              See what parents ask about most, identify content gaps, and view patterns by archetype.
+              See recurring parent needs, identify content gaps, and review topic trends.
+            </p>
+          </div>
+        ) : activeSection === "feedback" ? (
+          <div className="px-4 py-2">
+            <p className="text-xs text-harbor-text/50 leading-relaxed">
+              Review liked and disliked answers to understand where Harbor is helping or missing.
             </p>
           </div>
         ) : null}

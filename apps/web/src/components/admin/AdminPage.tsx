@@ -5,6 +5,7 @@ import { useReportTemplatesAdmin } from "../../hooks/useReportTemplatesAdmin";
 import { useResources } from "../../hooks/useResources";
 import AdminSidebar from "./AdminSidebar";
 import type { AdminSection } from "./AdminSidebar";
+import AdminOverview from "./AdminOverview";
 import EntryList from "./EntryList";
 import EntryEditor from "./EntryEditor";
 import BulkImportModal from "./BulkImportModal";
@@ -22,20 +23,22 @@ import FeedbackDashboard from "./FeedbackDashboard";
 import type { KnowledgeEntry, ReportTemplateRecord } from "../../types/admin";
 
 const helpBanners: Record<AdminSection, string> = {
+  overview:
+    "Start here if you're not sure where to go. These shortcuts cover the most common admin tasks.",
   knowledge:
-    "These are the questions and answers Harbor uses to help parents. Each topic becomes searchable by the AI.",
+    "These are the AI answers Harbor can pull from during chat. Write titles the way a parent would ask the question.",
   resources:
-    "PDFs, checklists, and guides that Harbor can recommend to parents during conversations.",
+    "These are downloadable files Harbor can recommend to parents when they need a checklist, guide, or worksheet.",
   templates:
-    "Templates for the child assessment reports generated after the quiz.",
+    "These templates control the child report generated after the quiz.",
   analytics:
-    "Track how parents progress through the onboarding quiz.",
+    "Track how parents move through the quiz and where they drop off.",
   "token-usage":
-    "Monitor how much the AI is being used and estimated API costs.",
+    "Monitor how much the AI is being used and what that usage likely costs.",
   insights:
-    "See what topics parents are asking about most.",
+    "See what parents ask about most so you can spot content gaps.",
   feedback:
-    "Review thumbs-up and thumbs-down ratings parents leave on AI responses.",
+    "Review the answers parents liked or disliked to improve Harbor's quality.",
 };
 
 
@@ -87,6 +90,8 @@ export default function AdminPage() {
     classifyEntry,
     parseDocument,
     checkDuplicates,
+    importJob,
+    clearImportJob,
     refetch,
   } = useAdmin();
 
@@ -109,7 +114,7 @@ export default function AdminPage() {
     refreshResources,
   } = useResources();
 
-  const [activeSection, setActiveSection] = useState<AdminSection>("knowledge");
+  const [activeSection, setActiveSection] = useState<AdminSection>("overview");
   const [showEditor, setShowEditor] = useState(false);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -215,7 +220,7 @@ export default function AdminPage() {
                   <span className="text-2xl font-bold text-harbor-text">
                     {stats?.totalEntries ?? 0}
                   </span>
-                  <span className="text-xs text-harbor-text/40 ml-1.5">topics</span>
+                  <span className="text-xs text-harbor-text/40 ml-1.5">answers</span>
                 </div>
                 <div>
                   <span className="text-2xl font-bold text-harbor-orange">
@@ -229,7 +234,7 @@ export default function AdminPage() {
                   <span className="text-2xl font-bold text-harbor-primary-light">
                     {stats?.totalUsers ?? 0}
                   </span>
-                  <span className="text-xs text-harbor-text/40 ml-1.5">users</span>
+                  <span className="text-xs text-harbor-text/40 ml-1.5">accounts</span>
                 </div>
               </>
             ) : (
@@ -258,7 +263,18 @@ export default function AdminPage() {
           />
         )}
 
-        {activeSection === "knowledge" ? (
+        {activeSection === "overview" ? (
+          <AdminOverview
+            stats={stats ?? null}
+            totalResources={resources.length}
+            totalTemplates={templates.length}
+            onOpenSection={setActiveSection}
+            onPrimaryAction={() => {
+              setActiveSection("knowledge");
+              handleAddEntry();
+            }}
+          />
+        ) : activeSection === "knowledge" ? (
           <EntryList
             entries={filteredEntries}
             onEdit={handleEditEntry}
@@ -309,7 +325,9 @@ export default function AdminPage() {
       {showBulkImport && (
         <BulkImportModal
           saving={saving}
+          importJob={importJob}
           onImport={bulkImport}
+          onClearJob={clearImportJob}
           onClose={() => setShowBulkImport(false)}
         />
       )}

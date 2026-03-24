@@ -15,6 +15,21 @@ export interface AdminStats {
   totalDislikes: number;
 }
 
+export interface AdminImportJob {
+  id: string;
+  status: "queued" | "processing" | "completed" | "completed_with_errors" | "failed";
+  total: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
+  error: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdById: string;
+}
+
 export interface TestQuerySource {
   entryId: string;
   title: string;
@@ -28,6 +43,17 @@ export interface TestQueryResult {
   query: string;
   sources: TestQuerySource[];
   totalRetrieved: number;
+  retrievalMs: number;
+  cacheHit?: boolean;
+  answerPreview?: string;
+  answerMetadata?: {
+    model: string;
+    sourceCount?: number;
+    latencyMs?: number;
+    retrievalMs?: number;
+    providerMs?: number;
+    errorCode?: string;
+  };
 }
 
 export interface ReportTemplateData {
