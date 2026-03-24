@@ -113,6 +113,10 @@ Log in as admin, navigate to `/admin`, and either:
 
 Entries are automatically chunked and embedded for vector search.
 
+### Staging and Testers
+
+See [docs/staging-playbook.md](./docs/staging-playbook.md) for the recommended staging setup, preview deployment flow, and tester email/password workflow.
+
 ---
 
 ## Project Structure

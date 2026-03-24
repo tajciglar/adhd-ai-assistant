@@ -14,6 +14,7 @@ interface AnswerInput {
   userId: string;
   question: string;
   history: Array<{ role: "USER" | "ASSISTANT"; content: string }>;
+  enablePostProcessing?: boolean;
 }
 
 interface SourceMetadata {
@@ -83,6 +84,7 @@ export async function generateGroundedAnswer({
   userId,
   question,
   history,
+  enablePostProcessing = true,
 }: AnswerInput): Promise<AnswerResult> {
   const start = Date.now();
   let sources: RetrievedSource[] = [];
@@ -221,21 +223,23 @@ export async function generateGroundedAnswer({
       "chat.grounded.success",
     );
 
-    // Non-blocking: extract memories and insights from this exchange
-    extractMemories(fastify, userId, question, content).catch((err) =>
-      fastify.log.warn({ err }, "memory.extraction.failed"),
-    );
-    extractConversationInsight(fastify, userId, question, {
-      sourceCount: sourceMetadata.length,
-      avgScore:
-        sourceMetadata.length > 0
-          ? sourceMetadata.reduce((sum, s) => sum + s.score, 0) /
-            sourceMetadata.length
-          : 0,
-      archetypeId: archetypeId ?? null,
-    }).catch((err) =>
-      fastify.log.warn({ err }, "insight.extraction.failed"),
-    );
+    if (enablePostProcessing) {
+      // Non-blocking: extract memories and insights from this exchange
+      extractMemories(fastify, userId, question, content).catch((err) =>
+        fastify.log.warn({ err }, "memory.extraction.failed"),
+      );
+      extractConversationInsight(fastify, userId, question, {
+        sourceCount: sourceMetadata.length,
+        avgScore:
+          sourceMetadata.length > 0
+            ? sourceMetadata.reduce((sum, s) => sum + s.score, 0) /
+              sourceMetadata.length
+            : 0,
+        archetypeId: archetypeId ?? null,
+      }).catch((err) =>
+        fastify.log.warn({ err }, "insight.extraction.failed"),
+      );
+    }
 
     // Strip any download markers the AI fabricated (ID not in retrieved sources)
     const cleanContent = stripFakeDownloadMarkers(content, sources);

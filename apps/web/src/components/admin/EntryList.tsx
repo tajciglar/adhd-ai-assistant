@@ -26,7 +26,11 @@ export default function EntryList({
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) return entries;
     const q = searchQuery.toLowerCase();
-    return entries.filter((entry) => entry.title.toLowerCase().includes(q));
+    return entries.filter((entry) =>
+      [entry.title, entry.category, entry.content].some((value) =>
+        value.toLowerCase().includes(q),
+      ),
+    );
   }, [entries, searchQuery]);
 
   return (
@@ -42,18 +46,18 @@ export default function EntryList({
           >
             <span className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-base">quiz</span>
-              Test Search
+              Check AI Search
             </span>
           </button>
           <button
             onClick={onSmartImport}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-cta text-white hover:bg-harbor-cta/90 transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-primary text-white hover:bg-harbor-primary/90 transition-colors cursor-pointer"
           >
             <span className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-base">
                 auto_awesome
               </span>
-              Import Document
+              Turn Document Into Answers
             </span>
           </button>
           <button
@@ -64,7 +68,7 @@ export default function EntryList({
               <span className="material-symbols-outlined text-base">
                 upload_file
               </span>
-              Bulk Import
+              Import Spreadsheet
             </span>
           </button>
         </div>
@@ -80,7 +84,7 @@ export default function EntryList({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search entries by title..."
+            placeholder="Search by title, category, or answer text..."
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40 bg-white placeholder:text-harbor-text/30"
           />
           {searchQuery && (
@@ -108,17 +112,17 @@ export default function EntryList({
                 search_off
               </span>
               <p className="text-harbor-text/30 text-sm">
-                No entries match your search
+                No AI answers match your search
               </p>
               <p className="text-harbor-text/20 text-xs mt-1">
-                Try a different search term
+                Try a parent-facing phrase or category name
               </p>
             </>
           ) : (
             <>
-              <p className="text-harbor-text/30 text-sm">No entries yet</p>
+              <p className="text-harbor-text/30 text-sm">No AI answers yet</p>
               <p className="text-harbor-text/20 text-xs mt-1">
-                Add entries or use bulk import
+                Add one manually or import them in bulk
               </p>
             </>
           )}
@@ -165,7 +169,7 @@ export default function EntryList({
                       warning
                     </span>
                     <span>
-                      Delete this topic? Harbor won't be able to reference it
+                      Delete this AI answer? Harbor won&apos;t be able to reference it
                       anymore.
                     </span>
                   </div>

@@ -64,7 +64,7 @@ export default function ChatPage() {
   const hasMessages = activeConversationId || messages.length > 0;
 
   return (
-    <div className="h-screen flex bg-harbor-bg">
+    <div className="flex h-screen min-h-[100dvh] overflow-hidden bg-harbor-bg">
       {/* ── Desktop Sidebar (shared) with Conversation History ── */}
       <DesktopSidebar active="chat" isAdmin={isAdmin}>
         <div className="px-4 py-2 border-t border-harbor-primary/5 flex flex-col flex-1 overflow-hidden">
@@ -127,9 +127,9 @@ export default function ChatPage() {
       </DesktopSidebar>
 
       {/* ── Main Chat Area ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex min-w-0 flex-col overflow-hidden">
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white/80 backdrop-blur-md sticky top-0 z-10">
+        <header className="md:hidden sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white/80 px-4 py-3 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <Mascot size={40} />
             <div>
@@ -254,7 +254,7 @@ export default function ChatPage() {
         </header>
 
         {/* Chat Content */}
-        <div className="flex-1 flex flex-col min-h-0 bg-harbor-bg">
+        <div className="flex-1 flex min-h-0 flex-col overflow-hidden bg-harbor-bg">
           {hasMessages ? (
             <ChatMessageList messages={messages} sending={sending} streaming={streaming} onFeedback={submitFeedback} />
           ) : (
