@@ -185,7 +185,7 @@ function buildArchetypeContext(
 
   // Replace placeholders in template strings
   function render(text: string): string {
-    let result = text;
+    let result = String(text ?? "");
     for (const [placeholder, replacement] of Object.entries(placeholders)) {
       result = result.replaceAll(placeholder, replacement);
     }
