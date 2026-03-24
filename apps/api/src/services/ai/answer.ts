@@ -52,6 +52,7 @@ const NO_CONTENT_RESPONSE =
 
 // Strip fabricated download markers that don't match any retrieved source
 const DOWNLOAD_MARKER_RE = /\[download:([^\]:]+):([^\]]+)\]/g;
+const PLAIN_DOWNLOAD_LABEL_RE = /\[(?:download|resource)\s*:\s*[^:\]]+\]/gi;
 
 function stripFakeDownloadMarkers(content: string, sources: RetrievedSource[]): string {
   // Collect all real resource IDs from the source texts
@@ -67,6 +68,34 @@ function stripFakeDownloadMarkers(content: string, sources: RetrievedSource[]): 
   return content.replace(DOWNLOAD_MARKER_RE, (full, id) => {
     return realIds.has(id) ? full : "";
   });
+}
+
+function stripFakePlainDownloadMentions(content: string, sources: RetrievedSource[]): string {
+  const hasRealDownloadMarker = sources.some((source) =>
+    /\[download:([^\]:]+):([^\]]+)\]/i.test(source.text),
+  );
+
+  if (hasRealDownloadMarker) {
+    return content.replace(PLAIN_DOWNLOAD_LABEL_RE, "");
+  }
+
+  return content
+    .replace(
+      /(^|[\n\r])([^\n\r.!?]*\[(?:download|resource)\s*:\s*[^:\]]+\][^\n\r.!?]*[.!?]?)/gi,
+      (_match, prefix) => prefix,
+    )
+    .replace(/[^\n\r.!?]*our resource on[^.!?\n\r]*[.!?]\s*/gi, "")
+    .replace(/[^\n\r.!?]*checklist[^.!?\n\r]*[.!?]\s*/gi, (match) =>
+      /\bdownload\b/i.test(match) ? "" : match,
+    )
+    .replace(PLAIN_DOWNLOAD_LABEL_RE, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export function sanitizeResourceMentions(content: string, sources: RetrievedSource[]): string {
+  const withoutFakeMarkers = stripFakeDownloadMarkers(content, sources);
+  return stripFakePlainDownloadMentions(withoutFakeMarkers, sources);
 }
 
 function toMetadataSources(sources: RetrievedSource[]): SourceMetadata[] {
@@ -242,7 +271,7 @@ export async function generateGroundedAnswer({
     }
 
     // Strip any download markers the AI fabricated (ID not in retrieved sources)
-    const cleanContent = stripFakeDownloadMarkers(content, sources);
+    const cleanContent = sanitizeResourceMentions(content, sources);
 
     return {
       content: cleanContent,
@@ -477,7 +506,10 @@ export async function* streamGroundedAnswer({
 
   const providerMs = Date.now() - providerStart;
   // Strip fabricated download markers before saving
-  const content = stripFakeDownloadMarkers(fullContent.trim() || NO_CONTENT_RESPONSE, sources);
+  const content = sanitizeResourceMentions(
+    fullContent.trim() || NO_CONTENT_RESPONSE,
+    sources,
+  );
 
   // Update the assistant message with the full content + metadata
   const metadata: AssistantMetadata = {

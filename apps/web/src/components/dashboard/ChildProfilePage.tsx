@@ -4,6 +4,7 @@ import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import LoadingScreen from "../shared/LoadingScreen";
 import Mascot from "../shared/Mascot";
+import { normalizeReportTemplateData } from "../../lib/reportTemplate";
 
 interface ChildData {
   id: string;
@@ -66,7 +67,11 @@ export default function ChildProfilePage() {
     api
       .get("/api/user/child-report")
       .then((res) => {
-        setData(res as ChildReportResponse);
+        const payload = res as ChildReportResponse;
+        setData({
+          ...payload,
+          report: payload.report ? normalizeReportTemplateData(payload.report) : null,
+        });
         setLoading(false);
       })
       .catch(() => setLoading(false));

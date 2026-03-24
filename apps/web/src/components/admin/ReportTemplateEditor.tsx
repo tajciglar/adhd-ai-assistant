@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ReportTemplateData, ReportTemplateRecord } from "../../types/admin";
+import { normalizeReportTemplateData } from "../../lib/reportTemplate";
 
 interface ReportTemplateEditorProps {
   template: ReportTemplateRecord | null;
@@ -159,7 +160,9 @@ export default function ReportTemplateEditor({
   onSave,
   onCancel,
 }: ReportTemplateEditorProps) {
-  const [form, setForm] = useState<ReportTemplateData>(template?.template ?? emptyTemplate());
+  const [form, setForm] = useState<ReportTemplateData>(
+    template ? normalizeReportTemplateData(template.template) : emptyTemplate(),
+  );
   const [archetypeId, setArchetypeId] = useState(template?.archetypeId ?? "");
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [importText, setImportText] = useState("");

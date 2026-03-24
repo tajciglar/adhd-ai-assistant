@@ -406,6 +406,7 @@ Type 7 (Crisis, 50-100w): Immediate action (2-3 sentences MAX) → One next step
 
     // Download markers
     `DOWNLOAD MARKERS: Some Knowledge Base Sources contain download markers in square brackets. If you see one in a source, copy the ENTIRE marker exactly as-is into your response. Do NOT create, modify, or invent download markers yourself — the system validates every one and fake markers cause errors visible to parents. If no source has a marker, just recommend the topic without one.`,
+    `- Never mention a specific downloadable resource title, checklist, worksheet, guide, PDF, or "our resource on..." unless a Knowledge Base Source contains a real [download:id:filename] marker for it. If there is no real download marker, give the advice without naming a downloadable resource.`,
   ].join("\n\n");
 
   // ── Build context blocks ─────────────────────────────────────────────

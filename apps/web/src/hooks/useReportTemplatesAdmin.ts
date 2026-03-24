@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer } from "react";
 import { api } from "../lib/api";
 import type { ReportTemplateData, ReportTemplateRecord } from "../types/admin";
+import { normalizeReportTemplateRecord } from "../lib/reportTemplate";
 
 interface TemplatesState {
   templates: ReportTemplateRecord[];
@@ -62,7 +63,10 @@ export function useReportTemplatesAdmin() {
       const data = (await api.get("/api/admin/report-templates")) as {
         templates: ReportTemplateRecord[];
       };
-      dispatch({ type: "SET_TEMPLATES", templates: data.templates ?? [] });
+      dispatch({
+        type: "SET_TEMPLATES",
+        templates: (data.templates ?? []).map(normalizeReportTemplateRecord),
+      });
     } finally {
       dispatch({ type: "SET_LOADING", loading: false });
     }
@@ -78,7 +82,7 @@ export function useReportTemplatesAdmin() {
       const result = (await api.post("/api/admin/report-templates", template)) as {
         template: ReportTemplateRecord;
       };
-      dispatch({ type: "UPSERT_TEMPLATE", template: result.template });
+      dispatch({ type: "UPSERT_TEMPLATE", template: normalizeReportTemplateRecord(result.template) });
       return true;
     } catch {
       dispatch({ type: "SET_SAVING", saving: false });
@@ -93,7 +97,7 @@ export function useReportTemplatesAdmin() {
         const result = (await api.put(`/api/admin/report-templates/${id}`, template)) as {
           template: ReportTemplateRecord;
         };
-        dispatch({ type: "UPSERT_TEMPLATE", template: result.template });
+        dispatch({ type: "UPSERT_TEMPLATE", template: normalizeReportTemplateRecord(result.template) });
         return true;
       } catch {
         dispatch({ type: "SET_SAVING", saving: false });
