@@ -20,6 +20,7 @@ import QuizAnalyticsDashboard from "./QuizAnalyticsDashboard";
 import TokenUsageDashboard from "./TokenUsageDashboard";
 import ConversationInsights from "./ConversationInsights";
 import FeedbackDashboard from "./FeedbackDashboard";
+import AdminUsers from "./AdminUsers";
 import type { KnowledgeEntry, ReportTemplateRecord } from "../../types/admin";
 
 const helpBanners: Record<AdminSection, string> = {
@@ -39,6 +40,8 @@ const helpBanners: Record<AdminSection, string> = {
     "See what parents ask about most so you can spot content gaps.",
   feedback:
     "Review the answers parents liked or disliked to improve Harbor's quality.",
+  users:
+    "Send email invites to clients so they can set a password and get immediate chat access.",
 };
 
 
@@ -307,6 +310,8 @@ export default function AdminPage() {
           <ConversationInsights />
         ) : activeSection === "feedback" ? (
           <FeedbackDashboard stats={stats ?? null} />
+        ) : activeSection === "users" ? (
+          <AdminUsers />
         ) : null}
       </div>
 
