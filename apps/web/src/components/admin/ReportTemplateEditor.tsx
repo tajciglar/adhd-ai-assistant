@@ -16,19 +16,17 @@ function emptyTemplate(): ReportTemplateData {
     innerVoiceQuote: "",
     animalDescription: "",
     aboutChild: "",
-    aboutWhatHelps: "",
-    hiddenSuperpower: "",
-    hiddenGiftWhatHelps: "",
-    brainSections: [{ title: "", content: "", whatHelps: "" }],
-    dayInLife: { morning: "", school: "", schoolWhatHelps: "", afterSchool: "", bedtime: "" },
+    hiddenGift: "",
+    aboutBrain: "",
+    brainSections: [{ title: "", content: "" }],
+    dayInLife: { morning: "", school: "", afterSchool: "", bedtime: "" },
     drains: [""],
     fuels: [""],
     overwhelm: "",
-    overwhelmWhatHelps: "",
-    needsToHear: [{ when: "", say: "" }],
-    affirmations: [""],
-    doNotSay: [{ context: "", insteadOf: "", tryThis: "" }],
+    affirmations: [{ when: "", say: "" }],
+    doNotSay: [{ when: "", insteadOf: "", tryThis: "" }],
     closingLine: "",
+    whatHelps: {},
   };
 }
 
@@ -56,13 +54,13 @@ function parseTemplateFromText(raw: string): Partial<ReportTemplateData> {
   const innerVoiceQuote = quoteLine.replace(/—\s*\[NAME\]\s*$/g, "").replace(/^"|"$/g, "");
 
   const aboutHeading = "About [NAME]";
-  const hiddenHeading = "[NAME]'s Hidden Superpower";
+  const hiddenHeading = "[NAME]'s Hidden";
   const understandingHeading = "Understanding [NAME]'s Brain";
   const dayHeading = "A Day in [NAME]'s Life";
-  const drainsHeading = "What Drains [NAME] — and What Fuels [HIM/HER/THEM]";
+  const drainsHeading = "What Drains [NAME]";
   const overwhelmedHeading = "When [NAME] Gets Overwhelmed";
-  const needsHeading = "What [NAME] Needs to Hear Most";
-  const dontSayHeading = "What NOT to Say — and What to Say Instead";
+  const needsHeading = "What [NAME] Needs to Hear";
+  const dontSayHeading = "What NOT to Say";
 
   const preAbout = parseSection(text, innerVoiceQuote ? lines[1] : lines[0], aboutHeading);
   const animalDescription = preAbout
@@ -70,7 +68,7 @@ function parseTemplateFromText(raw: string): Partial<ReportTemplateData> {
     .replace(/^The [A-Za-z]+ /, "")
     .trim();
   const aboutChild = parseSection(text, aboutHeading, hiddenHeading);
-  const hiddenSuperpower = parseSection(text, hiddenHeading, understandingHeading);
+  const hiddenGift = parseSection(text, hiddenHeading, understandingHeading);
   const understanding = parseSection(text, understandingHeading, dayHeading);
   const day = parseSection(text, dayHeading, drainsHeading);
   const drainsFuels = parseSection(text, drainsHeading, overwhelmedHeading);
@@ -80,14 +78,14 @@ function parseTemplateFromText(raw: string): Partial<ReportTemplateData> {
 
   const firstIdx = understanding.indexOf("The first is");
   const secondIdx = understanding.indexOf("The second is");
-  let brainSections = [{ title: "Overview", content: understanding.trim(), whatHelps: "" }];
+  let brainSections = [{ title: "Overview", content: understanding.trim() }];
   if (firstIdx !== -1 && secondIdx !== -1 && secondIdx > firstIdx) {
     const intro = understanding.slice(0, firstIdx).trim();
     const attention = understanding.slice(firstIdx, secondIdx).trim();
     const hyperactivity = understanding.slice(secondIdx).trim();
     brainSections = [
-      { title: "Attention", content: `${intro} ${attention}`.trim(), whatHelps: "" },
-      { title: "Hyperactivity", content: hyperactivity, whatHelps: "" },
+      { title: "Attention", content: `${intro} ${attention}`.trim() },
+      { title: "Hyperactivity", content: hyperactivity },
     ];
   }
 
@@ -106,7 +104,6 @@ function parseTemplateFromText(raw: string): Partial<ReportTemplateData> {
   const dayInLife = {
     morning: extractDay("Morning:"),
     school: extractDay("At School:") || extractDay("School:"),
-    schoolWhatHelps: "",
     afterSchool: extractDay("After School:"),
     bedtime: extractDay("Bedtime:"),
   };
@@ -121,8 +118,8 @@ function parseTemplateFromText(raw: string): Partial<ReportTemplateData> {
     if (drainsFuelsLines[i + 1]) fuels.push(drainsFuelsLines[i + 1]);
   }
 
-  // Parse "What child needs to hear most" — each line is a say item, no when context
-  const needsToHear = compactLines(needsRaw)
+  // Parse affirmations — each line is a say item, no when context
+  const affirmations = compactLines(needsRaw)
     .map((line) => line.replace(/^"|"$/g, "").trim())
     .filter(Boolean)
     .map((say) => ({ when: "", say }));
@@ -133,11 +130,11 @@ function parseTemplateFromText(raw: string): Partial<ReportTemplateData> {
       line !== "Try..." &&
       !line.startsWith("[NAME] is a "),
   );
-  const doNotSay: Array<{ context: string; insteadOf: string; tryThis: string }> = [];
+  const doNotSay: Array<{ when: string; insteadOf: string; tryThis: string }> = [];
   for (let i = 0; i < doNotSayLines.length; i += 2) {
     if (!doNotSayLines[i]) continue;
     doNotSay.push({
-      context: "",
+      when: "",
       insteadOf: doNotSayLines[i].replace(/^"|"$/g, ""),
       tryThis: (doNotSayLines[i + 1] ?? "").replace(/^"|"$/g, ""),
     });
@@ -150,19 +147,16 @@ function parseTemplateFromText(raw: string): Partial<ReportTemplateData> {
     innerVoiceQuote,
     animalDescription,
     aboutChild,
-    aboutWhatHelps: "",
-    hiddenSuperpower,
-    hiddenGiftWhatHelps: "",
-    brainSections: brainSections.length > 0 ? brainSections : [{ title: "", content: "", whatHelps: "" }],
+    hiddenGift,
+    brainSections: brainSections.length > 0 ? brainSections : [{ title: "", content: "" }],
     dayInLife,
     drains: drains.length > 0 ? drains : [""],
     fuels: fuels.length > 0 ? fuels : [""],
     overwhelm,
-    overwhelmWhatHelps: "",
-    needsToHear: needsToHear.length > 0 ? needsToHear : [{ when: "", say: "" }],
-    affirmations: [""],
-    doNotSay: doNotSay.length > 0 ? doNotSay : [{ context: "", insteadOf: "", tryThis: "" }],
+    affirmations: affirmations.length > 0 ? affirmations : [{ when: "", say: "" }],
+    doNotSay: doNotSay.length > 0 ? doNotSay : [{ when: "", insteadOf: "", tryThis: "" }],
     closingLine,
+    whatHelps: {},
   };
 }
 
@@ -209,13 +203,13 @@ export default function ReportTemplateEditor({
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function updateStringList(key: "drains" | "fuels" | "affirmations", index: number, value: string) {
+  function updateStringList(key: "drains" | "fuels", index: number, value: string) {
     const next = [...form[key]];
     next[index] = value;
     setField(key, next);
   }
 
-  function removeStringListItem(key: "drains" | "fuels" | "affirmations", index: number) {
+  function removeStringListItem(key: "drains" | "fuels", index: number) {
     if (form[key].length <= 1) return;
     const next = [...form[key]];
     next.splice(index, 1);
@@ -236,11 +230,11 @@ export default function ReportTemplateEditor({
     setField("doNotSay", next);
   }
 
-  function removeNeedsToHearItem(index: number) {
-    if (form.needsToHear.length <= 1) return;
-    const next = [...form.needsToHear];
+  function removeAffirmationItem(index: number) {
+    if (form.affirmations.length <= 1) return;
+    const next = [...form.affirmations];
     next.splice(index, 1);
-    setField("needsToHear", next);
+    setField("affirmations", next);
   }
 
   async function handleSave() {
@@ -380,8 +374,8 @@ export default function ReportTemplateEditor({
                   className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
                 />
                 <WhatHelpsBox
-                  value={form.aboutWhatHelps ?? ""}
-                  onChange={(v) => setField("aboutWhatHelps", v)}
+                  value={form.whatHelps?.aboutChild ?? ""}
+                  onChange={(v) => setField("whatHelps", { ...form.whatHelps, aboutChild: v })}
                 />
               </section>
 
@@ -389,15 +383,15 @@ export default function ReportTemplateEditor({
               <section className="space-y-3">
                 <h4 className="text-sm font-semibold text-harbor-text/80">Hidden Gift</h4>
                 <textarea
-                  value={form.hiddenSuperpower}
-                  onChange={(e) => setField("hiddenSuperpower", e.target.value)}
-                  placeholder="The child's hidden gift / superpower..."
+                  value={form.hiddenGift}
+                  onChange={(e) => setField("hiddenGift", e.target.value)}
+                  placeholder="The child's hidden gift..."
                   rows={5}
                   className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
                 />
                 <WhatHelpsBox
-                  value={form.hiddenGiftWhatHelps ?? ""}
-                  onChange={(v) => setField("hiddenGiftWhatHelps", v)}
+                  value={form.whatHelps?.hiddenGift ?? ""}
+                  onChange={(v) => setField("whatHelps", { ...form.whatHelps, hiddenGift: v })}
                 />
               </section>
 
@@ -407,13 +401,20 @@ export default function ReportTemplateEditor({
                   <h4 className="text-sm font-semibold text-harbor-text/80">Understanding the Brain</h4>
                   <button
                     onClick={() =>
-                      setField("brainSections", [...form.brainSections, { title: "", content: "", whatHelps: "" }])
+                      setField("brainSections", [...form.brainSections, { title: "", content: "" }])
                     }
                     className="px-3 py-1.5 text-xs rounded-lg border border-harbor-text/15 hover:bg-harbor-bg cursor-pointer"
                   >
                     + Add Section
                   </button>
                 </div>
+                <textarea
+                  value={form.aboutBrain ?? ""}
+                  onChange={(e) => setField("aboutBrain", e.target.value)}
+                  rows={2}
+                  placeholder="Intro sentence about the brain (e.g. '[NAME]'s profile is shaped by two areas...')"
+                  className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
+                />
                 {form.brainSections.map((section, index) => (
                   <div key={`brain-${index}`} className="border border-harbor-text/10 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -442,16 +443,13 @@ export default function ReportTemplateEditor({
                       placeholder="Section content..."
                       className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
                     />
-                    <WhatHelpsBox
-                      value={section.whatHelps ?? ""}
-                      onChange={(v) => {
-                        const next = [...form.brainSections];
-                        next[index] = { ...next[index], whatHelps: v };
-                        setField("brainSections", next);
-                      }}
-                    />
                   </div>
                 ))}
+                <WhatHelpsBox
+                  label="WHAT HELPS (Brain)"
+                  value={form.whatHelps?.brain ?? ""}
+                  onChange={(v) => setField("whatHelps", { ...form.whatHelps, brain: v })}
+                />
               </section>
 
               {/* Day in Life */}
@@ -473,10 +471,9 @@ export default function ReportTemplateEditor({
                     />
                     {key === "school" && (
                       <WhatHelpsBox
-                        value={form.dayInLife.schoolWhatHelps ?? ""}
-                        onChange={(v) =>
-                          setField("dayInLife", { ...form.dayInLife, schoolWhatHelps: v })
-                        }
+                        label="WHAT HELPS (At School)"
+                        value={form.whatHelps?.school ?? ""}
+                        onChange={(v) => setField("whatHelps", { ...form.whatHelps, school: v })}
                       />
                     )}
                   </div>
@@ -521,36 +518,37 @@ export default function ReportTemplateEditor({
                   className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
                 />
                 <WhatHelpsBox
-                  value={form.overwhelmWhatHelps ?? ""}
-                  onChange={(v) => setField("overwhelmWhatHelps", v)}
+                  label="WHAT HELPS (Overwhelm)"
+                  value={form.whatHelps?.overwhelm ?? ""}
+                  onChange={(v) => setField("whatHelps", { ...form.whatHelps, overwhelm: v })}
                 />
               </section>
 
-              {/* What child needs to hear most */}
+              {/* Affirmations — what child needs to hear most */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-harbor-text/80">What Child Needs to Hear Most</h4>
                   <button
-                    onClick={() => setField("needsToHear", [...form.needsToHear, { when: "", say: "" }])}
+                    onClick={() => setField("affirmations", [...form.affirmations, { when: "", say: "" }])}
                     className="px-3 py-1.5 text-xs rounded-lg border border-harbor-text/15 hover:bg-harbor-bg cursor-pointer"
                   >
                     + Add Row
                   </button>
                 </div>
                 <p className="text-xs text-harbor-text/40">Each row: the situation (When) + the phrase to say (Say)</p>
-                {form.needsToHear.map((item, index) => (
-                  <div key={`nth-${index}`} className="border border-harbor-text/10 rounded-xl p-3 space-y-2">
+                {form.affirmations.map((item, index) => (
+                  <div key={`aff-${index}`} className="border border-harbor-text/10 rounded-xl p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-harbor-text/40 uppercase tracking-wider">Row {index + 1}</p>
-                      <XButton onClick={() => removeNeedsToHearItem(index)} disabled={form.needsToHear.length <= 1} />
+                      <XButton onClick={() => removeAffirmationItem(index)} disabled={form.affirmations.length <= 1} />
                     </div>
                     <input
                       type="text"
                       value={item.when}
                       onChange={(e) => {
-                        const next = [...form.needsToHear];
+                        const next = [...form.affirmations];
                         next[index] = { ...next[index], when: e.target.value };
-                        setField("needsToHear", next);
+                        setField("affirmations", next);
                       }}
                       placeholder="When... (situation / trigger)"
                       className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
@@ -559,9 +557,9 @@ export default function ReportTemplateEditor({
                       type="text"
                       value={item.say}
                       onChange={(e) => {
-                        const next = [...form.needsToHear];
+                        const next = [...form.affirmations];
                         next[index] = { ...next[index], say: e.target.value };
-                        setField("needsToHear", next);
+                        setField("affirmations", next);
                       }}
                       placeholder='"Say..." (the phrase)'
                       className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
@@ -576,7 +574,7 @@ export default function ReportTemplateEditor({
                   <h4 className="text-sm font-semibold text-harbor-text/80">What NOT to Say</h4>
                   <button
                     onClick={() =>
-                      setField("doNotSay", [...form.doNotSay, { context: "", insteadOf: "", tryThis: "" }])
+                      setField("doNotSay", [...form.doNotSay, { when: "", insteadOf: "", tryThis: "" }])
                     }
                     className="px-3 py-1.5 text-xs rounded-lg border border-harbor-text/15 hover:bg-harbor-bg cursor-pointer"
                   >
@@ -591,10 +589,10 @@ export default function ReportTemplateEditor({
                     </div>
                     <input
                       type="text"
-                      value={pair.context ?? ""}
+                      value={pair.when ?? ""}
                       onChange={(e) => {
                         const next = [...form.doNotSay];
-                        next[index] = { ...next[index], context: e.target.value };
+                        next[index] = { ...next[index], when: e.target.value };
                         setField("doNotSay", next);
                       }}
                       placeholder="When this happens... (context)"
@@ -668,24 +666,24 @@ export default function ReportTemplateEditor({
                   <p className="text-xs font-bold text-harbor-orange uppercase tracking-wider mb-2">About [Child Name]</p>
                   <div className="w-8 h-0.5 bg-harbor-orange mb-3" />
                   <p className="leading-relaxed whitespace-pre-line">{form.aboutChild}</p>
-                  {form.aboutWhatHelps && (
+                  {form.whatHelps?.aboutChild && (
                     <div className="mt-4 border-l-4 border-emerald-400 bg-emerald-50 rounded-r-xl px-4 py-3">
                       <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">What Helps</p>
-                      <p className="text-sm leading-relaxed">{form.aboutWhatHelps}</p>
+                      <p className="text-sm leading-relaxed">{form.whatHelps.aboutChild}</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {form.hiddenSuperpower && (
+              {form.hiddenGift && (
                 <div>
                   <p className="text-xs font-bold text-harbor-orange uppercase tracking-wider mb-2">[Child Name]'s Hidden Gift</p>
                   <div className="w-8 h-0.5 bg-harbor-orange mb-3" />
-                  <p className="leading-relaxed whitespace-pre-line">{form.hiddenSuperpower}</p>
-                  {form.hiddenGiftWhatHelps && (
+                  <p className="leading-relaxed whitespace-pre-line">{form.hiddenGift}</p>
+                  {form.whatHelps?.hiddenGift && (
                     <div className="mt-4 border-l-4 border-emerald-400 bg-emerald-50 rounded-r-xl px-4 py-3">
                       <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">What Helps</p>
-                      <p className="text-sm leading-relaxed">{form.hiddenGiftWhatHelps}</p>
+                      <p className="text-sm leading-relaxed">{form.whatHelps.hiddenGift}</p>
                     </div>
                   )}
                 </div>
@@ -695,18 +693,19 @@ export default function ReportTemplateEditor({
                 <div>
                   <p className="text-xs font-bold text-harbor-orange uppercase tracking-wider mb-2">Understanding [Child Name]'s Brain</p>
                   <div className="w-8 h-0.5 bg-harbor-orange mb-3" />
+                  {form.aboutBrain && <p className="mb-3 leading-relaxed">{form.aboutBrain}</p>}
                   {form.brainSections.map((s, i) => (
                     <div key={i} className="mb-4">
                       {s.title && <p className="font-bold mb-1">{s.title}</p>}
                       <p className="leading-relaxed whitespace-pre-line">{s.content}</p>
-                      {s.whatHelps && (
-                        <div className="mt-3 border-l-4 border-emerald-400 bg-emerald-50 rounded-r-xl px-4 py-3">
-                          <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">What Helps</p>
-                          <p className="text-sm leading-relaxed">{s.whatHelps}</p>
-                        </div>
-                      )}
                     </div>
                   ))}
+                  {form.whatHelps?.brain && (
+                    <div className="mt-3 border-l-4 border-emerald-400 bg-emerald-50 rounded-r-xl px-4 py-3">
+                      <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">What Helps</p>
+                      <p className="text-sm leading-relaxed">{form.whatHelps.brain}</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -721,10 +720,10 @@ export default function ReportTemplateEditor({
                           {key === "afterSchool" ? "After School" : key === "school" ? "School" : key.charAt(0).toUpperCase() + key.slice(1)}
                         </p>
                         <p className="leading-relaxed">{form.dayInLife[key]}</p>
-                        {key === "school" && form.dayInLife.schoolWhatHelps && (
+                        {key === "school" && form.whatHelps?.school && (
                           <div className="mt-3 border-l-4 border-emerald-400 bg-emerald-50 rounded-r-xl px-4 py-3">
                             <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">What Helps</p>
-                            <p className="text-sm leading-relaxed">{form.dayInLife.schoolWhatHelps}</p>
+                            <p className="text-sm leading-relaxed">{form.whatHelps.school}</p>
                           </div>
                         )}
                       </div>
@@ -763,16 +762,16 @@ export default function ReportTemplateEditor({
                   <p className="text-xs font-bold text-harbor-orange uppercase tracking-wider mb-2">When [Child Name] Gets Overwhelmed</p>
                   <div className="w-8 h-0.5 bg-harbor-orange mb-3" />
                   <p className="leading-relaxed whitespace-pre-line">{form.overwhelm}</p>
-                  {form.overwhelmWhatHelps && (
+                  {form.whatHelps?.overwhelm && (
                     <div className="mt-4 border-l-4 border-emerald-400 bg-emerald-50 rounded-r-xl px-4 py-3">
                       <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">What Helps</p>
-                      <p className="text-sm leading-relaxed">{form.overwhelmWhatHelps}</p>
+                      <p className="text-sm leading-relaxed">{form.whatHelps.overwhelm}</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {form.needsToHear.some((n) => n.say) && (
+              {form.affirmations.some((n) => n.say) && (
                 <div>
                   <p className="text-xs font-bold text-harbor-orange uppercase tracking-wider mb-2">What [Child Name] Needs to Hear Most</p>
                   <div className="w-8 h-0.5 bg-harbor-orange mb-3" />
@@ -781,7 +780,7 @@ export default function ReportTemplateEditor({
                       <div className="px-4 py-2 text-xs font-bold text-harbor-text/50 uppercase tracking-wider">When...</div>
                       <div className="px-4 py-2 text-xs font-bold text-harbor-text/50 uppercase tracking-wider border-l border-harbor-text/10">Say...</div>
                     </div>
-                    {form.needsToHear.filter((n) => n.say).map((item, i) => (
+                    {form.affirmations.filter((n) => n.say).map((item, i) => (
                       <div key={i} className="grid grid-cols-2 border-t border-harbor-text/10">
                         <div className="px-4 py-3 text-sm">{item.when || "—"}</div>
                         <div className="px-4 py-3 text-sm italic border-l border-harbor-text/10">"{item.say}"</div>
@@ -796,17 +795,17 @@ export default function ReportTemplateEditor({
                   <p className="text-xs font-bold text-harbor-orange uppercase tracking-wider mb-2">What NOT to Say and What to Say Instead</p>
                   <div className="w-8 h-0.5 bg-harbor-orange mb-3" />
                   <div className="border border-harbor-text/10 rounded-xl overflow-hidden">
-                    <div className={`grid bg-harbor-bg-alt ${form.doNotSay.some((p) => p.context) ? "grid-cols-3" : "grid-cols-2"}`}>
-                      {form.doNotSay.some((p) => p.context) && (
+                    <div className={`grid bg-harbor-bg-alt ${form.doNotSay.some((p) => p.when) ? "grid-cols-3" : "grid-cols-2"}`}>
+                      {form.doNotSay.some((p) => p.when) && (
                         <div className="px-4 py-2 text-xs font-bold text-harbor-text/50 uppercase tracking-wider">When this happens...</div>
                       )}
                       <div className="px-4 py-2 text-xs font-bold text-harbor-text/50 uppercase tracking-wider border-l border-harbor-text/10">Instead of...</div>
                       <div className="px-4 py-2 text-xs font-bold text-harbor-text/50 uppercase tracking-wider border-l border-harbor-text/10">Try...</div>
                     </div>
                     {form.doNotSay.filter((p) => p.insteadOf).map((pair, i) => (
-                      <div key={i} className={`grid border-t border-harbor-text/10 ${form.doNotSay.some((p) => p.context) ? "grid-cols-3" : "grid-cols-2"}`}>
-                        {form.doNotSay.some((p) => p.context) && (
-                          <div className="px-4 py-3 text-sm">{pair.context || "—"}</div>
+                      <div key={i} className={`grid border-t border-harbor-text/10 ${form.doNotSay.some((p) => p.when) ? "grid-cols-3" : "grid-cols-2"}`}>
+                        {form.doNotSay.some((p) => p.when) && (
+                          <div className="px-4 py-3 text-sm">{pair.when || "—"}</div>
                         )}
                         <div className="px-4 py-3 text-sm border-l border-harbor-text/10">
                           <span className="text-rose-500 mr-1">✗</span>"{pair.insteadOf}"

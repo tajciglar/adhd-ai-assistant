@@ -15,7 +15,8 @@
     "admin:promote": "tsx scripts/promote-admin.ts",
     "invite:testers": "tsx scripts/invite-quiz-testers.ts",
     "import-content": "tsx scripts/import-content.ts",
-    "security:check-logs": "tsx scripts/check-no-secret-logs.ts"
+    "security:check-logs": "tsx scripts/check-no-secret-logs.ts",
+    "seed:templates": "dotenv -e ../../.env -- tsx scripts/seed-report-templates.ts"
   },
   "dependencies": {
     "@adhd-ai-assistant/shared": "workspace:*",
