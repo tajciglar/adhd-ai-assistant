@@ -62,22 +62,32 @@ export interface ReportTemplateData {
   innerVoiceQuote: string;
   animalDescription: string;
   aboutChild: string;
+  aboutWhatHelps?: string;
   hiddenSuperpower: string;
+  hiddenGiftWhatHelps?: string;
   brainSections: Array<{
     title: string;
     content: string;
+    whatHelps?: string;
   }>;
   dayInLife: {
     morning: string;
     school: string;
+    schoolWhatHelps?: string;
     afterSchool: string;
     bedtime: string;
   };
   drains: string[];
   fuels: string[];
   overwhelm: string;
+  overwhelmWhatHelps?: string;
+  needsToHear: Array<{
+    when: string;
+    say: string;
+  }>;
   affirmations: string[];
   doNotSay: Array<{
+    context?: string;
     insteadOf: string;
     tryThis: string;
   }>;
