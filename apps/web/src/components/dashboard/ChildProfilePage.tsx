@@ -174,19 +174,6 @@ export default function ChildProfilePage() {
                 {child.age && (
                   <p className="text-white/60 text-xs mt-2">{child.age} years old</p>
                 )}
-                {traitProfile.pdfUrl && (
-                  <a
-                    href={traitProfile.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-4 bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                  >
-                    <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      download
-                    </span>
-                    Download Full PDF Report
-                  </a>
-                )}
               </div>
             </div>
 
@@ -469,6 +456,23 @@ export default function ChildProfilePage() {
               <div className="text-center py-6">
                 <Mascot size={48} mood="happy" className="mx-auto mb-3" />
                 <p className="text-sm text-harbor-text/60 italic max-w-md mx-auto">{report.closingLine}</p>
+              </div>
+            )}
+
+            {/* ── Download PDF Report ── */}
+            {traitProfile.pdfUrl && (
+              <div className="pt-2 pb-8">
+                <a
+                  href={traitProfile.pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-harbor-primary hover:bg-harbor-primary/90 transition-colors rounded-xl px-5 py-3.5 text-sm font-semibold text-white shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    download
+                  </span>
+                  Download Full PDF Report
+                </a>
               </div>
             )}
           </div>
