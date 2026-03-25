@@ -246,7 +246,8 @@ function buildArchetypeContext(
       "AFFIRMATIONS TO SUGGEST (when parent needs encouragement or when child needs to hear something):",
     );
     for (const aff of template.affirmations) {
-      sections.push(`  - ${render(aff)}`);
+      const text = aff.when ? `When ${aff.when}: ${aff.say}` : aff.say;
+      sections.push(`  - ${render(text)}`);
     }
   }
 

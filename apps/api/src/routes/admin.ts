@@ -78,36 +78,61 @@ const reportTemplateSchema = z.object({
   innerVoiceQuote: z.string().min(1).max(2000),
   animalDescription: z.string().min(1).max(50000),
   aboutChild: z.string().min(1).max(50000),
-  hiddenSuperpower: z.string().min(1).max(50000),
+  hiddenGift: z.string().max(50000).optional().default(""),
+  aboutBrain: z.string().max(50000).optional().default(""),
   brainSections: z
     .array(
       z.object({
-        title: z.string().min(1).max(300),
-        content: z.string().min(1).max(50000),
+        title: z.string().max(300),
+        content: z.string().max(50000),
       }),
     )
-    .min(1)
-    .max(20),
+    .max(20)
+    .optional()
+    .default([]),
   dayInLife: z.object({
-    morning: z.string().min(1).max(50000),
-    school: z.string().min(1).max(50000),
-    afterSchool: z.string().min(1).max(50000),
-    bedtime: z.string().min(1).max(50000),
+    morning: z.string().max(50000).optional().default(""),
+    school: z.string().max(50000).optional().default(""),
+    afterSchool: z.string().max(50000).optional().default(""),
+    bedtime: z.string().max(50000).optional().default(""),
   }),
-  drains: z.array(z.string().min(1).max(2000)).min(1).max(40),
-  fuels: z.array(z.string().min(1).max(2000)).min(1).max(40),
-  overwhelm: z.string().min(1).max(50000),
-  affirmations: z.array(z.string().min(1).max(2000)).min(1).max(40),
+  drains: z.array(z.string().min(1).max(2000)).max(40).optional().default([]),
+  fuels: z.array(z.string().min(1).max(2000)).max(40).optional().default([]),
+  overwhelm: z.string().max(50000).optional().default(""),
+  affirmations: z
+    .array(
+      z.object({
+        when: z.string().max(2000).optional().default(""),
+        say: z.string().max(2000),
+      }),
+    )
+    .max(40)
+    .optional()
+    .default([]),
   doNotSay: z
     .array(
       z.object({
-        insteadOf: z.string().min(1).max(2000),
-        tryThis: z.string().min(1).max(2000),
+        when: z.string().max(2000).optional().default(""),
+        insteadOf: z.string().max(2000),
+        tryThis: z.string().max(2000),
       }),
     )
-    .min(1)
-    .max(40),
-  closingLine: z.string().min(1).max(2000),
+    .max(40)
+    .optional()
+    .default([]),
+  closingLine: z.string().max(2000).optional().default(""),
+  whatHelps: z
+    .object({
+      aboutChild: z.string().max(50000).optional(),
+      hiddenGift: z.string().max(50000).optional(),
+      brain: z.string().max(50000).optional(),
+      morning: z.string().max(50000).optional(),
+      school: z.string().max(50000).optional(),
+      afterSchool: z.string().max(50000).optional(),
+      bedtime: z.string().max(50000).optional(),
+      overwhelm: z.string().max(50000).optional(),
+    })
+    .optional(),
 });
 
 const readRateLimitConfig = { rateLimit: { max: 60, timeWindow: "1 minute" } };
