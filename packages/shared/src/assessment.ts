@@ -171,10 +171,10 @@ export interface Archetype {
   explanation: string;
   traits: string;
   solution: string;
-  childPerspective: string;
 }
 
 export const ARCHETYPES: Archetype[] = [
+  // ── Tier 3: 2-trait profiles ──────────────────────────────────────────────
   {
     id: "koala",
     animal: "The Koala",
@@ -183,7 +183,6 @@ export const ARCHETYPES: Archetype[] = [
     explanation: "Inattentive + Executive Function profile.",
     traits: "Reflective, imaginative, loses track of steps and time.",
     solution: "Use visual structure and one-step instructions.",
-    childPerspective: "",
   },
   {
     id: "hummingbird",
@@ -193,7 +192,6 @@ export const ARCHETYPES: Archetype[] = [
     explanation: "Inattentive + Hyperactive profile.",
     traits: "Fast shifts in attention, very active, impulsive starts.",
     solution: "Short task cycles, movement breaks, rapid feedback.",
-    childPerspective: "",
   },
   {
     id: "tiger",
@@ -203,7 +201,6 @@ export const ARCHETYPES: Archetype[] = [
     explanation: "Inattentive + Emotional profile.",
     traits: "Fluctuating focus with big emotional reactions.",
     solution: "Co-regulation first, then task re-entry.",
-    childPerspective: "",
   },
   {
     id: "meerkat",
@@ -213,7 +210,6 @@ export const ARCHETYPES: Archetype[] = [
     explanation: "Inattentive + Sensory profile.",
     traits: "Easily overloaded, scanning environment, variable focus.",
     solution: "Lower sensory load and add predictable routines.",
-    childPerspective: "",
   },
   {
     id: "stallion",
@@ -223,7 +219,6 @@ export const ARCHETYPES: Archetype[] = [
     explanation: "Emotional + Executive Function profile.",
     traits: "Strong feelings and friction around transitions/planning.",
     solution: "External time supports plus calm transition rituals.",
-    childPerspective: "",
   },
   {
     id: "fox",
@@ -233,7 +228,60 @@ export const ARCHETYPES: Archetype[] = [
     explanation: "Executive Function + Social profile.",
     traits: "Socially agile with timing/planning weak points.",
     solution: "First/Then flows and clear social boundaries.",
-    childPerspective: "",
+  },
+  {
+    id: "rabbit",
+    animal: "The Rabbit",
+    typeName: "The Busy Rabbit",
+    primaryTrait: ["hyperactive", "executive_function"],
+    explanation: "Hyperactive + Executive Function profile.",
+    traits: "Constantly moving, starting things but rarely finishing, energy without direction.",
+    solution: "Movement with purpose, visual checklists, short structured bursts.",
+  },
+  {
+    id: "elephant",
+    animal: "The Elephant",
+    typeName: "The Justice Elephant",
+    primaryTrait: ["emotional", "social"],
+    explanation: "Emotional + Social profile.",
+    traits: "Deep sense of fairness, strong emotional reactions to perceived injustice, reads the room intensely.",
+    solution: "Validate feelings first, reframe fairness as flexibility, use social stories.",
+  },
+  {
+    id: "dolphin",
+    animal: "The Dolphin",
+    typeName: "The Splashy Dolphin",
+    primaryTrait: ["hyperactive", "social"],
+    explanation: "Hyperactive + Social profile.",
+    traits: "Verbal impulsivity, social energy, talks fast, interrupts, needs to be part of everything.",
+    solution: "Social turn-taking games, signal systems, channel verbal energy into storytelling.",
+  },
+  {
+    id: "hedgehog",
+    animal: "The Hedgehog",
+    typeName: "The Storm Hedgehog",
+    primaryTrait: ["sensory", "emotional"],
+    explanation: "Sensory + Emotional profile.",
+    traits: "Sensory overload triggers intense emotional responses, needs calm and predictable environments.",
+    solution: "Reduce sensory input, validate feelings, create decompression routines.",
+  },
+  {
+    id: "bull",
+    animal: "The Bull",
+    typeName: "The Fearless Bull",
+    primaryTrait: ["hyperactive", "emotional"],
+    explanation: "Hyperactive + Emotional profile.",
+    traits: "Impulse-to-action gap is near zero, emotions amplify physical impulsivity.",
+    solution: "Physical outlets, external braking systems, repair after overwhelm.",
+  },
+  {
+    id: "red_panda",
+    animal: "The Red Panda",
+    typeName: "The Red Panda",
+    primaryTrait: ["sensory", "social"],
+    explanation: "Sensory + Social profile.",
+    traits: "Sensory sensitivity combined with social challenges.",
+    solution: "Controlled social environments with sensory accommodations.",
   },
   {
     id: "owl",
@@ -241,9 +289,120 @@ export const ARCHETYPES: Archetype[] = [
     typeName: "The Keen Owl",
     primaryTrait: ["inattentive", "social"],
     explanation: "Inattentive + Social profile.",
-    traits: "Deep attention pockets, misses cues in fast exchanges.",
-    solution: "Practice turn-taking and cue labeling.",
-    childPerspective: "",
+    traits: "Deep focus on interests, difficulty reading social cues, hyperfocus meets social navigation.",
+    solution: "Protected interest time, direct social coaching, clear transition warnings.",
+  },
+  // ── Tier 2: 3-trait profiles ────────────────────────────────────────────────
+  {
+    id: "panda",
+    animal: "The Panda",
+    typeName: "The Cloudy Panda",
+    primaryTrait: ["inattentive", "emotional", "executive_function"],
+    explanation: "Inattentive + Emotional + Executive Function profile.",
+    traits: "Drifting attention, emotional intensity, and planning difficulties combine.",
+    solution: "Co-regulation, visual structure, and one-step instructions with emotional support.",
+  },
+  {
+    id: "firefly",
+    animal: "The Firefly",
+    typeName: "The Spark Firefly",
+    primaryTrait: ["emotional", "executive_function", "social"],
+    explanation: "Emotional + Executive Function + Social profile.",
+    traits: "Strong feelings, planning challenges, and social awareness intertwine.",
+    solution: "Emotional validation, external structure, and social coaching.",
+  },
+  {
+    id: "penguin",
+    animal: "The Penguin",
+    typeName: "The Wandering Penguin",
+    primaryTrait: ["inattentive", "executive_function", "social"],
+    explanation: "Inattentive + Executive Function + Social profile.",
+    traits: "Drifting focus, planning struggles, and social navigation challenges.",
+    solution: "Visual schedules, social scripts, and step-by-step support.",
+  },
+  {
+    id: "eagle",
+    animal: "The Eagle",
+    typeName: "The Sky Eagle",
+    primaryTrait: ["inattentive", "hyperactive", "executive_function"],
+    explanation: "Inattentive + Hyperactive + Executive Function profile.",
+    traits: "Shifting attention, high energy, and organisational challenges.",
+    solution: "Movement breaks, visual checklists, and short structured tasks.",
+  },
+  // ── Tier 1: 4-trait profiles ────────────────────────────────────────────────
+  {
+    id: "deer",
+    animal: "The Deer",
+    typeName: "The Gentle Deer",
+    primaryTrait: ["inattentive", "emotional", "executive_function", "social"],
+    explanation: "Inattentive + Emotional + Executive Function + Social profile.",
+    traits: "Drifting attention, emotional depth, planning struggles, and social sensitivity.",
+    solution: "Holistic support across attention, emotion, structure, and social navigation.",
+  },
+  {
+    id: "bear",
+    animal: "The Bear",
+    typeName: "The Brave Bear",
+    primaryTrait: ["inattentive", "hyperactive", "emotional", "executive_function"],
+    explanation: "Inattentive + Hyperactive + Emotional + Executive Function profile.",
+    traits: "Shifting focus, high energy, emotional intensity, and organisational challenges.",
+    solution: "Movement outlets, emotional co-regulation, visual structure, and step-by-step support.",
+  },
+  {
+    id: "bee",
+    animal: "The Bee",
+    typeName: "The Buzzy Bee",
+    primaryTrait: ["inattentive", "hyperactive", "executive_function", "social"],
+    explanation: "Inattentive + Hyperactive + Executive Function + Social profile.",
+    traits: "Shifting attention, constant energy, planning struggles, and social navigation challenges.",
+    solution: "Short tasks, movement breaks, visual schedules, and social coaching.",
+  },
+  // ── Tier 0: pre-check profile ───────────────────────────────────────────────
+  {
+    id: "octopus",
+    animal: "The Octopus",
+    typeName: "The Vivid Octopus",
+    primaryTrait: ["inattentive", "hyperactive", "sensory", "emotional", "executive_function", "social"],
+    explanation: "All traits score high — the most complex profile.",
+    traits: "Everything is happening at once across all systems.",
+    solution: "Reduce simultaneous demands, simplify the environment, step in early.",
+  },
+  // ── Girl Variants ───────────────────────────────────────────────────────────
+  {
+    id: "swan",
+    animal: "The Swan",
+    typeName: "The Graceful Swan",
+    primaryTrait: ["inattentive", "emotional", "executive_function", "social"],
+    explanation: "Girl variant of Gentle Deer (1+4+5+6).",
+    traits: "Masks struggles behind composure, emotionally exhausted from maintaining the performance.",
+    solution: "Private check-ins, reduce masking pressure, validate the effort behind the appearance.",
+  },
+  {
+    id: "bunny",
+    animal: "The Bunny",
+    typeName: "The Dreamy Bunny",
+    primaryTrait: ["inattentive", "emotional", "executive_function"],
+    explanation: "Girl variant of Cloudy Panda (1+4+5).",
+    traits: "Silent drift, emotional weight carried quietly, struggles get read as laziness.",
+    solution: "Interrupt the drift gently, reduce overwhelm, step in before shame takes over.",
+  },
+  {
+    id: "tender_hedgehog",
+    animal: "The Hedgehog",
+    typeName: "The Tender Hedgehog",
+    primaryTrait: ["sensory", "emotional"],
+    explanation: "Girl variant of Storm Hedgehog (3+4).",
+    traits: "Internalises sensory and emotional overwhelm, withdraws quietly.",
+    solution: "Reduce sensory load, create safe spaces, validate without pushing.",
+  },
+  {
+    id: "hidden_firefly",
+    animal: "The Firefly",
+    typeName: "The Hidden Firefly",
+    primaryTrait: ["emotional", "executive_function", "social"],
+    explanation: "Girl variant of Spark Firefly (4+5+6).",
+    traits: "Brilliant insight hidden by inconsistent follow-through, looks capable but quietly struggling.",
+    solution: "Make basics concrete, catch problems early, judge ideas separately from execution.",
   },
 ];
 
@@ -394,37 +553,122 @@ export function computeScores(
 }
 
 /**
- * Match archetype by top-2 ranking:
- * 1) Rank all six categories by section average.
- * 2) Take top two.
- * 3) Find archetype with exact 2-dimension combination (order-insensitive).
- * 4) If no exact pair exists, fallback to the first archetype containing both dimensions.
+ * Determine cluster depth using natural break analysis.
+ * Finds the largest gap between consecutive ranked traits
+ * to determine how many traits form the child's natural cluster.
+ */
+function findClusterDepth(
+  ranked: CategoryId[],
+  scores: TraitScores,
+): 2 | 3 | 4 {
+  const gapA = scores[ranked[1]] - scores[ranked[2]]; // between #2 and #3
+  const gapB = scores[ranked[2]] - scores[ranked[3]]; // between #3 and #4
+  const gapC = scores[ranked[3]] - scores[ranked[4]]; // between #4 and #5
+
+  // If two gaps are equal or within 0.1, prefer the deeper cluster
+  if (gapC >= gapB - 0.1 && gapC >= gapA - 0.1) return 4;
+  if (gapB >= gapA - 0.1) return 3;
+  return 2;
+}
+
+/** Check if a set of CategoryIds matches an archetype's primaryTrait (order-insensitive) */
+function traitSetMatches(
+  traitSet: Set<CategoryId>,
+  archetype: Archetype,
+): boolean {
+  if (archetype.primaryTrait.length !== traitSet.size) return false;
+  return archetype.primaryTrait.every((t) => traitSet.has(t));
+}
+
+/** Find archetype matching exactly the given trait set */
+function findByTraitSet(traitSet: Set<CategoryId>): Archetype | undefined {
+  return ARCHETYPES.find((a) => traitSetMatches(traitSet, a));
+}
+
+/**
+ * Fallback for missing 2-trait combos.
+ * Uses the 3rd-highest trait to find the nearest existing 2-trait profile
+ * that includes one of the top 2 traits plus the 3rd trait.
+ */
+function nearestTier3Match(
+  ranked: CategoryId[],
+  scores: TraitScores,
+): Archetype {
+  const top1 = ranked[0];
+  const top2 = ranked[1];
+  const third = ranked[2];
+
+  const option1 = findByTraitSet(new Set([top1, third]));
+  const option2 = findByTraitSet(new Set([top2, third]));
+
+  if (option1 && option2) {
+    return scores[top1] >= scores[top2] ? option1 : option2;
+  }
+  if (option1) return option1;
+  if (option2) return option2;
+
+  return ARCHETYPES.find((a) => a.id === "koala")!;
+}
+
+/**
+ * Match archetype using tiered profile matching:
+ * 1) Check for Vivid Octopus (5+ categories at max score on 0-3 scale).
+ * 2) Rank all six categories by score (descending).
+ * 3) Find natural break to determine cluster depth (2, 3, or 4).
+ * 4) Try matching at that depth, falling through to lower tiers.
+ *
+ * Tier 1 (4-trait) → Tier 2 (3-trait) → Tier 3 (2-trait)
  */
 export function matchArchetype(scores: TraitScores): Archetype {
+  // Vivid Octopus check — 5+ categories at max on 0-3 scale
+  const highCount = CATEGORY_IDS.filter((id) => scores[id] >= 3.0).length;
+  if (highCount >= 5) {
+    return ARCHETYPES.find((a) => a.id === "octopus")!;
+  }
+
   const ranked = sortCategoriesByScore(scores);
-  const topA = ranked[0];
-  const topB = ranked[1];
-  const topTwo = new Set<CategoryId>([topA, topB]);
+  const clusterDepth = findClusterDepth(ranked, scores);
 
-  const exactCandidates = ARCHETYPES.filter(
-    (arch) =>
-      arch.primaryTrait.length === 2 &&
-      arch.primaryTrait.every((d) => topTwo.has(d)),
-  );
+  const top4 = new Set(ranked.slice(0, 4) as CategoryId[]);
+  const top3 = new Set(ranked.slice(0, 3) as CategoryId[]);
+  const top2 = new Set(ranked.slice(0, 2) as CategoryId[]);
 
-  if (exactCandidates.length > 0) {
-    return exactCandidates[0];
+  if (clusterDepth === 4) {
+    const tier1 = findByTraitSet(top4);
+    if (tier1) return tier1;
+    const tier2 = findByTraitSet(top3);
+    if (tier2) return tier2;
+    const tier3 = findByTraitSet(top2);
+    if (tier3) return tier3;
+    return nearestTier3Match(ranked, scores);
   }
 
-  const inclusiveCandidates = ARCHETYPES.filter((arch) =>
-    arch.primaryTrait.includes(topA) && arch.primaryTrait.includes(topB),
-  );
-
-  if (inclusiveCandidates.length > 0) {
-    return inclusiveCandidates[0];
+  if (clusterDepth === 3) {
+    const tier2 = findByTraitSet(top3);
+    if (tier2) return tier2;
+    const tier3 = findByTraitSet(top2);
+    if (tier3) return tier3;
+    return nearestTier3Match(ranked, scores);
   }
 
-  return ARCHETYPES[0];
+  // clusterDepth === 2
+  const tier3 = findByTraitSet(top2);
+  if (tier3) return tier3;
+  return nearestTier3Match(ranked, scores);
+}
+
+export const GIRL_VARIANTS: Record<string, string> = {
+  deer: "swan",
+  panda: "bunny",
+  hedgehog: "tender_hedgehog",
+  firefly: "hidden_firefly",
+};
+
+export function applyGenderVariant(archetypeId: string, gender?: string): string {
+  if (gender === "Female" && GIRL_VARIANTS[archetypeId]) {
+    return GIRL_VARIANTS[archetypeId];
+  }
+  return archetypeId;
 }
 
 /**
@@ -432,8 +676,10 @@ export function matchArchetype(scores: TraitScores): Archetype {
  */
 export function computeTraitProfile(
   responses: Record<string, unknown>,
+  gender?: string,
 ): TraitProfile {
   const scores = computeScores(responses);
   const archetype = matchArchetype(scores);
-  return { scores, archetypeId: archetype.id };
+  const finalId = applyGenderVariant(archetype.id, gender);
+  return { scores, archetypeId: finalId };
 }

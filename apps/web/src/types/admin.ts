@@ -62,36 +62,41 @@ export interface ReportTemplateData {
   innerVoiceQuote: string;
   animalDescription: string;
   aboutChild: string;
-  aboutWhatHelps?: string;
-  hiddenSuperpower: string;
-  hiddenGiftWhatHelps?: string;
+  hiddenGift: string;
+  aboutBrain?: string;
   brainSections: Array<{
     title: string;
     content: string;
-    whatHelps?: string;
   }>;
   dayInLife: {
     morning: string;
     school: string;
-    schoolWhatHelps?: string;
     afterSchool: string;
     bedtime: string;
   };
   drains: string[];
   fuels: string[];
   overwhelm: string;
-  overwhelmWhatHelps?: string;
-  needsToHear: Array<{
+  affirmations: Array<{
     when: string;
     say: string;
   }>;
-  affirmations: string[];
   doNotSay: Array<{
-    context?: string;
+    when?: string;
     insteadOf: string;
     tryThis: string;
   }>;
   closingLine: string;
+  whatHelps?: {
+    aboutChild?: string;
+    hiddenGift?: string;
+    brain?: string;
+    morning?: string;
+    school?: string;
+    afterSchool?: string;
+    bedtime?: string;
+    overwhelm?: string;
+  };
 }
 
 export interface ReportTemplateRecord {

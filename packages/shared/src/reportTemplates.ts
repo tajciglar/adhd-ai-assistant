@@ -4,7 +4,8 @@ export interface ArchetypeReportTemplate {
   innerVoiceQuote: string;
   animalDescription: string;
   aboutChild: string;
-  hiddenSuperpower: string;
+  hiddenGift: string;
+  aboutBrain: string;
   brainSections: Array<{
     title: string;
     content: string;
@@ -18,12 +19,26 @@ export interface ArchetypeReportTemplate {
   drains: string[];
   fuels: string[];
   overwhelm: string;
-  affirmations: string[];
+  affirmations: Array<{
+    when: string;
+    say: string;
+  }>;
   doNotSay: Array<{
+    when: string;
     insteadOf: string;
     tryThis: string;
   }>;
   closingLine: string;
+  whatHelps?: {
+    aboutChild?: string;
+    hiddenGift?: string;
+    brain?: string;
+    morning?: string;
+    school?: string;
+    afterSchool?: string;
+    bedtime?: string;
+    overwhelm?: string;
+  };
 }
 
 // Source of truth is now DB-backed report_templates via API.

@@ -26,13 +26,12 @@ function normalizeStringList(value: unknown): string[] {
   return items.length > 0 ? items : [""];
 }
 
-function normalizeNeedsToHear(value: unknown): ReportTemplateData["needsToHear"] {
-  // Support both legacy string[] (affirmations) and new { when, say }[]
+function normalizeAffirmations(value: unknown): ReportTemplateData["affirmations"] {
+  // Support both legacy string[] and new { when, say }[]
   if (!Array.isArray(value)) return [{ when: "", say: "" }];
   const items = value
     .map((item) => {
       if (typeof item === "string") {
-        // Legacy: plain string — treat as the "say" part, no "when"
         return item.trim() ? { when: "", say: item.trim() } : null;
       }
       const record = asRecord(item);
@@ -47,7 +46,7 @@ function normalizeNeedsToHear(value: unknown): ReportTemplateData["needsToHear"]
 }
 
 function normalizeBrainSections(value: unknown): ReportTemplateData["brainSections"] {
-  if (!Array.isArray(value)) return [{ title: "", content: "", whatHelps: "" }];
+  if (!Array.isArray(value)) return [{ title: "", content: "" }];
   const items = value
     .map((item) => {
       const record = asRecord(item);
@@ -55,11 +54,10 @@ function normalizeBrainSections(value: unknown): ReportTemplateData["brainSectio
       return {
         title: asString(record.title),
         content: asString(record.content),
-        whatHelps: asString(record.whatHelps),
       };
     })
-    .filter((item): item is { title: string; content: string; whatHelps: string } => !!item);
-  return items.length > 0 ? items : [{ title: "", content: "", whatHelps: "" }];
+    .filter((item): item is { title: string; content: string } => !!item);
+  return items.length > 0 ? items : [{ title: "", content: "" }];
 }
 
 function normalizeDayInLife(value: unknown): ReportTemplateData["dayInLife"] {
@@ -67,14 +65,13 @@ function normalizeDayInLife(value: unknown): ReportTemplateData["dayInLife"] {
   return {
     morning: asString(record.morning),
     school: asString(record.school),
-    schoolWhatHelps: asString(record.schoolWhatHelps),
     afterSchool: asString(record.afterSchool),
     bedtime: asString(record.bedtime),
   };
 }
 
 function normalizeDoNotSay(value: unknown): ReportTemplateData["doNotSay"] {
-  if (!Array.isArray(value)) return [{ context: "", insteadOf: "", tryThis: "" }];
+  if (!Array.isArray(value)) return [{ when: "", insteadOf: "", tryThis: "" }];
   const items = value
     .map((item) => {
       const record = asRecord(item);
@@ -86,21 +83,45 @@ function normalizeDoNotSay(value: unknown): ReportTemplateData["doNotSay"] {
       const tryThis =
         asString(record.tryThis) ||
         asString(record.doSay);
-      return {
-        context: asString(record.context),
-        insteadOf,
-        tryThis,
-      };
+      // Support both "when" (new canonical) and "context" (legacy)
+      const when = asString(record.when) || asString(record.context);
+      return { when, insteadOf, tryThis };
     })
-    .filter((item): item is { context: string; insteadOf: string; tryThis: string } => !!item);
-  return items.length > 0 ? items : [{ context: "", insteadOf: "", tryThis: "" }];
+    .filter((item): item is { when: string; insteadOf: string; tryThis: string } => !!item);
+  return items.length > 0 ? items : [{ when: "", insteadOf: "", tryThis: "" }];
+}
+
+function normalizeWhatHelps(value: unknown, record: UnknownRecord): ReportTemplateData["whatHelps"] {
+  // New format: whatHelps nested object
+  const wh = asRecord(value);
+  if (wh) {
+    return {
+      aboutChild: asString(wh.aboutChild),
+      hiddenGift: asString(wh.hiddenGift),
+      brain: asString(wh.brain),
+      morning: asString(wh.morning),
+      school: asString(wh.school),
+      afterSchool: asString(wh.afterSchool),
+      bedtime: asString(wh.bedtime),
+      overwhelm: asString(wh.overwhelm),
+    };
+  }
+  // Legacy format: spread fields on the record itself
+  const aboutChild = asString(record.aboutWhatHelps);
+  const hiddenGift = asString(record.hiddenGiftWhatHelps);
+  const school = asString((asRecord(record.dayInLife) ?? {}).schoolWhatHelps);
+  const overwhelm = asString(record.overwhelmWhatHelps);
+  if (aboutChild || hiddenGift || school || overwhelm) {
+    return { aboutChild, hiddenGift, school, overwhelm };
+  }
+  return undefined;
 }
 
 export function normalizeReportTemplateData(value: unknown): ReportTemplateData {
   const record = asRecord(value) ?? {};
 
-  // needsToHear: prefer new field, fall back to legacy affirmations
-  const needsToHearRaw = record.needsToHear ?? record.affirmations;
+  // affirmations: prefer new field, fall back to legacy needsToHear or string[] affirmations
+  const affirmationsRaw = record.affirmations ?? record.needsToHear;
 
   return {
     archetypeId: asString(record.archetypeId),
@@ -108,19 +129,18 @@ export function normalizeReportTemplateData(value: unknown): ReportTemplateData 
     innerVoiceQuote: asString(record.innerVoiceQuote),
     animalDescription: asString(record.animalDescription),
     aboutChild: asString(record.aboutChild),
-    aboutWhatHelps: asString(record.aboutWhatHelps),
-    hiddenSuperpower: asString(record.hiddenSuperpower),
-    hiddenGiftWhatHelps: asString(record.hiddenGiftWhatHelps),
+    // Support both hiddenGift (new) and hiddenSuperpower (legacy)
+    hiddenGift: asString(record.hiddenGift) || asString(record.hiddenSuperpower),
+    aboutBrain: asString(record.aboutBrain),
     brainSections: normalizeBrainSections(record.brainSections),
     dayInLife: normalizeDayInLife(record.dayInLife),
     drains: normalizeStringList(record.drains),
     fuels: normalizeStringList(record.fuels),
     overwhelm: asString(record.overwhelm),
-    overwhelmWhatHelps: asString(record.overwhelmWhatHelps),
-    needsToHear: normalizeNeedsToHear(needsToHearRaw),
-    affirmations: normalizeStringList(record.affirmations),
+    affirmations: normalizeAffirmations(affirmationsRaw),
     doNotSay: normalizeDoNotSay(record.doNotSay),
     closingLine: asString(record.closingLine),
+    whatHelps: normalizeWhatHelps(record.whatHelps, record),
   };
 }
 

@@ -26,25 +26,31 @@ interface Report {
   innerVoiceQuote: string;
   animalDescription: string;
   aboutChild: string;
-  aboutWhatHelps?: string;
-  hiddenSuperpower: string;
-  hiddenGiftWhatHelps?: string;
-  brainSections: Array<{ title: string; content: string; whatHelps?: string }>;
+  hiddenGift: string;
+  aboutBrain?: string;
+  brainSections: Array<{ title: string; content: string }>;
   dayInLife: {
     morning: string;
     school: string;
-    schoolWhatHelps?: string;
     afterSchool: string;
     bedtime: string;
   };
   drains: string[];
   fuels: string[];
   overwhelm: string;
-  overwhelmWhatHelps?: string;
-  needsToHear: Array<{ when: string; say: string }>;
-  affirmations: string[];
-  doNotSay: Array<{ context?: string; insteadOf: string; tryThis: string }>;
+  affirmations: Array<{ when: string; say: string }>;
+  doNotSay: Array<{ when?: string; insteadOf: string; tryThis: string }>;
   closingLine: string;
+  whatHelps?: {
+    aboutChild?: string;
+    hiddenGift?: string;
+    brain?: string;
+    morning?: string;
+    school?: string;
+    afterSchool?: string;
+    bedtime?: string;
+    overwhelm?: string;
+  };
 }
 
 interface ChildReportResponse {
@@ -236,13 +242,13 @@ export default function ChildProfilePage() {
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">About {childName}</h3>
                 <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
                   <p className="text-sm text-harbor-text leading-relaxed">{report.aboutChild}</p>
-                  {report.aboutWhatHelps && <WhatHelpsBox text={report.aboutWhatHelps} />}
+                  {report.whatHelps?.aboutChild && <WhatHelpsBox text={report.whatHelps.aboutChild} />}
                 </div>
               </section>
             )}
 
             {/* ── Hidden Gift ── */}
-            {report?.hiddenSuperpower && (
+            {report?.hiddenGift && (
               <section className="mb-8">
                 <div className="bg-harbor-bg-alt border border-harbor-orange/15 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-2">
@@ -254,8 +260,8 @@ export default function ChildProfilePage() {
                     </span>
                     <h3 className="text-base font-bold text-harbor-orange font-display">Hidden Gift</h3>
                   </div>
-                  <p className="text-sm text-harbor-text leading-relaxed">{report.hiddenSuperpower}</p>
-                  {report.hiddenGiftWhatHelps && <WhatHelpsBox text={report.hiddenGiftWhatHelps} />}
+                  <p className="text-sm text-harbor-text leading-relaxed">{report.hiddenGift}</p>
+                  {report.whatHelps?.hiddenGift && <WhatHelpsBox text={report.whatHelps.hiddenGift} />}
                 </div>
               </section>
             )}
@@ -294,7 +300,7 @@ export default function ChildProfilePage() {
                       {expandedBrain === i && (
                         <div className="px-5 pb-4">
                           <p className="text-sm text-harbor-text/80 leading-relaxed">{section.content}</p>
-                          {section.whatHelps && <WhatHelpsBox text={section.whatHelps} />}
+                          {i === 0 && report.whatHelps?.brain && <WhatHelpsBox text={report.whatHelps.brain} />}
                         </div>
                       )}
                     </div>
@@ -324,8 +330,8 @@ export default function ChildProfilePage() {
                           <span className="text-sm font-semibold text-harbor-text">{info.label}</span>
                         </div>
                         <p className="text-sm text-harbor-text/70 leading-relaxed">{text}</p>
-                        {key === "school" && report.dayInLife.schoolWhatHelps && (
-                          <WhatHelpsBox text={report.dayInLife.schoolWhatHelps} />
+                        {key === "school" && report.whatHelps?.school && (
+                          <WhatHelpsBox text={report.whatHelps.school} />
                         )}
                       </div>
                     );
@@ -391,13 +397,13 @@ export default function ChildProfilePage() {
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">When {childName} is Overwhelmed</h3>
                 <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
                   <p className="text-sm text-harbor-text leading-relaxed">{report.overwhelm}</p>
-                  {report.overwhelmWhatHelps && <WhatHelpsBox text={report.overwhelmWhatHelps} />}
+                  {report.whatHelps?.overwhelm && <WhatHelpsBox text={report.whatHelps.overwhelm} />}
                 </div>
               </section>
             )}
 
             {/* ── What Child Needs to Hear ── */}
-            {report?.needsToHear && report.needsToHear.filter((n) => n.when || n.say).length > 0 && (
+            {report?.affirmations && report.affirmations.filter((n) => n.when || n.say).length > 0 && (
               <section className="mb-8">
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">
                   What {childName} Needs to Hear
@@ -412,7 +418,7 @@ export default function ChildProfilePage() {
                     </div>
                   </div>
                   <div className="divide-y divide-slate-50">
-                    {report.needsToHear
+                    {report.affirmations
                       .filter((n) => n.when || n.say)
                       .map((item, i) => (
                         <div key={i} className="grid grid-cols-2 divide-x divide-slate-100">
@@ -436,9 +442,9 @@ export default function ChildProfilePage() {
                 <div className="space-y-3">
                   {report.doNotSay.map((item, i) => (
                     <div key={i} className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-                      {item.context && (
+                      {item.when && (
                         <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
-                          <span className="text-xs font-semibold text-slate-500">{item.context}</span>
+                          <span className="text-xs font-semibold text-slate-500">{item.when}</span>
                         </div>
                       )}
                       <div className="flex gap-3 p-4">
@@ -452,24 +458,6 @@ export default function ChildProfilePage() {
                           <p className="text-sm text-harbor-text font-medium">{item.tryThis}</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* ── Affirmations (legacy fallback) ── */}
-            {report?.affirmations && report.affirmations.filter(Boolean).length > 0 &&
-              (!report.needsToHear || report.needsToHear.filter((n) => n.say).length === 0) && (
-              <section className="mb-8">
-                <h3 className="text-base font-bold text-harbor-primary font-display mb-3">Affirmations for {childName}</h3>
-                <div className="space-y-2">
-                  {report.affirmations.map((a, i) => (
-                    <div key={i} className="bg-harbor-bg-alt rounded-xl px-4 py-3 border border-harbor-orange/10 flex items-start gap-2">
-                      <span className="material-symbols-outlined text-harbor-orange text-[16px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        favorite
-                      </span>
-                      <p className="text-sm text-harbor-text">{a}</p>
                     </div>
                   ))}
                 </div>
