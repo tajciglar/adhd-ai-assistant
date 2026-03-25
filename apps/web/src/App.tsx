@@ -38,10 +38,17 @@ function AppRoutes() {
 
     let active = true;
 
+    const timeout = setTimeout(() => {
+      if (!active) return;
+      setUserRole("user");
+      setHasChatAccess(false);
+    }, 8000);
+
     api
       .get("/api/user/me")
       .then((data) => {
         if (!active) return;
+        clearTimeout(timeout);
         const d = data as {
           role?: string;
           hasChatAccess?: boolean;
@@ -51,12 +58,14 @@ function AppRoutes() {
       })
       .catch(() => {
         if (!active) return;
+        clearTimeout(timeout);
         setUserRole("user");
         setHasChatAccess(false);
       });
 
     return () => {
       active = false;
+      clearTimeout(timeout);
     };
   }, [session]);
 
@@ -189,8 +198,7 @@ function AppRoutes() {
                     Access Not Enabled
                   </h1>
                   <p className="text-harbor-text/60">
-                    Your account doesn't have chat access yet. Please complete
-                    the parenting quiz first to unlock the AI assistant.
+                    Your account doesn't have access yet. Please contact us to get started.
                   </p>
                 </div>
               </div>
