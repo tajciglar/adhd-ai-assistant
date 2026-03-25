@@ -351,7 +351,7 @@ export default function ReportTemplateEditor({
                 <textarea
                   value={form.innerVoiceQuote}
                   onChange={(e) => setField("innerVoiceQuote", e.target.value)}
-                  placeholder='Inner voice quote (e.g. "It\'s safer and quieter inside my own head.")'
+                  placeholder="Inner voice quote (e.g. &quot;It's safer and quieter inside my own head.&quot;)"
                   rows={2}
                   className="w-full px-4 py-2.5 rounded-xl border border-harbor-text/15 focus:outline-none focus:border-harbor-accent"
                 />
