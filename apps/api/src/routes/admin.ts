@@ -1128,6 +1128,13 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: error.message });
       }
 
+      // Pre-create the DB user with chat access so they land on /dashboard after setting their password
+      await fastify.prisma.user.upsert({
+        where: { id: data.user.id },
+        update: { hasChatAccess: true },
+        create: { id: data.user.id, email: data.user.email!, hasChatAccess: true },
+      });
+
       await audit(request.user.id, "admin.invite_user", "user", data.user.id, { email });
       return reply.send({ success: true, email: data.user.email });
     },
