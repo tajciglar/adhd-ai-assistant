@@ -1,5 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+
+interface ResourceMeta {
+  title: string;
+  category: string;
+  description: string;
+  sizeBytes: number;
+}
 
 interface ResourceDownloadCardProps {
   resourceId: string;
@@ -12,10 +19,23 @@ export default function ResourceDownloadCard({
 }: ResourceDownloadCardProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [meta, setMeta] = useState<ResourceMeta | null>(null);
 
   const displayName = filename
     .replace(/\.pdf$/i, "")
     .replace(/[-_]/g, " ");
+
+  useEffect(() => {
+    api
+      .get(`/api/resources/${resourceId}`)
+      .then((data) => {
+        const d = data as { resource: ResourceMeta };
+        setMeta(d.resource);
+      })
+      .catch(() => {
+        // Silently fail — displayName fallback is fine
+      });
+  }, [resourceId]);
 
   const handleDownload = async () => {
     setLoading(true);
@@ -31,6 +51,9 @@ export default function ResourceDownloadCard({
       setLoading(false);
     }
   };
+
+  const title = meta?.title ?? displayName;
+  const category = meta?.category ?? null;
 
   return (
     <button
@@ -52,11 +75,18 @@ export default function ResourceDownloadCard({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-harbor-text truncate">
-          {displayName}
+          {title}
         </p>
-        <p className="text-[11px] text-slate-400">
-          {loading ? "Opening..." : error ? "Resource not available — it may have been removed" : "PDF Resource — tap to view"}
-        </p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {category && !error && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-harbor-primary/70 bg-harbor-primary/8 px-1.5 py-0.5 rounded-md">
+              {category}
+            </span>
+          )}
+          <p className="text-[11px] text-slate-400">
+            {loading ? "Opening..." : error ? "Resource not available — it may have been removed" : "PDF · tap to view"}
+          </p>
+        </div>
       </div>
       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
         error ? "bg-red-100" : "bg-harbor-orange/10 group-hover:bg-harbor-orange/20"

@@ -97,7 +97,7 @@ export default function LibraryPage() {
 
   useEffect(() => {
     Promise.all([
-      api.get("/api/admin/resources").catch(() => ({ resources: [] })),
+      api.get("/api/resources/recommended").catch(() => ({ resources: [] })),
       api.get("/api/user/me").catch(() => null),
     ]).then(([resourceData, userData]) => {
       const rd = resourceData as { resources: Resource[] };
@@ -364,7 +364,7 @@ export default function LibraryPage() {
                       folder_off
                     </span>
                     <p className="text-slate-500 text-sm font-medium">No resources yet</p>
-                    <p className="text-slate-400 text-xs mt-1">Resources will appear here once added</p>
+                    <p className="text-slate-400 text-xs mt-1">Resources recommended by Harbor will appear here</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
@@ -402,7 +402,7 @@ export default function LibraryPage() {
                 <div className="mb-6">
                   <h2 className="text-xl font-bold text-harbor-primary font-display">Library</h2>
                   <p className="text-sm text-slate-500 mt-1">
-                    Your personalized guides and saved resources
+                    Resources Harbor has recommended for you
                   </p>
                 </div>
 
@@ -415,7 +415,7 @@ export default function LibraryPage() {
                       folder_off
                     </span>
                     <p className="text-slate-500 text-base font-medium">No resources yet</p>
-                    <p className="text-slate-400 text-sm mt-1">Resources will appear here once added</p>
+                    <p className="text-slate-400 text-sm mt-1">Resources recommended by Harbor will appear here</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">

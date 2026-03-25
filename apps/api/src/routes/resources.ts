@@ -570,6 +570,71 @@ export default async function resourceRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // ── Get recommended resources for the current user ──
+  fastify.get(
+    "/resources/recommended",
+    { preHandler: [fastify.authenticate], config: readRateLimitConfig },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id: userId } = request.user;
+      const messages = await fastify.prisma.message.findMany({
+        where: { conversation: { userId }, role: "ASSISTANT" },
+        select: { content: true },
+      });
+
+      const DOWNLOAD_REGEX = /\[download:([a-f0-9-]+):[^\]]+\]/g;
+      const resourceIds = new Set<string>();
+      for (const msg of messages) {
+        const re = new RegExp(DOWNLOAD_REGEX.source, "g");
+        let match: RegExpExecArray | null;
+        while ((match = re.exec(msg.content)) !== null) resourceIds.add(match[1]);
+      }
+
+      if (resourceIds.size === 0) return reply.send({ resources: [] });
+
+      const resources = await fastify.prisma.resource.findMany({
+        where: { id: { in: [...resourceIds] } },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          category: true,
+          filename: true,
+          originalName: true,
+          sizeBytes: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return reply.send({ resources });
+    },
+  );
+
+  // ── Get resource metadata (authenticated users) ──
+  fastify.get<{ Params: { id: string } }>(
+    "/resources/:id",
+    { preHandler: [fastify.authenticate], config: readRateLimitConfig },
+    async (request, reply) => {
+      const { id } = request.params;
+      const resource = await fastify.prisma.resource.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          category: true,
+          filename: true,
+          originalName: true,
+          sizeBytes: true,
+        },
+      });
+      if (!resource) {
+        return reply.status(404).send({ error: "Resource not found" });
+      }
+      return reply.send({ resource });
+    },
+  );
+
   // ── Download resource (authenticated users) ──
   fastify.get<{ Params: { id: string } }>(
     "/resources/:id/download",
