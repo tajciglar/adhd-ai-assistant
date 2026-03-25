@@ -17,7 +17,8 @@
     "import-content": "tsx scripts/import-content.ts",
     "security:check-logs": "tsx scripts/check-no-secret-logs.ts",
     "seed:templates": "dotenv -e ../../.env -- tsx scripts/seed-report-templates.ts",
-    "backfill:quiz-data": "tsx scripts/backfill-quiz-data.ts"
+    "backfill:quiz-data": "tsx scripts/backfill-quiz-data.ts",
+    "reset:access": "tsx scripts/reset-and-grant-access.ts"
   },
   "dependencies": {
     "@adhd-ai-assistant/shared": "workspace:*",

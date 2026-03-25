@@ -23,6 +23,20 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
       // Ensure user exists in our DB (may be first login via Supabase)
       const isAdminDomain = email.endsWith("@wecreatecourses.com");
+
+      // If a record exists under a different ID (e.g. pre-created by invite script
+      // but user later signed in via OAuth which assigned a new UID), migrate it.
+      const existingByEmail = await fastify.prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingByEmail && existingByEmail.id !== userId) {
+        await fastify.prisma.user.update({
+          where: { email },
+          data: { id: userId },
+        });
+        fastify.log.info({ oldId: existingByEmail.id, newId: userId, email }, "user.me.id_migrated");
+      }
+
       await fastify.prisma.user.upsert({
         where: { id: userId },
         update: isAdminDomain ? { hasChatAccess: true, role: "admin" } : {},
