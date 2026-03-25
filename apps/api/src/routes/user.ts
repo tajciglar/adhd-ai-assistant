@@ -25,7 +25,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
       const isAdminDomain = email.endsWith("@wecreatecourses.com");
       await fastify.prisma.user.upsert({
         where: { id: userId },
-        update: {},
+        update: isAdminDomain ? { hasChatAccess: true, role: "admin" } : {},
         create: {
           id: userId,
           email,
