@@ -9,7 +9,8 @@ export type AdminSection =
   | "analytics"
   | "token-usage"
   | "insights"
-  | "feedback";
+  | "feedback"
+  | "users";
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
@@ -124,6 +125,7 @@ const sectionLabels: Record<AdminSection, string> = {
   "token-usage": "AI Costs",
   insights: "Parent Needs",
   feedback: "Answer Ratings",
+  users: "Invite Clients",
 };
 
 const sectionIcons: Record<AdminSection, string> = {
@@ -135,6 +137,7 @@ const sectionIcons: Record<AdminSection, string> = {
   "token-usage": "monitoring",
   insights: "insights",
   feedback: "thumb_down",
+  users: "person_add",
 };
 
 function SidebarContent({
@@ -172,6 +175,7 @@ function SidebarContent({
     { key: "token-usage" },
     { key: "insights" },
     { key: "feedback" },
+    { key: "users" },
   ];
 
   return (

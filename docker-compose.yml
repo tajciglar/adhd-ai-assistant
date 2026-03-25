@@ -35,6 +35,7 @@ services:
       PORT: "3001"
       HOST: "0.0.0.0"
       CORS_ORIGIN: "http://localhost:3000"
+      APP_URL: "http://localhost:5173"
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./apps/api/prisma:/app/apps/api/prisma

@@ -8,6 +8,7 @@ import {
   retrieveRelevantKnowledge,
 } from "../services/ai/retrieval.js";
 import { getQuizAnalytics } from "../services/quizAnalytics.js";
+import { getSupabaseAdmin } from "../services/supabaseAdmin.js";
 import {
   classifyContent,
   parseDocumentIntoEntries,
@@ -1098,6 +1099,37 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         fastify.log.error({ err }, "admin.conversation_insights.query_failed");
         return reply.status(500).send({ error: "Failed to fetch conversation insights" });
       }
+    },
+  );
+
+  // ── Invite user by email ──
+  fastify.post<{ Body: { email: string } }>(
+    "/admin/invite-user",
+    { preHandler: basePreHandler },
+    async (request, reply) => {
+      const { email } = request.body;
+      if (!email?.trim()) {
+        return reply.status(400).send({ error: "Email is required" });
+      }
+
+      const supabase = getSupabaseAdmin();
+      if (!supabase) {
+        return reply.status(503).send({ error: "Supabase admin not configured" });
+      }
+
+      const appUrl = process.env.APP_URL || "http://localhost:5173";
+      const { data, error } = await supabase.auth.admin.inviteUserByEmail(
+        email.trim().toLowerCase(),
+        { redirectTo: `${appUrl}/set-password` },
+      );
+
+      if (error) {
+        fastify.log.error({ error, email }, "admin.invite_user.failed");
+        return reply.status(400).send({ error: error.message });
+      }
+
+      await audit(request.user.id, "admin.invite_user", "user", data.user.id, { email });
+      return reply.send({ success: true, email: data.user.email });
     },
   );
 }

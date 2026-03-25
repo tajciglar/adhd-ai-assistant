@@ -8,6 +8,7 @@ import {
 import { useAuth } from "./hooks/useAuth";
 import { api } from "./lib/api";
 import AuthPage from "./components/auth/AuthPage";
+import SetPasswordPage from "./components/auth/SetPasswordPage";
 
 const DashboardPage = lazy(() => import("./components/dashboard/DashboardPage"));
 const ChatPage = lazy(() => import("./components/chat/ChatPage"));
@@ -109,6 +110,7 @@ function AppRoutes() {
           path="/auth"
           element={session ? <Navigate to={homePath} /> : <AuthPage />}
         />
+        <Route path="/set-password" element={<SetPasswordPage />} />
         <Route
           path="/dashboard"
           element={
