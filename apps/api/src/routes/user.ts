@@ -191,6 +191,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
         archetypeId: string;
         archetypeName?: string;
         archetypeTypeName?: string;
+        pdfUrl?: string | null;
       };
 
       // Fetch the report template for this archetype

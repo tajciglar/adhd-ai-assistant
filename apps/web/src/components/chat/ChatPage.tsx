@@ -129,7 +129,7 @@ export default function ChatPage() {
       {/* ── Main Chat Area ── */}
       <div className="flex-1 flex min-w-0 flex-col overflow-hidden">
         {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white/80 px-4 py-3 backdrop-blur-md">
+        <header className="md:hidden sticky top-0 z-40 flex shrink-0 items-center justify-between border-b border-harbor-orange/10 bg-harbor-bg-alt px-4 py-3">
           <div className="flex items-center gap-3">
             <Mascot size={40} />
             <div>

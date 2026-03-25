@@ -13,6 +13,7 @@ interface QuizSubmission {
   archetype_id: string;
   trait_scores: Record<string, number>;
   responses: Record<string, unknown>;
+  pdf_url: string | null;
 }
 
 /** Capitalize first letter of each word in a name (e.g. "taj" → "Taj", "mary jane" → "Mary Jane") */
@@ -73,6 +74,7 @@ export async function tryImportFromQuiz(
     archetypeId: quiz.archetype_id,
     archetypeName: ARCHETYPES.find((a) => a.id === quiz.archetype_id)?.animal ?? "",
     archetypeTypeName: ARCHETYPES.find((a) => a.id === quiz.archetype_id)?.typeName ?? "",
+    pdfUrl: quiz.pdf_url ?? null,
   };
 
   // Map caregiver type to parent gender field
