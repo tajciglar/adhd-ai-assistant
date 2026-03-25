@@ -37,7 +37,13 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
       if (!existingProfile?.onboardingCompleted) {
         try {
-          await tryImportFromQuiz(fastify, userId, email);
+          const imported = await tryImportFromQuiz(fastify, userId, email);
+          if (imported) {
+            await fastify.prisma.user.update({
+              where: { id: userId },
+              data: { hasChatAccess: true },
+            });
+          }
         } catch (err) {
           fastify.log.warn({ err, userId }, "user.me.quiz_import_failed");
         }
