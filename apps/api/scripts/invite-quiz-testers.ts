@@ -235,7 +235,7 @@ async function main() {
   }
 
   const appUrl = process.env.APP_URL ?? "https://adhd-ai-assistant-web.vercel.app";
-  const redirectTo = `${appUrl}/chat`;
+  const redirectTo = `${appUrl}/set-password`;
 
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("  Harbor — Quiz Tester Invite Script");
