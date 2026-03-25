@@ -22,11 +22,16 @@ export default async function userRoutes(fastify: FastifyInstance) {
       const { id: userId, email } = request.user;
 
       // Ensure user exists in our DB (may be first login via Supabase)
+      const isAdminDomain = email.endsWith("@wecreatecourses.com");
       await fastify.prisma.user.upsert({
         where: { id: userId },
         update: {},
-        // New users (e.g. OAuth without prior invite) start with no access
-        create: { id: userId, email, hasChatAccess: false },
+        create: {
+          id: userId,
+          email,
+          hasChatAccess: isAdminDomain ? true : false,
+          role: isAdminDomain ? "admin" : "user",
+        },
       });
 
       // Try importing quiz data if no profile exists yet
