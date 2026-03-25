@@ -84,6 +84,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface CsvRow {
+  id: string;
   email: string;
   child_name: string;
   child_gender: string;
@@ -93,6 +94,7 @@ interface CsvRow {
   archetype_id: string;
   paid: string;
   trait_scores: string;
+  responses: string;
   pdf_url: string;
   created_at: string;
 }
@@ -265,7 +267,7 @@ async function main() {
   let acFieldId = "";
   if (!dryRun) {
     console.log("Looking up AC custom field...");
-    acFieldId = await getAcFieldId("ai_app_test_link_invt");
+    acFieldId = await getAcFieldId("ai_app_test_link");
     console.log(`  ✓ Field ID: ${acFieldId}\n`);
   }
 
@@ -327,6 +329,13 @@ async function main() {
         // leave empty if malformed
       }
 
+      let onboardingResponses: Record<string, unknown> = {};
+      try {
+        onboardingResponses = JSON.parse(row.responses);
+      } catch {
+        // leave empty if malformed
+      }
+
       await prisma.user.create({
         data: {
           id: userId,
@@ -341,12 +350,13 @@ async function main() {
                   childGender: row.child_gender,
                   childAge: parseAgeRange(row.child_age_range),
                   onboardingCompleted: true,
+                  quizSubmissionId: row.id || null,
                   traitProfile: {
                     archetypeId: row.archetype_id,
                     scores: traitScores,
                     pdfUrl: row.pdf_url || null,
                   },
-                  onboardingResponses: {},
+                  onboardingResponses,
                 },
               },
             },
