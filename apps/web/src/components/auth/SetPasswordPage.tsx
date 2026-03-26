@@ -59,14 +59,26 @@ export default function SetPasswordPage() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6">
-        <div className="text-center max-w-md">
-          <h1 className="text-3xl font-bold text-harbor-primary mb-2">Harbor</h1>
-          {error ? (
-            <p className="text-red-500 text-sm mt-2">{error}</p>
-          ) : (
-            <p className="text-harbor-text/40">Setting up your account…</p>
-          )}
+      <div className="min-h-screen bg-harbor-bg flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-10 flex flex-col items-center">
+            <Mascot size={100} className="mb-3" />
+            <h1 className="text-3xl font-extrabold text-harbor-primary mb-1 font-display">Harbor</h1>
+            <p className="text-slate-400 text-sm">ADHD Parenting Support</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+            {error ? (
+              <>
+                <p className="text-4xl mb-4">🔗</p>
+                <h2 className="text-lg font-semibold text-harbor-text mb-2">Link expired</h2>
+                <p className="text-sm text-slate-400 leading-relaxed">{error}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-harbor-text/40 text-sm">Setting up your account…</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
