@@ -14,15 +14,34 @@ export default function SetPasswordPage() {
   // Supabase auto-processes the invite token from the URL hash and sets the session.
   // We wait for onAuthStateChange to fire before showing the form.
   useEffect(() => {
+    let initialEventReceived = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) setReady(true);
-      // If the user somehow lands here without a valid session, send to auth
-      if (event === "SIGNED_OUT") navigate("/auth", { replace: true });
+      if (session) {
+        setReady(true);
+        return;
+      }
+      // Only redirect to /auth if the link is invalid/expired —
+      // i.e. after the initial session check comes back with nothing.
+      // Never redirect on the first SIGNED_OUT before any session was established,
+      // since it can fire before the invite token is processed.
+      if (initialEventReceived && event === "SIGNED_OUT") {
+        navigate("/auth", { replace: true });
+      }
+      initialEventReceived = true;
     });
 
     // Also check if session already exists (e.g. page refresh)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
+      if (session) {
+        setReady(true);
+      } else {
+        // No session and no token in URL — show expired link error
+        const hasToken = window.location.hash.includes("access_token") ||
+          window.location.search.includes("code=");
+        if (!hasToken) setError("This link has expired or already been used. Please contact us for a new one.");
+        initialEventReceived = true;
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -55,10 +74,14 @@ export default function SetPasswordPage() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-harbor-bg flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6">
+        <div className="text-center max-w-md">
           <h1 className="text-3xl font-bold text-harbor-primary mb-2">Harbor</h1>
-          <p className="text-harbor-text/40">Setting up your account…</p>
+          {error ? (
+            <p className="text-red-500 text-sm mt-2">{error}</p>
+          ) : (
+            <p className="text-harbor-text/40">Setting up your account…</p>
+          )}
         </div>
       </div>
     );
