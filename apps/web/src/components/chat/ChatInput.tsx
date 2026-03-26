@@ -58,6 +58,7 @@ export default function ChatInput({ onSend, disabled, childName }: ChatInputProp
             placeholder={placeholder}
             rows={1}
             className="flex-1 resize-none bg-transparent py-1.5 text-harbor-text placeholder:text-slate-400 focus:outline-none text-sm leading-relaxed"
+            style={{ fontSize: "16px" }}
           />
           <button
             onClick={handleSend}
@@ -83,9 +84,6 @@ export default function ChatInput({ onSend, disabled, childName }: ChatInputProp
             </svg>
           </button>
         </div>
-        <p className="text-center text-[10px] text-slate-300 mt-2">
-          Press Enter to send · Shift+Enter for new line
-        </p>
       </div>
     </div>
   );

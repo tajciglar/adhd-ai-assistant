@@ -64,7 +64,7 @@ export default function ChatPage() {
   const hasMessages = activeConversationId || messages.length > 0;
 
   return (
-    <div className="flex h-screen min-h-[100dvh] overflow-hidden bg-harbor-bg">
+    <div className="flex h-[100dvh] overflow-hidden bg-harbor-bg">
       {/* ── Desktop Sidebar (shared) with Conversation History ── */}
       <DesktopSidebar active="chat" isAdmin={isAdmin}>
         <div className="px-4 py-2 border-t border-harbor-primary/5 flex flex-col flex-1 overflow-hidden">

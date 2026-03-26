@@ -70,27 +70,50 @@ function stripFakeDownloadMarkers(content: string, sources: RetrievedSource[]): 
   });
 }
 
+// Patterns that indicate the AI is referencing a resource it doesn't actually have
+const VAGUE_RESOURCE_MENTION_RE = new RegExp(
+  [
+    // "you might find our guide on X" / "you may find our resource on"
+    /[^\n\r.!?]*you (?:might|may|can|could) find our (?:guide|checklist|resource|worksheet|workbook|toolkit|handout|PDF|resource)[^.!?\n\r]*[.!?]?/i,
+    // "our guide on X" / "our checklist for X"
+    /[^\n\r.!?]*\bour (?:guide|checklist|resource|worksheet|workbook|toolkit|handout|PDF|resource) (?:on|for|to|about)[^.!?\n\r]*[.!?]?/i,
+    // "find our guide" / "check out our checklist"
+    /[^\n\r.!?]*(?:find|check out|download|access|grab) our (?:guide|checklist|resource|worksheet|workbook|toolkit|handout|PDF|resource)[^.!?\n\r]*[.!?]?/i,
+    // "we have a guide on" / "there is a guide for"
+    /[^\n\r.!?]*(?:we have|there's|there is) a (?:guide|checklist|worksheet|workbook|toolkit|handout|PDF|resource) (?:on|for|to|about|that)[^.!?\n\r]*[.!?]?/i,
+    // "a great resource called [Name]" / "a resource called"
+    /[^\n\r.!?]*a (?:great |helpful |useful )?(?:guide|checklist|resource|worksheet|workbook|toolkit) called[^.!?\n\r]*[.!?]?/i,
+    // "our resource on..." legacy
+    /[^\n\r.!?]*our resource on[^.!?\n\r]*[.!?]?/i,
+  ]
+    .map((r) => r.source)
+    .join("|"),
+  "gi",
+);
+
 function stripFakePlainDownloadMentions(content: string, sources: RetrievedSource[]): string {
   const hasRealDownloadMarker = sources.some((source) =>
     /\[download:([^\]:]+):([^\]]+)\]/i.test(source.text),
   );
 
+  // Always remove vague "you might find our guide on..." style sentences
+  let cleaned = content.replace(VAGUE_RESOURCE_MENTION_RE, "");
+
   if (hasRealDownloadMarker) {
-    return content.replace(PLAIN_DOWNLOAD_LABEL_RE, "");
+    return cleaned.replace(PLAIN_DOWNLOAD_LABEL_RE, "").replace(/\n{3,}/g, "\n\n").trim();
   }
 
-  return content
+  cleaned = cleaned
     .replace(
       /(^|[\n\r])([^\n\r.!?]*\[(?:download|resource)\s*:\s*[^:\]]+\][^\n\r.!?]*[.!?]?)/gi,
       (_match, prefix) => prefix,
     )
-    .replace(/[^\n\r.!?]*our resource on[^.!?\n\r]*[.!?]\s*/gi, "")
     .replace(/[^\n\r.!?]*checklist[^.!?\n\r]*[.!?]\s*/gi, (match) =>
       /\bdownload\b/i.test(match) ? "" : match,
     )
-    .replace(PLAIN_DOWNLOAD_LABEL_RE, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+    .replace(PLAIN_DOWNLOAD_LABEL_RE, "");
+
+  return cleaned.replace(/\n{3,}/g, "\n\n").trim();
 }
 
 export function sanitizeResourceMentions(content: string, sources: RetrievedSource[]): string {
