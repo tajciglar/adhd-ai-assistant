@@ -142,35 +142,43 @@ export default async function userRoutes(fastify: FastifyInstance) {
       const { id: userId } = request.user;
       const body = request.body ?? {};
 
-      // Update parent profile fields
+      // Upsert parent profile fields
       const parentData: Record<string, string> = {};
       if (body.parentGender !== undefined) parentData.parentGender = body.parentGender;
       if (body.parentAgeRange !== undefined) parentData.parentAgeRange = body.parentAgeRange;
       if (body.householdStructure !== undefined) parentData.householdStructure = body.householdStructure;
 
-      if (Object.keys(parentData).length > 0) {
-        await fastify.prisma.userProfile.update({
-          where: { userId },
-          data: parentData,
-        });
-      }
+      // Always ensure a userProfile row exists (needed for child profile foreign key)
+      const profile = await fastify.prisma.userProfile.upsert({
+        where: { userId },
+        update: Object.keys(parentData).length > 0 ? parentData : {},
+        create: { userId, ...parentData },
+        include: { children: { select: { id: true } } },
+      });
 
-      // Update child profile fields
+      // Upsert child profile fields
       const childData: Record<string, string | number> = {};
       if (body.childName !== undefined) childData.childName = body.childName;
       if (body.childAge !== undefined) childData.childAge = body.childAge;
       if (body.childGender !== undefined) childData.childGender = body.childGender;
 
       if (Object.keys(childData).length > 0) {
-        const profile = await fastify.prisma.userProfile.findUnique({
-          where: { userId },
-          include: { children: { select: { id: true } } },
-        });
-        const childId = profile?.children?.[0]?.id;
+        const childId = profile.children?.[0]?.id;
         if (childId) {
+          // Update existing child profile
           await fastify.prisma.childProfile.update({
             where: { id: childId },
             data: childData,
+          });
+        } else {
+          // Create first child profile if none exists yet
+          await fastify.prisma.childProfile.create({
+            data: {
+              profileId: profile.id,
+              childName: (childData.childName as string) ?? "",
+              ...(childData.childAge !== undefined ? { childAge: childData.childAge as number } : {}),
+              ...(childData.childGender !== undefined ? { childGender: childData.childGender as string } : {}),
+            },
           });
         }
       }
