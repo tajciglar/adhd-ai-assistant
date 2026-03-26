@@ -68,7 +68,7 @@ async function buildServer() {
     contentSecurityPolicy: false, // API only
     hsts: environment === "production" ? { maxAge: 31536000, includeSubDomains: true } : false,
     hidePoweredBy: true,
-    crossOriginResourcePolicy: { policy: "same-site" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   });
 
   await server.register(cors, {
