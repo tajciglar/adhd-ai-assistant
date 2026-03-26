@@ -72,6 +72,8 @@ export default function EntryList({
   // New category
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  // Manually created empty categories (no entries yet)
+  const [manualCategories, setManualCategories] = useState<string[]>([]);
 
   const categories = useMemo(() => {
     const map = new Map<string, number>();
@@ -79,10 +81,14 @@ export default function EntryList({
       const cat = e.category || "Uncategorized";
       map.set(cat, (map.get(cat) ?? 0) + 1);
     }
+    // Include manually created empty categories
+    for (const cat of manualCategories) {
+      if (!map.has(cat)) map.set(cat, 0);
+    }
     return Array.from(map.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([name, count]) => ({ name, count }));
-  }, [entries]);
+  }, [entries, manualCategories]);
 
   const filteredEntries = useMemo(() => {
     let list = entries;
@@ -115,6 +121,7 @@ export default function EntryList({
         to: editCategoryValue.trim(),
       });
       if (selectedCategory === editingCategory) setSelectedCategory(editCategoryValue.trim());
+      setManualCategories((prev) => prev.map((c) => c === editingCategory ? editCategoryValue.trim() : c));
       onRefresh();
     } finally {
       setRenamingLoading(false);
@@ -123,10 +130,9 @@ export default function EntryList({
   };
 
   const saveNewCategory = () => {
-    // A new empty category is just a label in the sidebar — entries get assigned
-    // when created/edited. We just switch to it so the user can see it's ready.
     const name = newCategoryName.trim();
     if (!name) { setIsAddingCategory(false); return; }
+    setManualCategories((prev) => prev.includes(name) ? prev : [...prev, name]);
     setSelectedCategory(name);
     setIsAddingCategory(false);
     setNewCategoryName("");
