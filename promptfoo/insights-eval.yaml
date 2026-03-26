@@ -1,0 +1,134 @@
+# Insights classification eval — tests insights.ts prompt
+# Run: promptfoo eval --config insights-eval.yaml
+
+description: Topic classification prompt eval
+
+providers:
+  - id: google:gemini-2.5-flash
+    config:
+      generationConfig:
+        temperature: 0.2
+
+prompts:
+  - file://prompts/insights-messages.yaml
+
+# Valid categories from insights.ts
+defaultTest:
+  assert:
+    - type: javascript
+      value: |
+        const valid = [
+          "morning-routines", "bedtime-routines", "homework-school",
+          "emotional-regulation", "meltdowns", "focus-attention",
+          "energy-impulse", "sensory-needs", "social-skills",
+          "organization-planning", "family-dynamics", "discipline-behavior",
+          "understanding-adhd", "medication", "professional-help",
+          "transitions", "self-care-parent", "other"
+        ];
+        return valid.includes(output.trim().toLowerCase().replace(/[^a-z-]/g, ""));
+
+tests:
+  - description: "Homework question → homework-school"
+    vars:
+      message: "My son won't sit down and do his homework without a huge fight every night."
+    assert:
+      - type: equals
+        value: "homework-school"
+
+  - description: "Active meltdown → meltdowns"
+    vars:
+      message: "My daughter is having a meltdown right now and I don't know how to calm her down."
+    assert:
+      - type: equals
+        value: "meltdowns"
+
+  - description: "Medication question → medication"
+    vars:
+      message: "What are the side effects of Adderall for kids and when should I consider it?"
+    assert:
+      - type: equals
+        value: "medication"
+
+  - description: "Parent exhaustion → self-care-parent"
+    vars:
+      message: "I'm completely burned out. I have no patience left and I keep snapping at my kids."
+    assert:
+      - type: equals
+        value: "self-care-parent"
+
+  - description: "Morning struggle → morning-routines"
+    vars:
+      message: "Getting my son dressed and out the door in the morning is an absolute disaster every single day."
+    assert:
+      - type: equals
+        value: "morning-routines"
+
+  - description: "Bedtime issue → bedtime-routines"
+    vars:
+      message: "My child can't fall asleep until midnight even though we have a bedtime routine."
+    assert:
+      - type: equals
+        value: "bedtime-routines"
+
+  - description: "Social skills → social-skills"
+    vars:
+      message: "My son keeps interrupting other kids and doesn't understand why they don't want to play with him."
+    assert:
+      - type: equals
+        value: "social-skills"
+
+  - description: "Understanding ADHD → understanding-adhd"
+    vars:
+      message: "Why does ADHD make it so hard for kids to just listen when you ask them something?"
+    assert:
+      - type: equals
+        value: "understanding-adhd"
+
+  - description: "Emotional regulation → emotional-regulation"
+    vars:
+      message: "My daughter goes from fine to screaming in about 3 seconds. How do I help her manage her emotions?"
+    assert:
+      - type: equals
+        value: "emotional-regulation"
+
+  - description: "School transition → transitions"
+    vars:
+      message: "We're moving Max to a new school next month and I'm worried about how he'll handle the change."
+    assert:
+      - type: equals
+        value: "transitions"
+
+  - description: "Therapist question → professional-help"
+    vars:
+      message: "Should I get my child an occupational therapist? What's the difference between OT and a behavioral therapist?"
+    assert:
+      - type: equals
+        value: "professional-help"
+
+  - description: "Focus/distraction → focus-attention"
+    vars:
+      message: "My son starts tasks but never finishes them. He gets distracted by literally anything."
+    assert:
+      - type: equals
+        value: "focus-attention"
+
+  - description: "Hyperactivity → energy-impulse"
+    vars:
+      message: "My kid cannot sit still for more than 30 seconds. He's constantly bouncing and interrupting."
+    assert:
+      - type: equals
+        value: "energy-impulse"
+
+  - description: "Sensory sensitivity → sensory-needs"
+    vars:
+      message: "My daughter completely loses it if her socks have a seam. Tags on clothing cause full meltdowns."
+    assert:
+      - type: equals
+        value: "sensory-needs"
+
+  - description: "Sibling conflict → family-dynamics"
+    vars:
+      message: "My ADHD son and his sister fight constantly. It's affecting the whole family."
+    assert:
+      - type: equals
+        value: "family-dynamics"

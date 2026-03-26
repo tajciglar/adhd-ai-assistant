@@ -21,4 +21,6 @@ yarn-error.log*
 .idea/
 
 # Claude
-.claude/
+.claude/promptfoo/.env
+promptfoo/.env
+promptfoo/.env
