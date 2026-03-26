@@ -17,6 +17,29 @@ const ProfilePage = lazy(() => import("./components/dashboard/ProfilePage"));
 const ChildProfilePage = lazy(() => import("./components/dashboard/ChildProfilePage"));
 const AdminPage = lazy(() => import("./components/admin/AdminPage"));
 
+function NoAccessPage() {
+  const { signOut } = useAuth();
+  return (
+    <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6">
+      <div className="text-center max-w-md">
+        <h1 className="text-2xl font-bold text-harbor-primary mb-3">
+          Access Not Enabled
+        </h1>
+        <p className="text-harbor-text/60 mb-6">
+          Your account doesn't have access yet. Please contact us to get started.
+        </p>
+        <button
+          onClick={signOut}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-harbor-primary/20 text-harbor-primary/70 text-sm font-semibold hover:bg-harbor-primary/5 hover:text-harbor-primary transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px]">logout</span>
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Dev-only preview bypass ──────────────────────────────────────────────────
 // Activated via ?preview=dashboard|chat|resources|profile in dev only.
 // import.meta.env.DEV is false in production — this entire path is dead code.
@@ -192,16 +215,7 @@ function AppRoutes() {
           path="/no-access"
           element={
             session ? (
-              <div className="min-h-screen bg-harbor-bg flex items-center justify-center px-6">
-                <div className="text-center max-w-md">
-                  <h1 className="text-2xl font-bold text-harbor-primary mb-3">
-                    Access Not Enabled
-                  </h1>
-                  <p className="text-harbor-text/60">
-                    Your account doesn't have access yet. Please contact us to get started.
-                  </p>
-                </div>
-              </div>
+              <NoAccessPage />
             ) : (
               <Navigate to="/auth" />
             )
