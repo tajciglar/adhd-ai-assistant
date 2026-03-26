@@ -488,24 +488,6 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     },
   );
 
-  // PATCH /admin/entries/rename-category — bulk rename a category across all entries
-  fastify.patch(
-    "/admin/entries/rename-category",
-    { preHandler: basePreHandler, config: writeRateLimitConfig },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { from, to } = request.body as { from: string; to: string };
-      if (!from || !to || typeof from !== "string" || typeof to !== "string") {
-        return reply.status(400).send({ error: "from and to are required strings" });
-      }
-      const result = await fastify.prisma.knowledgeEntry.updateMany({
-        where: { category: from },
-        data: { category: to.trim() },
-      });
-      invalidateRetrievalCaches();
-      await audit(request.user.id, "admin.category.rename", "knowledge_entry", "bulk", { from, to, count: result.count });
-      return reply.send({ updated: result.count });
-    },
-  );
 
   fastify.post(
     "/admin/entries/bulk",
