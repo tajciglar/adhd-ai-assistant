@@ -18,6 +18,19 @@ type FeedbackBody = z.infer<typeof feedbackBodySchema>;
 
 const MAX_MESSAGES_PER_CONVERSATION = 200;
 
+function detectCategory(message: string): string {
+  const msg = message.toLowerCase();
+  if (/sleep|bedtime|night|rest|nap|tired|wake/.test(msg)) return "Sleep & Rest";
+  if (/school|homework|teacher|class|learn|focus|study|read|math/.test(msg)) return "School & Learning";
+  if (/meltdown|tantrum|behav|angry|aggress|hit|scream|calm|defian/.test(msg)) return "Behavior";
+  if (/routine|schedule|morning|evening|structure|transition|chore/.test(msg)) return "Routines";
+  if (/medic|therapy|therapist|adhd|treatment|dose|diagnos/.test(msg)) return "Medication & Therapy";
+  if (/emotion|sad|anxious|anxiety|worry|feel|overwhelm|depress|afraid/.test(msg)) return "Emotional Support";
+  if (/screen|game|phone|ipad|tablet|tv|video|youtube/.test(msg)) return "Screen & Activities";
+  if (/talk|communicat|say|tell|explain|understand|listen/.test(msg)) return "Communication";
+  return "General";
+}
+
 export default async function chatRoutes(fastify: FastifyInstance) {
   async function requireChatAccess(request: FastifyRequest, reply: FastifyReply) {
     const user = await fastify.prisma.user.findUnique({
@@ -43,6 +56,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         select: {
           id: true,
           title: true,
+          category: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -172,7 +186,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
           message.length > 60 ? message.substring(0, 57) + "..." : message;
 
         conversation = await fastify.prisma.conversation.create({
-          data: { userId, title },
+          data: { userId, title, category: detectCategory(message) },
         });
       }
 
@@ -289,7 +303,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
         const title =
           message.length > 60 ? message.substring(0, 57) + "..." : message;
         conversation = await fastify.prisma.conversation.create({
-          data: { userId, title },
+          data: { userId, title, category: detectCategory(message) },
         });
       }
 

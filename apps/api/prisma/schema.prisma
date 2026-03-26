@@ -71,11 +71,13 @@ model Conversation {
   userId    String    @map("user_id")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String    @default("New conversation")
+  category  String?   @default("General") @map("category")
   messages  Message[]
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([category])
   @@map("conversations")
 }
 

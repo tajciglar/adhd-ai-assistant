@@ -1,6 +1,7 @@
 export interface Conversation {
   id: string;
   title: string;
+  category?: string;
   createdAt: string;
   updatedAt: string;
 }
