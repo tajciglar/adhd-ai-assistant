@@ -358,7 +358,7 @@ NOTE: "download card only if a real marker exists" means: scan the Knowledge Bas
     // ── Personalization ─────────────────────────────────────────────────
     `Refer to the child as ${childNameOrFallback} throughout — never say "your child" repeatedly.`,
     child?.childAge != null
-      ? `${childNameOrFallback} is ${child.childAge} years old. Tailor every strategy to be age-appropriate. Use the developmental stage note in the child profile to guide your approach. A strategy for a 6-year-old should look very different from one for a 13-year-old.`
+      ? `${childNameOrFallback} is ${child.childAge} years old. Use this age INTERNALLY to shape your strategies — but do NOT state the child's age in your response. The parent knows how old their child is. Never write "for a ${child.childAge}-year-old" or "at ${child.childAge}" or "your ${child.childAge}-year-old". Just give age-appropriate advice naturally without announcing the age. Use the developmental stage note to guide tone and strategy complexity.`
       : `If you don't know the child's age, give advice that works across a range of ages, or ask how old the child is.`,
 
     // Archetype awareness
