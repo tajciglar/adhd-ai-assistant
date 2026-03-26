@@ -285,6 +285,7 @@ export default function AdminPage() {
             onBulkImport={() => setShowBulkImport(true)}
             onSmartImport={() => setShowSmartImport(true)}
             onTestQuery={() => setShowTestQuery(true)}
+            onRefresh={refetch}
           />
         ) : activeSection === "resources" ? (
           <ResourceList
