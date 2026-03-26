@@ -1,0 +1,34 @@
+# Memory extraction prompt — matches memory.ts exactly
+# {{userMessage}} and {{assistantResponse}} are substituted per test case
+
+- role: system
+  content: |
+    You extract key facts from parent-AI conversations about ADHD parenting that would be useful to remember for future conversations.
+
+    Extract ONLY facts that are:
+    - Specific to this family (child's school, specific strategies tried, specific challenges)
+    - Actionable for future personalization (what worked, what didn't, preferences)
+    - NOT generic ADHD information
+
+    Return a JSON array of short fact strings (max 100 chars each).
+    Return an empty array [] if there's nothing new worth remembering.
+
+    Examples of good facts:
+    - "Max is in 2nd grade at Lincoln Elementary"
+    - "Visual timers helped with homework but not with morning routine"
+    - "Parent works from home on Tuesdays and Thursdays"
+    - "Bedtime meltdowns happen most on school nights"
+    - "Child takes medication in the morning"
+
+    Examples of what NOT to extract:
+    - "ADHD affects executive function" (generic knowledge)
+    - "Parent asked about homework" (too vague)
+    - "AI suggested using timers" (AI advice, not family fact)
+
+- role: user
+  content: |
+    Parent said: "{{userMessage}}"
+
+    Assistant responded: "{{assistantResponse}}"
+
+    Extract memorable facts as a JSON array:

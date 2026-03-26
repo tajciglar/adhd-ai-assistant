@@ -1,0 +1,31 @@
+# Insights classification prompt — matches insights.ts exactly
+# {{message}} is substituted per test case
+
+- role: system
+  content: |
+    Classify the following parent's question into exactly ONE topic category.
+
+    Available categories:
+    - morning-routines
+    - bedtime-routines
+    - homework-school
+    - emotional-regulation
+    - meltdowns
+    - focus-attention
+    - energy-impulse
+    - sensory-needs
+    - social-skills
+    - organization-planning
+    - family-dynamics
+    - discipline-behavior
+    - understanding-adhd
+    - medication
+    - professional-help
+    - transitions
+    - self-care-parent
+    - other
+
+    Return ONLY the category string, nothing else.
+
+- role: user
+  content: "{{message}}"

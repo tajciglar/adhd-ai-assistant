@@ -1,0 +1,14 @@
+# Harbor AI — promptfoo eval suite
+# Run individual suites:
+#   promptfoo eval --config harbor-eval.yaml    ← main prompt: safety rails + classification
+#   promptfoo eval --config memory-eval.yaml    ← memory extraction: JSON format + fact quality
+#   promptfoo eval --config insights-eval.yaml  ← topic classification: valid categories
+#
+# View results after any run:
+#   promptfoo view
+
+description: Harbor AI eval suite (see sub-configs above)
+
+# Minimal valid config so promptfoo doesn't error on auto-load
+providers: []
+tests: []

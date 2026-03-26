@@ -1,0 +1,101 @@
+# Memory extraction eval — tests memory.ts prompt
+# Run: promptfoo eval --config memory-eval.yaml
+
+description: Memory extraction prompt eval
+
+providers:
+  - id: google:gemini-2.5-flash
+    config:
+      generationConfig:
+        temperature: 0.2
+
+prompts:
+  - file://prompts/memory-messages.yaml
+
+defaultTest:
+  assert:
+    # Must always return valid JSON
+    - type: is-json
+
+tests:
+  # ── Should extract clear family-specific facts ────────────────────────
+  - description: "Conversation with clear facts should extract them"
+    vars:
+      userMessage: "Max is in 3rd grade at Riverside Elementary. He takes his medication at 7:30am every morning before school. Visual timers have been a game changer for us."
+      assistantResponse: "That's great that visual timers are helping Max. The medication timing sounds consistent which is really important."
+    assert:
+      - type: javascript
+        value: |
+          const arr = JSON.parse(output);
+          return Array.isArray(arr) && arr.length >= 2;
+      - type: llm-rubric
+        value: >
+          The JSON array contains at least 2 specific family facts.
+          Facts include specifics like school name, grade, medication timing, or what's working.
+          None of the facts are generic ADHD information.
+
+  # ── Should return empty array for generic conversation ─────────────────
+  - description: "Generic ADHD conversation should return empty array"
+    vars:
+      userMessage: "Why do ADHD kids have trouble with transitions?"
+      assistantResponse: "ADHD affects the brain's ability to shift attention, which makes transitions harder. The prefrontal cortex, which manages task-switching, works differently in kids with ADHD."
+    assert:
+      - type: javascript
+        value: |
+          const arr = JSON.parse(output);
+          return Array.isArray(arr) && arr.length === 0;
+      - type: llm-rubric
+        value: >
+          The JSON array is empty [] because there are no family-specific facts in this conversation.
+          Generic ADHD information should not be extracted as memories.
+
+  # ── Should not extract AI advice as facts ─────────────────────────────
+  - description: "AI suggestions should not be stored as family facts"
+    vars:
+      userMessage: "Max has been having huge meltdowns after school."
+      assistantResponse: "Try giving Max a 20-minute wind-down buffer after school before any demands. A snack and quiet activity can help regulate his nervous system."
+    assert:
+      - type: javascript
+        value: |
+          const arr = JSON.parse(output);
+          if (!Array.isArray(arr)) return false;
+          // AI advice should not be stored — only the family fact (after-school meltdowns)
+          const hasAIAdvice = arr.some(f =>
+            f.toLowerCase().includes("wind-down") ||
+            f.toLowerCase().includes("ai suggested") ||
+            f.toLowerCase().includes("harbor suggested")
+          );
+          return !hasAIAdvice;
+      - type: llm-rubric
+        value: >
+          The JSON array may include the family fact that Max has meltdowns after school.
+          It must NOT include the AI's suggestions (wind-down buffer, snack) as if they are family facts.
+          AI advice is not a memory worth storing.
+
+  # ── Should handle multiple rich facts ─────────────────────────────────
+  - description: "Rich conversation extracts up to 5 facts"
+    vars:
+      userMessage: "We moved to a new house last month and Max is really struggling. He's at Oak Hill Middle School now. Dad travels for work Monday through Wednesday every week. We tried the token board system last year and it didn't work at all for him."
+      assistantResponse: "Big transitions like moving can be really hard for kids with ADHD. It makes sense Max is struggling with the adjustment."
+    assert:
+      - type: javascript
+        value: |
+          const arr = JSON.parse(output);
+          return Array.isArray(arr) && arr.length >= 3 && arr.length <= 5;
+      - type: llm-rubric
+        value: >
+          The facts include specific details: new school name, dad's travel schedule, token board not working.
+          All facts are specific to this family, not generic.
+          Maximum 5 facts are returned.
+
+  # ── All facts must be under 100 characters ────────────────────────────
+  - description: "Each fact must be short (max 100 chars)"
+    vars:
+      userMessage: "My son Max goes to Lincoln Elementary in 2nd grade and his teacher is Ms. Johnson who has been really supportive and understanding about his ADHD needs."
+      assistantResponse: "It's wonderful that Max has a supportive teacher. Having an understanding teacher makes a huge difference."
+    assert:
+      - type: javascript
+        value: |
+          const arr = JSON.parse(output);
+          if (!Array.isArray(arr)) return false;
+          return arr.every(f => typeof f === 'string' && f.length <= 100);
