@@ -517,7 +517,7 @@ export default function ResourceList({
             </button>
             <button
               onClick={onUpload}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-cta text-white hover:bg-harbor-cta/90 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-orange text-white hover:bg-harbor-orange/90 transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">

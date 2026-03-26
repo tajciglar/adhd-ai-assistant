@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import type { KnowledgeEntry } from "../../types/admin";
 
+const ALL_CATEGORIES = "__all__";
+
 interface EntryListProps {
   entries: KnowledgeEntry[];
   onEdit: (entry: KnowledgeEntry) => void;
@@ -19,22 +21,79 @@ export default function EntryList({
   onTestQuery,
 }: EntryListProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
-    null,
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+
+  const categories = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const e of entries) {
+      const cat = e.category || "Uncategorized";
+      map.set(cat, (map.get(cat) ?? 0) + 1);
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({ name, count }));
+  }, [entries]);
 
   const filteredEntries = useMemo(() => {
-    if (!searchQuery.trim()) return entries;
+    let list = entries;
+    if (selectedCategory !== ALL_CATEGORIES) {
+      list = list.filter((e) => (e.category || "Uncategorized") === selectedCategory);
+    }
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase();
-    return entries.filter((entry) =>
+    return list.filter((entry) =>
       [entry.title, entry.category, entry.content].some((value) =>
         value.toLowerCase().includes(q),
       ),
     );
-  }, [entries, searchQuery]);
+  }, [entries, searchQuery, selectedCategory]);
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 flex overflow-hidden">
+
+      {/* ── Folder Sidebar ── */}
+      <div className="w-[200px] flex-shrink-0 border-r border-harbor-text/10 flex flex-col bg-harbor-bg/30">
+        <div className="px-3 py-3 border-b border-harbor-text/10">
+          <p className="text-[10px] font-semibold text-harbor-text/40 uppercase tracking-wider">Categories</p>
+        </div>
+        <div className="flex-1 overflow-y-auto py-1">
+          <button
+            onClick={() => setSelectedCategory(ALL_CATEGORIES)}
+            className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
+              selectedCategory === ALL_CATEGORIES
+                ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+                : "text-harbor-text/70 hover:bg-harbor-bg hover:text-harbor-text"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">folder_open</span>
+            <span className="flex-1 truncate">All Answers</span>
+            <span className={`text-xs tabular-nums ${selectedCategory === ALL_CATEGORIES ? "text-harbor-accent/70" : "text-harbor-text/40"}`}>
+              {entries.length}
+            </span>
+          </button>
+          {categories.map(({ name, count }) => (
+            <button
+              key={name}
+              onClick={() => setSelectedCategory(name)}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
+                selectedCategory === name
+                  ? "bg-harbor-accent/10 text-harbor-accent font-medium"
+                  : "text-harbor-text/70 hover:bg-harbor-bg hover:text-harbor-text"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">folder</span>
+              <span className="flex-1 truncate">{name}</span>
+              <span className={`text-xs tabular-nums ${selectedCategory === name ? "text-harbor-accent/70" : "text-harbor-text/40"}`}>
+                {count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Main Content ── */}
+      <div className="flex-1 flex flex-col overflow-y-auto">
       <div className="flex items-center justify-between px-6 py-4 border-b border-harbor-text/10">
         <h3 className="text-sm font-semibold text-harbor-text">
           {entries.length} {entries.length === 1 ? "entry" : "entries"}
@@ -196,6 +255,7 @@ export default function EntryList({
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
