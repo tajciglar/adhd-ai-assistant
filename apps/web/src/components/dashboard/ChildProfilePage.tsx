@@ -413,7 +413,7 @@ export default function ChildProfilePage() {
                             <p className="text-xs text-harbor-text/60 leading-relaxed">{item.when}</p>
                           </div>
                           <div className="px-4 py-3">
-                            <p className="text-sm text-harbor-text font-medium leading-relaxed">"{item.say}"</p>
+                            <p className="text-sm text-harbor-text font-medium leading-relaxed">&ldquo;{item.say.replace(/^[\u201c\u201d"']+|[\u201c\u201d"']+$/g, "")}&rdquo;</p>
                           </div>
                         </div>
                       ))}
