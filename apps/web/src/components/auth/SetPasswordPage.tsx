@@ -14,33 +14,18 @@ export default function SetPasswordPage() {
   // Supabase auto-processes the invite token from the URL hash and sets the session.
   // We wait for onAuthStateChange to fire before showing the form.
   useEffect(() => {
-    let initialEventReceived = false;
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setReady(true);
         return;
       }
-      // Only redirect to /auth if the link is invalid/expired —
-      // i.e. after the initial session check comes back with nothing.
-      // Never redirect on the first SIGNED_OUT before any session was established,
-      // since it can fire before the invite token is processed.
-      if (initialEventReceived && event === "SIGNED_OUT") {
-        navigate("/auth", { replace: true });
+      // INITIAL_SESSION fires after Supabase has fully processed the URL token.
+      // If there's still no session at that point, the link is genuinely expired/used.
+      if (event === "INITIAL_SESSION") {
+        setError("This link has expired or already been used. Please contact us for a new one.");
       }
-      initialEventReceived = true;
-    });
-
-    // Also check if session already exists (e.g. page refresh)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true);
-      } else {
-        // No session and no token in URL — show expired link error
-        const hasToken = window.location.hash.includes("access_token") ||
-          window.location.search.includes("code=");
-        if (!hasToken) setError("This link has expired or already been used. Please contact us for a new one.");
-        initialEventReceived = true;
+      if (event === "SIGNED_OUT") {
+        navigate("/auth", { replace: true });
       }
     });
 
