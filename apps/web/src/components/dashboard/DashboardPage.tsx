@@ -42,15 +42,19 @@ export default function DashboardPage() {
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasConversations, setHasConversations] = useState(false);
 
   useEffect(() => {
     Promise.all([
       api.get("/api/user/me").catch(() => null),
       api.get("/api/admin/resources").catch(() => ({ resources: [] })),
-    ]).then(([userData, resourceData]) => {
+      api.get("/api/conversations").catch(() => ({ conversations: [] })),
+    ]).then(([userData, resourceData, convData]) => {
       if (userData) setUserInfo(userData as DashboardUserInfo);
       const rd = resourceData as { resources: Resource[] };
       setResources(rd.resources?.slice(0, 3) ?? []);
+      const cd = convData as { conversations: unknown[] };
+      setHasConversations((cd.conversations?.length ?? 0) > 0);
       setLoading(false);
     });
   }, []);
@@ -185,21 +189,23 @@ export default function DashboardPage() {
           </div>
 
           {/* ── Quick actions ── */}
-          <div className="px-4 md:px-8 mb-6">
-            <div className="bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm cursor-pointer hover:bg-harbor-bg-alt/80 transition-colors" onClick={() => navigate("/chat")}>
-              <span
-                className="material-symbols-outlined text-harbor-orange text-[20px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                chat_bubble
-              </span>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-slate-900">Continue your conversation</p>
-                <p className="text-xs text-slate-400">Pick up where you left off with Harbor</p>
+          {hasConversations && (
+            <div className="px-4 md:px-8 mb-6">
+              <div className="bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm cursor-pointer hover:bg-harbor-bg-alt/80 transition-colors" onClick={() => navigate("/chat")}>
+                <span
+                  className="material-symbols-outlined text-harbor-orange text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  chat_bubble
+                </span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900">Continue your conversation</p>
+                  <p className="text-xs text-slate-400">Pick up where you left off with Harbor</p>
+                </div>
+                <span className="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
               </div>
-              <span className="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
             </div>
-          </div>
+          )}
 
           {/* ── Resources ── */}
           <div className="md:px-8">
