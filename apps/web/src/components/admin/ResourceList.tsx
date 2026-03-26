@@ -257,10 +257,17 @@ function FolderSidebar({
 }) {
   return (
     <div className="w-[200px] flex-shrink-0 border-r border-harbor-text/10 flex flex-col bg-harbor-bg/30">
-      <div className="px-3 py-3 border-b border-harbor-text/10">
+      <div className="px-3 py-3 border-b border-harbor-text/10 flex items-center justify-between gap-1">
         <p className="text-[10px] font-semibold text-harbor-text/40 uppercase tracking-wider">
           Folders
         </p>
+        <button
+          onClick={onCreateFolder}
+          title="Add folder"
+          className="w-6 h-6 flex items-center justify-center rounded hover:bg-harbor-accent/10 text-harbor-accent/60 hover:text-harbor-accent transition-colors cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-base">add</span>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto py-1">
@@ -327,56 +334,38 @@ function FolderSidebar({
         })}
       </div>
 
-      {/* Create Folder area */}
-      <div className="px-3 py-3 border-t border-harbor-text/10">
-        {isCreatingFolder ? (
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => onNewFolderNameChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onNewFolderSave();
-                if (e.key === "Escape") onNewFolderCancel();
-              }}
-              placeholder="Folder name..."
-              autoFocus
-              className="w-full px-2 py-1.5 rounded-lg border border-harbor-text/15 text-xs focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40 bg-white"
-            />
-            <div className="flex gap-1.5">
-              <button
-                onClick={onNewFolderSave}
-                disabled={!newFolderName.trim()}
-                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  check
-                </span>
-                Save
-              </button>
-              <button
-                onClick={onNewFolderCancel}
-                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs text-harbor-text/60 hover:bg-harbor-bg transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  close
-                </span>
-                Cancel
-              </button>
-            </div>
+      {/* Inline new folder input — shown when isCreatingFolder */}
+      {isCreatingFolder && (
+        <div className="px-3 py-3 border-t border-harbor-text/10 space-y-2">
+          <input
+            type="text"
+            value={newFolderName}
+            onChange={(e) => onNewFolderNameChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onNewFolderSave();
+              if (e.key === "Escape") onNewFolderCancel();
+            }}
+            placeholder="Folder name..."
+            autoFocus
+            className="w-full px-2 py-1.5 rounded-lg border border-harbor-text/15 text-xs focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40 bg-white"
+          />
+          <div className="flex gap-1.5">
+            <button
+              onClick={onNewFolderSave}
+              disabled={!newFolderName.trim()}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-harbor-accent text-white hover:bg-harbor-accent-light transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined text-sm">check</span>Save
+            </button>
+            <button
+              onClick={onNewFolderCancel}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs text-harbor-text/60 hover:bg-harbor-bg transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>Cancel
+            </button>
           </div>
-        ) : (
-          <button
-            onClick={onCreateFolder}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-harbor-accent/70 hover:text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base">
-              create_new_folder
-            </span>
-            <span>Create Folder</span>
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
