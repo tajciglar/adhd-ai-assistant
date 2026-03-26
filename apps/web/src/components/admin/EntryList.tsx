@@ -141,9 +141,9 @@ export default function EntryList({
   return (
     <div className="flex-1 flex overflow-hidden">
 
-      {/* ── Folder Sidebar ── */}
+      {/* ── Folder Sidebar (desktop only) ── */}
       <div
-        className="flex-shrink-0 border-r border-harbor-text/10 flex flex-col bg-harbor-bg/30 relative"
+        className="hidden md:flex flex-shrink-0 border-r border-harbor-text/10 flex-col bg-harbor-bg/30 relative"
         style={{ width: sidebarWidth }}
       >
         <div className="px-3 py-3 border-b border-harbor-text/10 flex items-center justify-between gap-1">
@@ -271,46 +271,63 @@ export default function EntryList({
       </div>
 
       {/* ── Main Content ── */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-harbor-text/10">
-          <h3 className="text-sm font-semibold text-harbor-text">
+      <div className="flex-1 flex flex-col overflow-y-auto min-w-0">
+        {/* Mobile category picker */}
+        <div className="md:hidden px-4 py-2 border-b border-harbor-text/10 bg-harbor-bg/30">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-harbor-accent/30"
+          >
+            <option value={ALL_CATEGORIES}>All Answers ({entries.length})</option>
+            {categories.map(({ name, count }) => (
+              <option key={name} value={name}>{name} ({count})</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-harbor-text/10 gap-2">
+          <h3 className="text-sm font-semibold text-harbor-text shrink-0">
             {selectedCategory === ALL_CATEGORIES
               ? `All Answers (${entries.length})`
               : `${selectedCategory} (${filteredEntries.length})`}
           </h3>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 flex-wrap justify-end">
             <button
               onClick={onTestQuery}
-              className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+              className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+              title="Check AI Search"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">quiz</span>
-                Check AI Search
+                <span className="hidden lg:inline">Check AI Search</span>
               </span>
             </button>
             <button
               onClick={onSmartImport}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-primary text-white hover:bg-harbor-primary/90 transition-colors cursor-pointer"
+              className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium bg-harbor-primary text-white hover:bg-harbor-primary/90 transition-colors cursor-pointer"
+              title="Turn Document Into Answers"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">auto_awesome</span>
-                Turn Document Into Answers
+                <span className="hidden lg:inline">Turn Document Into Answers</span>
               </span>
             </button>
             <button
               onClick={onBulkImport}
-              className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+              className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+              title="Import Spreadsheet"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">upload_file</span>
-                Import Spreadsheet
+                <span className="hidden lg:inline">Import Spreadsheet</span>
               </span>
             </button>
           </div>
         </div>
 
         {/* Search bar */}
-        <div className="px-6 py-3 border-b border-harbor-text/10">
+        <div className="px-4 md:px-6 py-3 border-b border-harbor-text/10">
           <div className="relative">
             <span className="material-symbols-outlined text-lg text-harbor-text/30 absolute left-3 top-1/2 -translate-y-1/2">search</span>
             <input

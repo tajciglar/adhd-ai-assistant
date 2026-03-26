@@ -256,7 +256,7 @@ function FolderSidebar({
   onNewFolderCancel: () => void;
 }) {
   return (
-    <div className="w-[200px] flex-shrink-0 border-r border-harbor-text/10 flex flex-col bg-harbor-bg/30">
+    <div className="w-[200px] flex-shrink-0 border-r border-harbor-text/10 hidden md:flex flex-col bg-harbor-bg/30">
       <div className="px-3 py-3 border-b border-harbor-text/10 flex items-center justify-between gap-1">
         <p className="text-[10px] font-semibold text-harbor-text/40 uppercase tracking-wider">
           Folders
@@ -466,7 +466,7 @@ export default function ResourceList({
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      {/* Folder Sidebar */}
+      {/* Folder Sidebar (desktop only) */}
       <FolderSidebar
         categories={categories}
         selectedFolder={selectedFolder}
@@ -486,41 +486,57 @@ export default function ResourceList({
       />
 
       {/* Resource List */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-harbor-text/10">
-          <h3 className="text-sm font-semibold text-harbor-text">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Mobile folder picker */}
+        <div className="md:hidden px-4 py-2 border-b border-harbor-text/10 bg-harbor-bg/30">
+          <select
+            value={selectedFolder}
+            onChange={(e) => setSelectedFolder(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-harbor-text/15 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-harbor-accent/30"
+          >
+            <option value={ALL_FOLDERS}>All Resources ({resources.length})</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat} ({resourceCountByCategory[cat] || 0})</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-harbor-text/10 gap-2">
+          <h3 className="text-sm font-semibold text-harbor-text shrink-0">
             {selectedFolder === ALL_FOLDERS
               ? `All Resources (${resources.length})`
               : `${selectedFolder} (${filteredResources.length})`}
           </h3>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <button
               onClick={onBulkUpload}
-              className="px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+              className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
+              title="Bulk Upload"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">
                   drive_folder_upload
                 </span>
-                Bulk Upload
+                <span className="hidden lg:inline">Bulk Upload</span>
               </span>
             </button>
             <button
               onClick={onUpload}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-harbor-orange text-white hover:bg-harbor-orange/90 transition-colors cursor-pointer"
+              className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium bg-harbor-orange text-white hover:bg-harbor-orange/90 transition-colors cursor-pointer"
+              title="Upload PDF"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">
                   upload_file
                 </span>
-                Upload PDF
+                <span className="hidden lg:inline">Upload PDF</span>
               </span>
             </button>
           </div>
         </div>
 
         {/* Search bar */}
-        <div className="px-6 py-3 border-b border-harbor-text/10">
+        <div className="px-4 md:px-6 py-3 border-b border-harbor-text/10">
           <div className="relative">
             <span className="material-symbols-outlined text-lg text-harbor-text/30 absolute left-3 top-1/2 -translate-y-1/2">
               search
