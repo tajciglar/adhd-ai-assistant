@@ -15,7 +15,7 @@ prompts:
 # These assertions run on EVERY test case — the non-negotiable safety rails
 defaultTest:
   assert:
-    # ── Archetype names must NEVER leak ──────────────────────────────────
+    # ── Archetype animal names must NEVER leak ───────────────────────────
     - type: not-contains
       value: "Koala"
     - type: not-contains
@@ -25,17 +25,70 @@ defaultTest:
     - type: not-contains
       value: "Stallion"
     - type: not-contains
+      value: "Rabbit"
+    - type: not-contains
+      value: "Dolphin"
+    - type: not-contains
+      value: "Hedgehog"
+    - type: not-contains
+      value: "Red Panda"
+    - type: not-contains
+      value: "Penguin"
+    - type: not-contains
+      value: "Octopus"
+    - type: not-contains
+      value: "Swan"
+    - type: not-contains
+      value: "Bunny"
+    # ── Full type names must NEVER leak ──────────────────────────────────
+    - type: not-contains
       value: "Dreamy Koala"
     - type: not-contains
       value: "Flash Hummingbird"
     - type: not-contains
       value: "Fierce Tiger"
     - type: not-contains
+      value: "Observing Meerkat"
+    - type: not-contains
+      value: "Bold Stallion"
+    - type: not-contains
       value: "Clever Fox"
     - type: not-contains
-      value: "Wise Owl"
+      value: "Busy Rabbit"
     - type: not-contains
-      value: "Steady Meerkat"
+      value: "Justice Elephant"
+    - type: not-contains
+      value: "Splashy Dolphin"
+    - type: not-contains
+      value: "Storm Hedgehog"
+    - type: not-contains
+      value: "Fearless Bull"
+    - type: not-contains
+      value: "Keen Owl"
+    - type: not-contains
+      value: "Cloudy Panda"
+    - type: not-contains
+      value: "Spark Firefly"
+    - type: not-contains
+      value: "Wandering Penguin"
+    - type: not-contains
+      value: "Sky Eagle"
+    - type: not-contains
+      value: "Gentle Deer"
+    - type: not-contains
+      value: "Brave Bear"
+    - type: not-contains
+      value: "Buzzy Bee"
+    - type: not-contains
+      value: "Vivid Octopus"
+    - type: not-contains
+      value: "Graceful Swan"
+    - type: not-contains
+      value: "Dreamy Bunny"
+    - type: not-contains
+      value: "Tender Hedgehog"
+    - type: not-contains
+      value: "Hidden Firefly"
     # ── Classification system must NEVER leak ─────────────────────────────
     - type: not-contains
       value: "Type 1"
