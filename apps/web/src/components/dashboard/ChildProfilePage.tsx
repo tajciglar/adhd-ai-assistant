@@ -430,8 +430,8 @@ export default function ChildProfilePage() {
                   {report.doNotSay.map((item, i) => (
                     <div key={i} className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                       {item.when && (
-                        <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
-                          <span className="text-xs font-semibold text-slate-500">{item.when}</span>
+                        <div className="px-4 py-2.5 bg-harbor-primary border-b border-harbor-primary/80">
+                          <span className="text-xs font-bold text-white uppercase tracking-wider">{item.when}</span>
                         </div>
                       )}
                       <div className="flex gap-3 p-4">
