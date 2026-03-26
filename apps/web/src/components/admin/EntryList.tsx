@@ -117,8 +117,8 @@ export default function EntryList({
     setRenamingLoading(true);
     try {
       await api.patch("/api/admin/entries/rename-category", {
-        from: editingCategory,
-        to: editCategoryValue.trim(),
+        oldName: editingCategory,
+        newName: editCategoryValue.trim(),
       });
       if (selectedCategory === editingCategory) setSelectedCategory(editCategoryValue.trim());
       setManualCategories((prev) => prev.map((c) => c === editingCategory ? editCategoryValue.trim() : c));
