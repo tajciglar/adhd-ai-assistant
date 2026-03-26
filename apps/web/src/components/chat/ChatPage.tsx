@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useChat } from "../../hooks/useChat";
 import { useAuth } from "../../hooks/useAuth";
@@ -9,7 +9,6 @@ import BottomNav from "../dashboard/BottomNav";
 import DesktopSidebar from "../dashboard/DesktopSidebar";
 import LoadingScreen from "../shared/LoadingScreen";
 import Mascot from "../shared/Mascot";
-import ConversationCategorySidebar from "./ConversationCategorySidebar";
 import type { Conversation } from "../../types/chat";
 
 function timeAgo(dateStr: string): string {
@@ -52,20 +51,6 @@ export default function ChatPage() {
   const isAdmin = userInfo?.role === "admin";
 
   const [showMobileHistory, setShowMobileHistory] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-
-  const filteredConversations = activeCategory
-    ? conversations.filter((c) => (c.category ?? "General") === activeCategory)
-    : conversations;
-
-  const categories = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const c of conversations) {
-      const cat = c.category ?? "General";
-      map.set(cat, (map.get(cat) ?? 0) + 1);
-    }
-    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
-  }, [conversations]);
 
   const handleStarterClick = useCallback(
     (message: string) => sendMessage(message),
@@ -96,10 +81,10 @@ export default function ChatPage() {
             </button>
           </div>
           <div className="flex flex-col gap-1 overflow-y-auto flex-1 custom-scrollbar">
-            {filteredConversations.length === 0 && (
+            {conversations.length === 0 && (
               <p className="text-center text-slate-400 text-sm py-8">No conversations yet</p>
             )}
-            {filteredConversations.map((conv: Conversation) => (
+            {conversations.map((conv: Conversation) => (
               <div
                 key={conv.id}
                 className={`group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors ${
@@ -283,12 +268,6 @@ export default function ChatPage() {
         {/* Mobile bottom spacing for nav */}
         <div className="md:hidden h-16" />
       </div>
-
-      <ConversationCategorySidebar
-        categories={categories}
-        activeCategory={activeCategory}
-        onSelect={setActiveCategory}
-      />
 
       <BottomNav active="chat" isAdmin={isAdmin} />
     </div>
