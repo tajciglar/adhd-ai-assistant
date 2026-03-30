@@ -39,6 +39,7 @@ interface DailyTrend {
   date: string;
   started: number;
   completed: number;
+  emailSubmitted: number;
   purchased: number;
 }
 
@@ -248,6 +249,7 @@ export default function QuizAnalyticsDashboard() {
                     <th className="text-left py-2 pr-4 text-harbor-text/50 font-medium">Date</th>
                     <th className="text-right py-2 px-4 text-harbor-text/50 font-medium">Started</th>
                     <th className="text-right py-2 px-4 text-harbor-text/50 font-medium">Completed</th>
+                    <th className="text-right py-2 px-4 text-harbor-text/50 font-medium">Email Submitted</th>
                     <th className="text-right py-2 pl-4 text-harbor-text/50 font-medium">Purchased</th>
                   </tr>
                 </thead>
@@ -257,6 +259,7 @@ export default function QuizAnalyticsDashboard() {
                       <td className="py-2 pr-4 text-harbor-text/70">{day.date}</td>
                       <td className="py-2 px-4 text-right tabular-nums">{day.started}</td>
                       <td className="py-2 px-4 text-right tabular-nums text-harbor-accent">{day.completed}</td>
+                      <td className="py-2 px-4 text-right tabular-nums text-blue-500">{day.emailSubmitted}</td>
                       <td className="py-2 pl-4 text-right tabular-nums text-green-600 font-medium">{day.purchased}</td>
                     </tr>
                   ))}
