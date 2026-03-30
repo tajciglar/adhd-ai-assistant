@@ -1103,6 +1103,42 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     },
   );
 
+  // ── List all users ──
+  fastify.get(
+    "/admin/users",
+    { preHandler: basePreHandler },
+    async (request, reply) => {
+      const users = await fastify.prisma.user.findMany({
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          hasChatAccess: true,
+          createdAt: true,
+        },
+      });
+      return reply.send({ users });
+    },
+  );
+
+  // ── Toggle chat access ──
+  fastify.patch<{ Params: { id: string }; Body: { hasChatAccess: boolean } }>(
+    "/admin/users/:id/access",
+    { preHandler: basePreHandler },
+    async (request, reply) => {
+      const { id } = request.params;
+      const { hasChatAccess } = request.body;
+      const updated = await fastify.prisma.user.update({
+        where: { id },
+        data: { hasChatAccess },
+        select: { id: true, email: true, hasChatAccess: true },
+      });
+      await audit(request.user.id, "admin.toggle_access", "user", id, { hasChatAccess });
+      return reply.send(updated);
+    },
+  );
+
   // ── Invite user by email ──
   fastify.post<{ Body: { email: string } }>(
     "/admin/invite-user",
@@ -1119,25 +1155,56 @@ export default async function adminRoutes(fastify: FastifyInstance) {
       }
 
       const appUrl = process.env.APP_URL || "http://localhost:5173";
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(
-        email.trim().toLowerCase(),
-        { redirectTo: `${appUrl}/set-password` },
-      );
+      const normalizedEmail = email.trim().toLowerCase();
 
-      if (error) {
-        fastify.log.error({ error, email }, "admin.invite_user.failed");
-        return reply.status(400).send({ error: error.message });
+      // Check if user already exists in auth
+      const { data: { users: authUsers } } = await supabase.auth.admin.listUsers();
+      const existingAuthUser = authUsers.find((u) => u.email === normalizedEmail);
+
+      let inviteLink: string;
+      let userId: string;
+
+      if (existingAuthUser) {
+        // User already has an auth account — generate a recovery link instead
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: "recovery",
+          email: normalizedEmail,
+          options: { redirectTo: `${appUrl}/set-password` },
+        });
+        if (linkError) {
+          return reply.status(400).send({ error: linkError.message });
+        }
+        inviteLink = linkData.properties.action_link;
+        userId = existingAuthUser.id;
+      } else {
+        // New user — send invite
+        const { data, error } = await supabase.auth.admin.inviteUserByEmail(
+          normalizedEmail,
+          { redirectTo: `${appUrl}/set-password` },
+        );
+        if (error) {
+          fastify.log.error({ error, email }, "admin.invite_user.failed");
+          return reply.status(400).send({ error: error.message });
+        }
+        // Generate a link the admin can copy in addition to the emailed one
+        const { data: linkData } = await supabase.auth.admin.generateLink({
+          type: "recovery",
+          email: normalizedEmail,
+          options: { redirectTo: `${appUrl}/set-password` },
+        });
+        inviteLink = linkData?.properties?.action_link ?? "";
+        userId = data.user.id;
       }
 
-      // Pre-create the DB user with chat access so they land on /dashboard after setting their password
+      // Ensure DB user exists with chat access
       await fastify.prisma.user.upsert({
-        where: { id: data.user.id },
+        where: { id: userId },
         update: { hasChatAccess: true },
-        create: { id: data.user.id, email: data.user.email!, hasChatAccess: true },
+        create: { id: userId, email: normalizedEmail, hasChatAccess: true },
       });
 
-      await audit(request.user.id, "admin.invite_user", "user", data.user.id, { email });
-      return reply.send({ success: true, email: data.user.email });
+      await audit(request.user.id, "admin.invite_user", "user", userId, { email: normalizedEmail });
+      return reply.send({ success: true, email: normalizedEmail, inviteLink });
     },
   );
 }
