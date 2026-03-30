@@ -171,7 +171,6 @@ async function main() {
         traitProfile: MOCK_TRAIT_PROFILE as any,
         onboardingResponses: MOCK_QUIZ_RESPONSES as any,
         onboardingCompleted: true,
-        onboardingStep: 999,
       },
     });
   } else {
@@ -184,7 +183,6 @@ async function main() {
         traitProfile: MOCK_TRAIT_PROFILE as any,
         onboardingResponses: MOCK_QUIZ_RESPONSES as any,
         onboardingCompleted: true,
-        onboardingStep: 999,
       },
     });
   }
