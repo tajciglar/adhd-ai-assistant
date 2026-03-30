@@ -21,9 +21,11 @@ const QUESTION_MAP = buildQuestionMap();
 interface FunnelSummary {
   quizStarted: number;
   quizCompleted: number;
+  optinCompleted: number;
   checkoutStarted: number;
   purchaseCompleted: number;
   quizCompletionRate: number;
+  optinRate: number;
   checkoutRate: number;
   purchaseRate: number;
   overallConversion: number;
@@ -203,9 +205,10 @@ export default function QuizAnalyticsDashboard() {
 
         {/* Funnel Summary Cards */}
         {summary ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <MetricCard label="Quiz Started" value={summary.quizStarted} color="text-harbor-primary" />
             <MetricCard label="Quiz Completed" value={summary.quizCompleted} rate={summary.quizCompletionRate} color="text-harbor-accent" />
+            <MetricCard label="Email Submitted" value={summary.optinCompleted} rate={summary.optinRate} color="text-blue-500" />
             <MetricCard label="Checkout Started" value={summary.checkoutStarted} rate={summary.checkoutRate} color="text-amber-600" />
             <MetricCard label="Purchased" value={summary.purchaseCompleted} rate={summary.purchaseRate} color="text-green-600" />
           </div>
