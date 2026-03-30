@@ -98,6 +98,7 @@ export async function getQuizAnalytics(days: number = 7): Promise<FunnelAnalytic
 
   const quizStarted = eventSessions.get("step_viewed")?.size ?? 0;
   const quizCompleted = eventSessions.get("quiz_completed")?.size ?? 0;
+  const optinCompleted = eventSessions.get("optin_completed")?.size ?? 0;
   const checkoutStarted = eventSessions.get("checkout_started")?.size ?? 0;
   const purchaseCompleted = eventSessions.get("purchase_completed")?.size ?? 0;
 
@@ -106,10 +107,12 @@ export async function getQuizAnalytics(days: number = 7): Promise<FunnelAnalytic
   const funnelSummary = {
     quizStarted,
     quizCompleted,
+    optinCompleted,
     checkoutStarted,
     purchaseCompleted,
     quizCompletionRate: pct(quizCompleted, quizStarted),
-    checkoutRate: pct(checkoutStarted, quizCompleted),
+    optinRate: pct(optinCompleted, quizCompleted),
+    checkoutRate: pct(checkoutStarted, optinCompleted),
     purchaseRate: pct(purchaseCompleted, checkoutStarted),
     overallConversion: pct(purchaseCompleted, quizStarted),
   };
@@ -134,7 +137,7 @@ export async function getQuizAnalytics(days: number = 7): Promise<FunnelAnalytic
     sb
       .from("funnel_events")
       .select("event_type, session_id, created_at")
-      .in("event_type", ["step_viewed", "quiz_completed"])
+      .in("event_type", ["step_viewed", "quiz_completed", "optin_completed"])
       .gte("created_at", sinceStr),
     sb
       .from("quiz_submissions")
@@ -142,11 +145,11 @@ export async function getQuizAnalytics(days: number = 7): Promise<FunnelAnalytic
       .gte("created_at", sinceStr),
   ]);
 
-  const dailyMap = new Map<string, { started: Set<string>; completed: Set<string>; emailSubmitted: number; purchased: number }>();
+  const dailyMap = new Map<string, { started: Set<string>; completed: Set<string>; emailSubmitted: Set<string>; purchased: number }>();
 
   const ensureDay = (date: string) => {
     if (!dailyMap.has(date)) {
-      dailyMap.set(date, { started: new Set(), completed: new Set(), emailSubmitted: 0, purchased: 0 });
+      dailyMap.set(date, { started: new Set(), completed: new Set(), emailSubmitted: new Set(), purchased: 0 });
     }
     return dailyMap.get(date)!;
   };
@@ -156,12 +159,12 @@ export async function getQuizAnalytics(days: number = 7): Promise<FunnelAnalytic
     const day = ensureDay(date);
     if (row.event_type === "step_viewed") day.started.add(row.session_id);
     if (row.event_type === "quiz_completed") day.completed.add(row.session_id);
+    if (row.event_type === "optin_completed") day.emailSubmitted.add(row.session_id);
   }
 
   for (const row of submissionsData ?? []) {
     const date = (row.created_at as string).slice(0, 10);
     const day = ensureDay(date);
-    day.emailSubmitted += 1;
     if (row.paid) day.purchased += 1;
   }
 
@@ -171,7 +174,7 @@ export async function getQuizAnalytics(days: number = 7): Promise<FunnelAnalytic
       date,
       started: sets.started.size,
       completed: sets.completed.size,
-      emailSubmitted: sets.emailSubmitted,
+      emailSubmitted: sets.emailSubmitted.size,
       purchased: sets.purchased,
     }));
 
