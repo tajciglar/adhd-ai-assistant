@@ -23,6 +23,7 @@ export interface FunnelAnalytics {
     date: string;
     started: number;
     completed: number;
+    emailSubmitted: number;
     purchased: number;
   }>;
   archetypeDistribution: Array<{ archetypeId: string; count: number }>;
@@ -128,31 +129,50 @@ export async function getQuizAnalytics(days: number = 7): Promise<FunnelAnalytic
     created_at: r.created_at as string,
   }));
 
-  // 4. Daily trend
-  const { data: trendData } = await sb
-    .from("funnel_events")
-    .select("event_type, session_id, created_at")
-    .gte("created_at", sinceStr);
+  // 4. Daily trend — started/completed from funnel_events, email submitted/purchased from quiz_submissions
+  const [{ data: trendData }, { data: submissionsData }] = await Promise.all([
+    sb
+      .from("funnel_events")
+      .select("event_type, session_id, created_at")
+      .in("event_type", ["step_viewed", "quiz_completed"])
+      .gte("created_at", sinceStr),
+    sb
+      .from("quiz_submissions")
+      .select("paid, created_at")
+      .gte("created_at", sinceStr),
+  ]);
 
-  const dailyMap = new Map<string, { started: Set<string>; completed: Set<string>; purchased: Set<string> }>();
+  const dailyMap = new Map<string, { started: Set<string>; completed: Set<string>; emailSubmitted: number; purchased: number }>();
+
+  const ensureDay = (date: string) => {
+    if (!dailyMap.has(date)) {
+      dailyMap.set(date, { started: new Set(), completed: new Set(), emailSubmitted: 0, purchased: 0 });
+    }
+    return dailyMap.get(date)!;
+  };
+
   for (const row of trendData ?? []) {
     const date = (row.created_at as string).slice(0, 10);
-    if (!dailyMap.has(date)) {
-      dailyMap.set(date, { started: new Set(), completed: new Set(), purchased: new Set() });
-    }
-    const day = dailyMap.get(date)!;
+    const day = ensureDay(date);
     if (row.event_type === "step_viewed") day.started.add(row.session_id);
     if (row.event_type === "quiz_completed") day.completed.add(row.session_id);
-    if (row.event_type === "purchase_completed") day.purchased.add(row.session_id);
+  }
+
+  for (const row of submissionsData ?? []) {
+    const date = (row.created_at as string).slice(0, 10);
+    const day = ensureDay(date);
+    day.emailSubmitted += 1;
+    if (row.paid) day.purchased += 1;
   }
 
   const dailyTrend = [...dailyMap.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => b.localeCompare(a)) // newest first
     .map(([date, sets]) => ({
       date,
       started: sets.started.size,
       completed: sets.completed.size,
-      purchased: sets.purchased.size,
+      emailSubmitted: sets.emailSubmitted,
+      purchased: sets.purchased,
     }));
 
   // 5. Archetype distribution
