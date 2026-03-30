@@ -119,6 +119,7 @@ export default function AdminPage() {
 
   const [activeSection, setActiveSection] = useState<AdminSection>("overview");
   const [showEditor, setShowEditor] = useState(false);
+  const [newEntryCategory, setNewEntryCategory] = useState("");
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showSmartImport, setShowSmartImport] = useState(false);
@@ -139,8 +140,9 @@ export default function AdminPage() {
     [],
   );
 
-  const handleAddEntry = useCallback(() => {
+  const handleAddEntry = useCallback((category = "") => {
     setActiveEntry(null);
+    setNewEntryCategory(category);
     setShowEditor(true);
   }, [setActiveEntry]);
 
@@ -286,6 +288,7 @@ export default function AdminPage() {
             onSmartImport={() => setShowSmartImport(true)}
             onTestQuery={() => setShowTestQuery(true)}
             onRefresh={refetch}
+            onAddEntry={handleAddEntry}
           />
         ) : activeSection === "resources" ? (
           <ResourceList
@@ -322,6 +325,7 @@ export default function AdminPage() {
           entry={activeEntry}
           categories={categories}
           saving={saving}
+          defaultCategory={newEntryCategory}
           onSave={handleSave}
           onCancel={() => setShowEditor(false)}
           onClassify={classifyEntry}

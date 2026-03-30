@@ -5,6 +5,7 @@ interface EntryEditorProps {
   entry: KnowledgeEntry | null; // null = create new
   categories: string[];
   saving: boolean;
+  defaultCategory?: string;
   onSave: (data: { category: string; title: string; content: string }) => void;
   onCancel: () => void;
   onClassify?: (
@@ -17,33 +18,26 @@ export default function EntryEditor({
   entry,
   categories,
   saving,
+  defaultCategory = "",
   onSave,
   onCancel,
   onClassify,
 }: EntryEditorProps) {
-  const [category, setCategory] = useState(entry?.category ?? "");
+  const [category, setCategory] = useState(entry?.category ?? defaultCategory);
   const [title, setTitle] = useState(entry?.title ?? "");
   const [content, setContent] = useState(entry?.content ?? "");
   const [classifying, setClassifying] = useState(false);
-  const [classifyHint, setClassifyHint] = useState("");
 
-  const isValid = category.trim() && title.trim() && content.trim();
+  const isValid = title.trim() && content.trim();
   const canClassify = title.trim().length > 0 && content.trim().length > 0;
 
+  // Auto-classify when both title and content are filled and no category yet
   const handleClassify = useCallback(async () => {
     if (!onClassify || !canClassify) return;
     setClassifying(true);
-    setClassifyHint("");
     try {
       const result = await onClassify(title.trim(), content.trim());
-      if (result) {
-        setCategory(result.category);
-        setClassifyHint(
-          result.isNew ? "New category suggested" : "Matched existing category",
-        );
-      } else {
-        setClassifyHint("Could not classify — please enter manually");
-      }
+      if (result) setCategory(result.category);
     } finally {
       setClassifying(false);
     }
@@ -59,42 +53,25 @@ export default function EntryEditor({
         </div>
 
         <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">
-              Category
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                  setClassifyHint("");
-                }}
-                list="category-suggestions"
-                placeholder="e.g. Executive Function Skills"
-                className="flex-1 px-4 py-2.5 rounded-xl border border-harbor-text/15 text-harbor-text placeholder:text-harbor-text/30 focus:outline-none focus:border-harbor-accent transition-colors"
-              />
-              {onClassify && (
+          {/* Category shown as read-only chip if set; hidden when editing existing entry */}
+          {category && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-harbor-text/50">Category:</span>
+              <span className="text-xs font-medium bg-harbor-accent/10 text-harbor-accent px-2.5 py-1 rounded-full">
+                {category}
+              </span>
+              {onClassify && !entry && (
                 <button
                   onClick={handleClassify}
                   disabled={!canClassify || classifying}
-                  title="Auto-classify using AI"
-                  className="px-3 py-2.5 rounded-xl border border-harbor-accent/30 text-harbor-accent text-sm font-medium hover:bg-harbor-accent/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+                  className="text-xs text-harbor-text/40 hover:text-harbor-accent transition-colors disabled:opacity-30 cursor-pointer"
+                  title="Re-classify with AI"
                 >
-                  {classifying ? "..." : "AI Suggest"}
+                  {classifying ? "classifying…" : "re-classify"}
                 </button>
               )}
             </div>
-            {classifyHint && (
-              <p className="text-xs text-harbor-accent mt-1">{classifyHint}</p>
-            )}
-            <datalist id="category-suggestions">
-              {categories.map((cat) => (
-                <option key={cat} value={cat} />
-              ))}
-            </datalist>
-          </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">

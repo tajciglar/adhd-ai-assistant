@@ -15,6 +15,7 @@ interface EntryListProps {
   onSmartImport: () => void;
   onTestQuery: () => void;
   onRefresh: () => void;
+  onAddEntry: (category: string) => void;
 }
 
 export default function EntryList({
@@ -25,6 +26,7 @@ export default function EntryList({
   onSmartImport,
   onTestQuery,
   onRefresh,
+  onAddEntry,
 }: EntryListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES);
@@ -293,6 +295,16 @@ export default function EntryList({
               : `${selectedCategory} (${filteredEntries.length})`}
           </h3>
           <div className="flex gap-1.5 flex-wrap justify-end">
+            <button
+              onClick={() => onAddEntry(selectedCategory === ALL_CATEGORIES ? "" : selectedCategory)}
+              className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium bg-harbor-primary text-white hover:bg-harbor-primary/90 transition-colors cursor-pointer"
+              title="Add AI Answer"
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base">add</span>
+                <span className="hidden lg:inline">Add AI Answer</span>
+              </span>
+            </button>
             <button
               onClick={onTestQuery}
               className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
