@@ -48,6 +48,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 const dryRun = process.argv.includes("--dry-run");
+const emailFilter = process.argv.find((a) => a.startsWith("--email="))?.split("=")[1];
 
 // ── ActiveCampaign helpers ────────────────────────────────────────────────────
 
@@ -105,11 +106,14 @@ async function main() {
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log(`  Mode    : ${dryRun ? "DRY RUN" : "LIVE"}`);
   console.log(`  Redirect: ${redirectTo}`);
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-  // Get all non-admin users from DB
+  // Get users from DB (optionally filtered by email)
+  // When targeting a specific email, include admins too (useful for manual resets)
   const users = await prisma.user.findMany({
-    where: { role: { not: "admin" } },
+    where: emailFilter
+      ? { email: emailFilter }
+      : { role: { not: "admin" } },
     select: { id: true, email: true, hasChatAccess: true },
   });
 
@@ -138,8 +142,15 @@ async function main() {
 
     try {
       // 1. Confirm email in Supabase Auth
+      // Look up the real auth UID by email (DB id may differ from auth UID)
+      const { data: { users: authUsers }, error: listErr } =
+        await supabase.auth.admin.listUsers();
+      if (listErr) throw new Error(`list users: ${listErr.message}`);
+      const authUser = authUsers.find((u) => u.email === user.email);
+      if (!authUser) throw new Error(`no auth account found for ${user.email}`);
+
       const { error: confirmErr } = await supabase.auth.admin.updateUserById(
-        user.id,
+        authUser.id,
         { email_confirm: true },
       );
       if (confirmErr) throw new Error(`confirm email: ${confirmErr.message}`);

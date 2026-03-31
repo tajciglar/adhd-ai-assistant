@@ -202,17 +202,10 @@ export default function AdminPage() {
       <AdminSidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
-        categories={categories}
-        entriesByCategory={stats?.entriesByCategory ?? {}}
-        activeFilter={filter}
-        totalEntries={stats?.totalEntries ?? 0}
         totalResources={resources.length}
         totalTemplates={templates.length}
-        onFilterChange={setFilter}
-        onAddEntry={handleAddEntry}
         onAddTemplate={handleAddTemplate}
         onBackToChat={() => navigate("/chat")}
-        onCategoryRenamed={() => refetch()}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { api } from "../../lib/api";
 
 export type AdminSection =
   | "overview"
@@ -15,105 +14,10 @@ export type AdminSection =
 interface AdminSidebarProps {
   activeSection: AdminSection;
   onSectionChange: (section: AdminSection) => void;
-  categories: string[];
-  entriesByCategory: Record<string, number>;
-  activeFilter: string | null;
-  totalEntries: number;
   totalResources: number;
   totalTemplates: number;
-  onFilterChange: (filter: string | null) => void;
-  onAddEntry: () => void;
   onAddTemplate: () => void;
   onBackToChat: () => void;
-  onCategoryRenamed?: (oldName: string, newName: string) => void;
-}
-
-function EditableCategory({
-  name,
-  count,
-  isActive,
-  onClick,
-  onRename,
-}: {
-  name: string;
-  count: number;
-  isActive: boolean;
-  onClick: () => void;
-  onRename: (oldName: string, newName: string) => Promise<void>;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(name);
-  const [saving, setSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleSave = async () => {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed === name) {
-      setValue(name);
-      setEditing(false);
-      return;
-    }
-    setSaving(true);
-    try {
-      await onRename(name, trimmed);
-      setEditing(false);
-    } catch {
-      setValue(name);
-      setEditing(false);
-    }
-    setSaving(false);
-  };
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-1 px-4 py-1.5">
-        <input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSave();
-            if (e.key === "Escape") {
-              setValue(name);
-              setEditing(false);
-            }
-          }}
-          onBlur={handleSave}
-          disabled={saving}
-          className="flex-1 text-sm px-2 py-1 rounded-lg border border-harbor-orange/30 focus:ring-2 focus:ring-harbor-orange/20 outline-none bg-white min-w-0"
-          autoFocus
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="group flex items-center">
-      <button
-        onClick={onClick}
-        className={`flex-1 text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-          isActive
-            ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-            : "text-harbor-text/70 hover:bg-harbor-bg"
-        }`}
-      >
-        <span className="truncate block pr-8">{name}</span>
-        <span className="float-right text-xs text-harbor-text/30 -mt-5">
-          {count}
-        </span>
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setEditing(true);
-        }}
-        className="opacity-0 group-hover:opacity-100 p-1 mr-2 text-harbor-text/30 hover:text-harbor-orange transition-all cursor-pointer rounded"
-        title="Rename category"
-      >
-        <span className="material-symbols-outlined text-[14px]">edit</span>
-      </button>
-    </div>
-  );
 }
 
 const sectionLabels: Record<AdminSection, string> = {
@@ -143,24 +47,12 @@ const sectionIcons: Record<AdminSection, string> = {
 function SidebarContent({
   activeSection,
   onSectionChange,
-  categories,
-  entriesByCategory,
-  activeFilter,
-  totalEntries,
   totalResources,
   totalTemplates,
-  onFilterChange,
-  onAddEntry,
   onAddTemplate,
   onBackToChat,
-  onCategoryRenamed,
   onCloseMobile,
 }: AdminSidebarProps & { onCloseMobile?: () => void }) {
-  const handleRenameCategory = async (oldName: string, newName: string) => {
-    await api.patch("/api/admin/entries/rename-category", { oldName, newName });
-    onCategoryRenamed?.(oldName, newName);
-  };
-
   const handleSectionClick = (section: AdminSection) => {
     onSectionChange(section);
     onCloseMobile?.();
@@ -219,23 +111,14 @@ function SidebarContent({
         ))}
       </div>
 
-      {(activeSection === "knowledge" || activeSection === "templates") && (
+      {activeSection === "templates" && (
         <div className="p-3">
-          {activeSection === "knowledge" ? (
-            <button
-              onClick={onAddEntry}
-              className="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-sm font-medium hover:opacity-90 transition-colors cursor-pointer"
-            >
-              + Add AI Answer
-            </button>
-          ) : (
-            <button
-              onClick={onAddTemplate}
-              className="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-sm font-medium hover:opacity-90 transition-colors cursor-pointer"
-            >
-              + Add Report Template
-            </button>
-          )}
+          <button
+            onClick={onAddTemplate}
+            className="w-full py-2.5 rounded-xl bg-harbor-primary text-white text-sm font-medium hover:opacity-90 transition-colors cursor-pointer"
+          >
+            + Add Report Template
+          </button>
         </div>
       )}
 
@@ -248,32 +131,11 @@ function SidebarContent({
             </p>
           </div>
         ) : activeSection === "knowledge" ? (
-          <>
-            <button
-              onClick={() => onFilterChange(null)}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                activeFilter === null
-                  ? "bg-harbor-accent/10 text-harbor-accent font-medium"
-                  : "text-harbor-text/70 hover:bg-harbor-bg"
-              }`}
-            >
-              All Categories
-              <span className="float-right text-xs text-harbor-text/30">
-                {totalEntries}
-              </span>
-            </button>
-
-            {categories.map((cat) => (
-              <EditableCategory
-                key={cat}
-                name={cat}
-                count={entriesByCategory[cat] || 0}
-                isActive={activeFilter === cat}
-                onClick={() => onFilterChange(cat)}
-                onRename={handleRenameCategory}
-              />
-            ))}
-          </>
+          <div className="px-4 py-2">
+            <p className="text-xs text-harbor-text/50 leading-relaxed">
+              Write titles the way a parent would ask the question. Harbor uses these answers during chat.
+            </p>
+          </div>
         ) : activeSection === "resources" ? (
           <div className="px-4 py-2">
             <p className="text-xs text-harbor-text/50 leading-relaxed">
