@@ -3,7 +3,7 @@ import type { KnowledgeEntry } from "../../types/admin";
 
 interface EntryEditorProps {
   entry: KnowledgeEntry | null; // null = create new
-  categories: string[];
+  categories?: string[];
   saving: boolean;
   defaultCategory?: string;
   onSave: (data: { category: string; title: string; content: string }) => void;
@@ -16,7 +16,6 @@ interface EntryEditorProps {
 
 export default function EntryEditor({
   entry,
-  categories,
   saving,
   defaultCategory = "",
   onSave,
