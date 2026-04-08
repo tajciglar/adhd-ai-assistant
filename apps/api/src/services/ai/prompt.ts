@@ -452,27 +452,18 @@ NOTE: "download card only if a real marker exists" means: scan the Knowledge Bas
     content: m.content.slice(0, 1200),
   }));
 
-  // ── Few-shot example ─────────────────────────────────────────────────
-  const exampleExchange: Array<{
-    role: "user" | "assistant";
-    content: string;
-  }> = [
-    {
-      role: "user",
-      content:
-        "My son won't do his homework without a huge fight every night. I'm exhausted.",
-    },
-    {
-      role: "assistant",
-      content: `Homework fights are usually an attention-switch problem, not a willpower problem — ${childNameOrFallback}'s brain genuinely resists shifting into low-interest tasks.
+  // ── Few-shot example (embedded in system prompt, not as conversation turns) ──
+  const fewShotExample = `
+EXAMPLE (for tone and format reference only — this is NOT real conversation history):
+Parent: "My son won't do his homework without a huge fight every night. I'm exhausted."
+Harbor: "Homework fights are usually an attention-switch problem, not a willpower problem — ${childNameOrFallback}'s brain genuinely resists shifting into low-interest tasks.
 
 💡 **The 3-minute rule**: say "just do the first problem with me" and sit beside them for 3 minutes. Once they start, they usually keep going. If not, 3 minutes was still a win.
 
 Also works well: a quick body reset before sitting down — 5 jumping jacks or a short walk resets the nervous system and makes starting way easier.
 
-Want me to help build a simple after-school routine around this?`,
-    },
-  ];
+Want me to help build a simple after-school routine around this?"
+END EXAMPLE`;
 
   // ── Assemble messages ────────────────────────────────────────────────
   const messages: Array<{
@@ -499,8 +490,8 @@ Want me to help build a simple after-school routine around this?`,
     content: `Knowledge Base Sources:\n${sourceContext}`,
   });
 
-  // Few-shot example
-  messages.push(...exampleExchange);
+  // Few-shot example (as system message, not conversation turns)
+  messages.push({ role: "system", content: fewShotExample });
 
   // Conversation history
   messages.push(...historyContext);
