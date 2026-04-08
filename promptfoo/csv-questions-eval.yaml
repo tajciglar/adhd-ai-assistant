@@ -1,0 +1,1204 @@
+# Auto-generated from CSV — do not edit by hand
+# Regenerate: node promptfoo/generate-tests.mjs
+# Run eval:   npx promptfoo eval --config promptfoo/csv-questions-eval.yaml
+
+description: Harbor CSV questions eval (53 tested questions)
+
+providers:
+  - file://gemini-provider.mjs
+
+prompts:
+  - file://prompts/harbor-messages.yaml
+
+# Use gpt-4o for grading llm-rubric assertions (more accurate than gpt-4o-mini; Gemini grader has a bug in promptfoo v0.121.3)
+defaultTest:
+  options:
+    provider: openai:gpt-4o
+  assert:
+    # ── Safety rails (must never leak) ───────────────────────────────────────
+    - type: not-contains
+      value: "Koala"
+    - type: not-contains
+      value: "Hummingbird"
+    - type: not-contains
+      value: "Meerkat"
+    - type: not-contains
+      value: "Stallion"
+    - type: not-contains
+      value: "Hedgehog"
+    - type: not-contains
+      value: "Red Panda"
+    - type: not-contains
+      value: "Penguin"
+    - type: not-contains
+      value: "Octopus"
+    - type: not-contains
+      value: "Swan"
+    - type: not-contains
+      value: "Bunny"
+    - type: not-contains
+      value: "Engine Speed"
+    - type: not-contains
+      value: "Time Horizon"
+    - type: not-contains
+      value: "Social Radar"
+    - type: not-contains
+      value: "Emotional Thermostat"
+    - type: not-contains
+      value: "Sensory Filter"
+    - type: not-contains
+      value: "[Source"
+    - type: not-contains
+      value: "according to our resources"
+    # ── Quality rails (new rules) ─────────────────────────────────────────────
+    - type: not-icontains
+      value: "that sounds exhausting"
+    - type: not-icontains
+      value: "it's so hard when"
+    - type: not-icontains
+      value: "so many parents"
+    - type: not-icontains
+      value: "i hear you"
+    - type: not-icontains
+      value: "you're not alone"
+
+tests:
+  - description: "Task Initiation & Follow-Through: Homework takes hours in our house."
+    vars:
+      message: "Homework takes hours in our house."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: didn't name the technique + matching homework to daily energy is not very realistic for real life, this needs more pract. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Starting homework feels impossible."
+    vars:
+      message: "Starting homework feels impossible."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good because it gave a specific situation and a named technique: permission to do nothing. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child suddenly needs water, snacks, the bathroom — anythi..."
+    vars:
+      message: "My child suddenly needs water, snacks, the bathroom — anything except homework."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: too much focus on preparing beforehand - the issue here is that they’re already asking for food or water, so it should a. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I feel like I'm doing the homework for them."
+    vars:
+      message: "I feel like I'm doing the homework for them."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: some sentences feel redundant, but overall it’s alright. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: How do I get my child to start homework without a fight?"
+    vars:
+      message: "How do I get my child to start homework without a fight?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good overall, it gives 4 clear techniques, but it feels a bit long and could be more concise. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: How do I teach my child to start homework independently?"
+    vars:
+      message: "How do I teach my child to start homework independently?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good explanation and 4 clear techniques. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child melts down before homework even begins."
+    vars:
+      message: "My child melts down before homework even begins."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the first sentence is very redundant and a bit irritating, but the rest is fine and the strategies are clear. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child rushes through homework and makes careless mistakes..."
+    vars:
+      message: "My child rushes through homework and makes careless mistakes."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the problem is that it asks about why the child rushes, but both options can sound too similar in practice - a better qu. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Homework turns into a power struggle every day — what do I d..."
+    vars:
+      message: "Homework turns into a power struggle every day — what do I do?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the first two sentences feel redundant, so it would be better to get to the technique sooner. otherwise, it’s okay. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child lies about finishing homework."
+    vars:
+      message: "My child lies about finishing homework."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: it’s fine since it gives 4 techniques, but it feels a bit too mild and permissive, and not fully in line with Markov’s a. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child just sits there and doesn't start."
+    vars:
+      message: "My child just sits there and doesn't start."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good overall - maybe just a little repetitive with “small steps . Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I have to sit next to my child the whole time."
+    vars:
+      message: "I have to sit next to my child the whole time."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: If I walk away, nothing happens."
+    vars:
+      message: "If I walk away, nothing happens."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: bot’s suggested technique, permission to do nothing, may not be the best fit here. Body doubling would work better. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child says \"I don't know how\" to everything."
+    vars:
+      message: "My child says \"I don't know how\" to everything."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: steps 2 and 4 feel repetitive since both focus on breaking the task down. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Small assignments feel huge to my child."
+    vars:
+      message: "Small assignments feel huge to my child."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: feels a bit repetitive, it would be better to focus on one technique (visual chunking), not 4. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child waits until the last minute every time."
+    vars:
+      message: "My child waits until the last minute every time."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: ask an unnecessary question and basically repeats the problem instead of answering. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Is this laziness or ADHD?"
+    vars:
+      message: "Is this laziness or ADHD?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: repetitive, and the technique does not really fit ( small steps  again), this needs firmer reassurance/explanation. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child is smart but doesn't produce."
+    vars:
+      message: "My child is smart but doesn't produce."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good techniques, but the intro is far too long and not very useful. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: It takes 20 minutes just to get started."
+    vars:
+      message: "It takes 20 minutes just to get started."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the tiny first step is getting repetitive and a bit annoying. it would be better to give two techniques in more detail i. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Everything takes forever with my child."
+    vars:
+      message: "Everything takes forever with my child."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good overall, but the intro feels redundant. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child avoids even easy work."
+    vars:
+      message: "My child avoids even easy work."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the idea is okay, but it’s missing the how. it should give a more concrete example of how to turn it into a game. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child says they'll do it but never starts."
+    vars:
+      message: "My child says they'll do it but never starts."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: How do I help my child plan schoolwork?"
+    vars:
+      message: "How do I help my child plan schoolwork?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: too generic - needs a more specific planning method or example. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child forgets instructions right after I say them."
+    vars:
+      message: "My child forgets instructions right after I say them."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child starts tasks but never finishes them."
+    vars:
+      message: "My child starts tasks but never finishes them."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: alright overall, but the intro is too long, and again it brings in the tiny first step idea. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child only works under pressure — is this normal with ADH..."
+    vars:
+      message: "My child only works under pressure — is this normal with ADHD?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: reassurance is 2 paragraphs long. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: How do I teach my child to break big tasks into smaller step..."
+    vars:
+      message: "How do I teach my child to break big tasks into smaller steps?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good techniques, but the intro is too long again. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: How does body doubling help my ADHD child?"
+    vars:
+      message: "How does body doubling help my ADHD child?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: since they asked how it helps, the definition at the start is unnecessary. the third paragraph explains it best, so the . Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: How do I build independence so my child doesn't rely on me f..."
+    vars:
+      message: "How do I build independence so my child doesn't rely on me for every task?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the intro could be cut, and it would be better if it added backup options for when the child still does not know what to. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child freezes when it's time to work."
+    vars:
+      message: "My child freezes when it's time to work."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: confusing and not very useful follow-up because “freezes” already describes the behavior, and the answer is weak since i. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Is my child being difficult on purpose?"
+    vars:
+      message: "Is my child being difficult on purpose?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child gets distracted every 30 seconds."
+    vars:
+      message: "My child gets distracted every 30 seconds."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good, but the intro is partly unnecessary, the outro can be cut. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I don't know how to help without taking over."
+    vars:
+      message: "I don't know how to help without taking over."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good, but it’s too generic - it needs more examples of guiding questions. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child says \"it's too hard\" but I know they can do it."
+    vars:
+      message: "My child says \"it's too hard\" but I know they can do it."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: intro is too long, and the last step does not feel very realistic (praising them just for writing their name). Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: It takes 2 hours to do 20 minutes of homework."
+    vars:
+      message: "It takes 2 hours to do 20 minutes of homework."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good, but the intro is too long/verbose, and the steps could be more concise and less fluffy. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Homework turns into tears every night."
+    vars:
+      message: "Homework turns into tears every night."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the intro is too long, too emotional, and over-explains before getting to the point. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child cries before even opening the workbook."
+    vars:
+      message: "My child cries before even opening the workbook."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the follow-up question is not helpful because the problem is already clear; the next answer is okay, but it needs more s. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I dread homework time."
+    vars:
+      message: "I dread homework time."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: besides the intro being too emotional, the technique does not really match the parent’s concern. the parent is talking a. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: How do I stop homework from ruining our relationship?"
+    vars:
+      message: "How do I stop homework from ruining our relationship?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: okay, but the intro and outro are redundant. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I am so tired of fighting over homework every single day."
+    vars:
+      message: "I am so tired of fighting over homework every single day."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: besides the intro being too emotional, the technique does not really match the parent’s concern. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I'm losing my patience over homework battles."
+    vars:
+      message: "I'm losing my patience over homework battles."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: besides the intro being too emotional, the technique does not really match the parent’s concern. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I feel like I have to babysit homework every day."
+    vars:
+      message: "I feel like I have to babysit homework every day."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Homework feels like torture to my child."
+    vars:
+      message: "Homework feels like torture to my child."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: this feels like a deeper issue, so just suggesting energy matching is too simplistic and not very realistic. it needs a . Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child shuts down before even trying."
+    vars:
+      message: "My child shuts down before even trying."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the intro is too fluffy, the technique is too narrow for a bigger problem, and the follow-up question is unnecessary. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: My child refuses to even take the book out."
+    vars:
+      message: "My child refuses to even take the book out."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I feel like I'm failing because homework is always chaos."
+    vars:
+      message: "I feel like I'm failing because homework is always chaos."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: the intro is too emotional, and the answer is too generic and reassuring without offering any help. Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: I end up yelling because nothing else works."
+    vars:
+      message: "I end up yelling because nothing else works."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: he intro is too emotional, and the technique feels dismissive of the parent’s actual state. if the parent is already at . Make sure the new response avoids that issue.
+
+  - description: "Task Initiation & Follow-Through: Will my child ever learn to work independently?"
+    vars:
+      message: "Will my child ever learn to work independently?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: good. Make sure the new response avoids that issue.
+
+  - description: "Screen Time & Tech: Should I ban screens completely?"
+    vars:
+      message: "Should I ban screens completely?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: Zelo precise vprašanje - ne rabi uvoda. + Najprej je dal Cel healthy screen time habits ebook not. + ne ujema se PDF s t. Make sure the new response avoids that issue.
+
+  - description: "Lying / Blaming / Avoiding Responsibility: My child refuses to admit mistakes."
+    vars:
+      message: "My child refuses to admit mistakes."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: OK. Make sure the new response avoids that issue.
+
+  - description: "School Motivation & Learning Support: How do I motivate my ADHD child to care about school?"
+    vars:
+      message: "How do I motivate my ADHD child to care about school?"
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The first sentence must be an ADHD brain mechanism or a direct action — NOT a warmup.
+          FAIL if the first sentence:
+          - Describes the child's behavior without naming the ADHD brain mechanism
+          - Opens with "It can be [adjective] when..."
+          - Uses "is common with ADHD" as a standalone opener
+          - Says "[child] struggles with X" without explaining WHY (the brain/dopamine reason)
+          PASS if the first sentence names the ADHD brain process (even using "struggles" is fine
+          if it includes a brain/dopamine explanation) OR opens with a direct technique.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: Motivation Gamification PDF???. Make sure the new response avoids that issue.
+
+  - description: "Mornings (Daily Routines): My ADHD child refuses to get dressed for school."
+    vars:
+      message: "My ADHD child refuses to get dressed for school."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+
+  - description: "Bedtime Battles (Daily Routines): My child refuses to go to bed."
+    vars:
+      message: "My child refuses to go to bed."
+    assert:
+      - type: javascript
+        value: "output.split(/\\s+/).filter(Boolean).length <= 250"
+        threshold: 1
+      - type: llm-rubric
+        value: >
+          The response may either ask a clarifying question OR give advice — both are acceptable.
+          If it asks a clarifying question: it should be focused, 1-3 sentences, and ideally offer
+          2-3 options (e.g. "does he X, Y, or Z?"). It must NOT open with a warmup like
+          "That sounds exhausting" or "It can be hard when".
+          If it gives advice: the first sentence must be an ADHD brain mechanism or a direct action,
+          not a warmup or a description of the child's struggle.
+          If the question is asking HOW something works or WHAT something is (knowledge/conceptual),
+          a clear explanation without techniques is acceptable — no technique count required.
+          Otherwise the response should give 2-3 techniques with concrete examples of what to say.
+          The response feels warm and conversational, not like a textbook.
+          Previous review flagged: You mind find our resource - which one - we dont have one :). Make sure the new response avoids that issue.

@@ -4,10 +4,11 @@
 description: Harbor main prompt eval
 
 providers:
-  - id: google:gemini-2.5-flash
+  - id: openai:gemini-2.5-flash
     config:
-      generationConfig:
-        temperature: 0.2
+      apiBaseUrl: https://generativelanguage.googleapis.com/v1beta/openai
+      apiKeyEnvar: GOOGLE_API_KEY
+      temperature: 0.2
 
 prompts:
   - file://prompts/harbor-messages.yaml
