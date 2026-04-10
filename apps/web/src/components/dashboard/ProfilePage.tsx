@@ -7,6 +7,7 @@ import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import LoadingScreen from "../shared/LoadingScreen";
 import Mascot from "../shared/Mascot";
+import Modal from "../shared/Modal";
 
 interface ProfileData {
   id: string;
@@ -67,10 +68,7 @@ function EditProfileModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <Modal onClose={onClose} ariaLabel="Edit Profile">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[85vh] flex flex-col">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-bold text-harbor-primary font-display">Edit Profile</h2>
@@ -84,8 +82,9 @@ function EditProfileModal({
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Child Information</p>
 
           <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Child's Name</label>
+            <label htmlFor="edit-child-name" className="text-xs font-medium text-slate-600 mb-1 block">Child's Name</label>
             <input
+              id="edit-child-name"
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40"
@@ -95,8 +94,9 @@ function EditProfileModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Age</label>
+              <label htmlFor="edit-child-age" className="text-xs font-medium text-slate-600 mb-1 block">Age</label>
               <input
+                id="edit-child-age"
                 type="number"
                 min={1}
                 max={18}
@@ -107,8 +107,9 @@ function EditProfileModal({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Gender</label>
+              <label htmlFor="edit-child-gender" className="text-xs font-medium text-slate-600 mb-1 block">Gender</label>
               <select
+                id="edit-child-gender"
                 value={childGender}
                 onChange={(e) => setChildGender(e.target.value)}
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40 bg-white"
@@ -126,8 +127,9 @@ function EditProfileModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Your Gender</label>
+              <label htmlFor="edit-parent-gender" className="text-xs font-medium text-slate-600 mb-1 block">Your Gender</label>
               <select
+                id="edit-parent-gender"
                 value={parentGender}
                 onChange={(e) => setParentGender(e.target.value)}
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40 bg-white"
@@ -140,8 +142,9 @@ function EditProfileModal({
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Household</label>
+              <label htmlFor="edit-household" className="text-xs font-medium text-slate-600 mb-1 block">Household</label>
               <select
+                id="edit-household"
                 value={household}
                 onChange={(e) => setHousehold(e.target.value)}
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-harbor-orange/20 focus:border-harbor-orange/40 bg-white"
@@ -156,7 +159,7 @@ function EditProfileModal({
             </div>
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-500" role="alert">{error}</p>}
         </div>
 
         <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end">
@@ -175,7 +178,7 @@ function EditProfileModal({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -211,10 +214,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <Modal onClose={onClose} ariaLabel="Change Password">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-bold text-harbor-primary font-display">Change Password</h2>
@@ -232,8 +232,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           ) : (
             <>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">New Password</label>
+                <label htmlFor="new-password" className="text-xs font-medium text-slate-600 mb-1 block">New Password</label>
                 <input
+                  id="new-password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -242,8 +243,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Confirm Password</label>
+                <label htmlFor="confirm-password" className="text-xs font-medium text-slate-600 mb-1 block">Confirm Password</label>
                 <input
+                  id="confirm-password"
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
@@ -251,7 +253,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                   placeholder="Repeat new password"
                 />
               </div>
-              {error && <p className="text-xs text-red-500">{error}</p>}
+              {error && <p className="text-xs text-red-500" role="alert">{error}</p>}
             </>
           )}
         </div>
@@ -271,7 +273,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -282,10 +284,7 @@ function NotificationsModal({ onClose }: { onClose: () => void }) {
   const [reminders, setReminders] = useState(false);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <Modal onClose={onClose} ariaLabel="Notification Preferences">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-bold text-harbor-primary font-display">Notifications</h2>
@@ -293,6 +292,7 @@ function NotificationsModal({ onClose }: { onClose: () => void }) {
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
+        <p className="px-6 pt-4 text-xs text-slate-400">Coming soon — preferences are not saved yet.</p>
         <div className="p-6 space-y-4">
           {[
             { label: "Push Notifications", sub: "Get notified in your browser", value: push, set: setPush },
@@ -305,6 +305,9 @@ function NotificationsModal({ onClose }: { onClose: () => void }) {
                 <p className="text-xs text-slate-400">{item.sub}</p>
               </div>
               <button
+                role="switch"
+                aria-checked={item.value}
+                aria-label={item.label}
                 onClick={() => item.set(!item.value)}
                 className={`w-11 h-6 rounded-full relative transition-colors ${item.value ? "bg-harbor-primary" : "bg-slate-200"}`}
               >
@@ -319,7 +322,7 @@ function NotificationsModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

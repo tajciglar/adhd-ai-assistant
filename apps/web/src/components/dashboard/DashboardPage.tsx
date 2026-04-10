@@ -8,6 +8,7 @@ import LoadingScreen from "../shared/LoadingScreen";
 import Mascot from "../shared/Mascot";
 import ResourcePreviewModal from "../shared/ResourcePreviewModal";
 import type { Resource } from "../../types/admin";
+import { formatFileSize } from "../../lib/format";
 
 interface DashboardUserInfo {
   id: string;
@@ -17,12 +18,6 @@ interface DashboardUserInfo {
     childName: string;
     onboardingCompleted: boolean;
   };
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function getResourceStyle(resource: Resource): { icon: string; bg: string; color: string; label: string } {
@@ -121,16 +116,15 @@ export default function DashboardPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search resources, tips, or guides"
               />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center justify-center rounded-xl h-10 w-10 hover:bg-harbor-primary/10 text-harbor-primary transition-colors border border-harbor-primary/15">
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
-            </button>
             <button
               onClick={() => navigate("/profile")}
               className="flex items-center justify-center rounded-xl h-10 w-10 hover:bg-harbor-primary/10 text-harbor-primary transition-colors border border-harbor-primary/15"
+              aria-label="Settings"
             >
               <span className="material-symbols-outlined text-[22px]">settings</span>
             </button>

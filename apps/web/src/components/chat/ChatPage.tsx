@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useChat } from "../../hooks/useChat";
 import { useAuth } from "../../hooks/useAuth";
 import ChatWelcome from "./ChatWelcome";
@@ -85,14 +86,15 @@ export default function ChatPage() {
               <p className="text-center text-slate-400 text-sm py-8">No conversations yet</p>
             )}
             {conversations.map((conv: Conversation) => (
-              <div
+              <button
                 key={conv.id}
-                className={`group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors ${
+                className={`group flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-colors w-full text-left ${
                   activeConversationId === conv.id
                     ? "bg-white text-harbor-primary border border-harbor-primary/25 shadow-sm"
                     : "bg-white/50 text-harbor-text/70 border border-harbor-orange/10 hover:bg-white hover:border-harbor-primary/15"
                 }`}
                 onClick={() => selectConversation(conv.id)}
+                aria-current={activeConversationId === conv.id ? "true" : undefined}
               >
                 <span className={`material-symbols-outlined text-lg ${activeConversationId === conv.id ? "text-harbor-primary" : "text-harbor-primary/60"}`}>chat_bubble</span>
                 <div className="flex flex-col min-w-0 flex-1">
@@ -111,16 +113,26 @@ export default function ChatPage() {
                     {activeConversationId === conv.id ? "Active now" : timeAgo(conv.updatedAt)}
                   </p>
                 </div>
-                <button
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteConversation(conv.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition-all cursor-pointer"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      deleteConversation(conv.id);
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0 p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition-all cursor-pointer"
+                  aria-label={`Delete conversation: ${conv.title}`}
                 >
                   <span className="material-symbols-outlined text-sm">delete</span>
-                </button>
-              </div>
+                </span>
+              </button>
             ))}
           </div>
         </div>
@@ -151,27 +163,39 @@ export default function ChatPage() {
             <button
               onClick={newConversation}
               className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-harbor-primary/10 transition-colors"
-              title="New Chat"
+              aria-label="New Chat"
             >
-              <span className="material-symbols-outlined text-harbor-primary/70 text-[22px]">add</span>
+              <span className="material-symbols-outlined text-harbor-primary/70 text-[22px]" aria-hidden="true">add</span>
             </button>
             <button
               onClick={() => setShowMobileHistory(true)}
               className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-harbor-primary/10 transition-colors"
-              title="Chat History"
+              aria-label="Chat History"
             >
-              <span className="material-symbols-outlined text-harbor-primary/70 text-[22px]">history</span>
+              <span className="material-symbols-outlined text-harbor-primary/70 text-[22px]" aria-hidden="true">history</span>
             </button>
           </div>
         </header>
 
         {/* Mobile Conversation Drawer */}
+        <AnimatePresence>
         {showMobileHistory && (
-          <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMobileHistory(false)}>
+          <motion.div
+            className="md:hidden fixed inset-0 z-50"
+            onClick={() => setShowMobileHistory(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
             <div className="absolute inset-0 bg-black/30" />
-            <div
+            <motion.div
               className="absolute right-0 top-0 bottom-0 w-72 max-w-[85vw] bg-gradient-to-b from-harbor-bg-alt to-white shadow-xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
             >
               <div className="px-4 py-4 border-b border-harbor-orange/15 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-harbor-primary font-display">Conversations</h3>
@@ -208,9 +232,10 @@ export default function ChatPage() {
                   ))
                 )}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
+        </AnimatePresence>
 
         {/* Desktop Header */}
         <header className="hidden md:flex h-16 border-b border-harbor-orange/10 bg-gradient-to-b from-harbor-bg-alt to-white items-center justify-between px-8 shrink-0">
@@ -222,16 +247,15 @@ export default function ChatPage() {
               <input
                 className="w-full bg-slate-100 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-slate-200 outline-none"
                 placeholder="Search guides or chats"
+                aria-label="Search guides or chats"
               />
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
-              <span className="material-symbols-outlined text-xl">notifications</span>
-            </button>
             <button
               onClick={() => navigate("/profile")}
               className="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+              aria-label="Settings"
             >
               <span className="material-symbols-outlined text-xl">settings</span>
             </button>

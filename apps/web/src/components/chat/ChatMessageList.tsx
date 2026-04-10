@@ -36,7 +36,7 @@ export default function ChatMessageList({
   }, [messages.length, sending, lastContent]);
 
   return (
-    <div className="relative flex-1 overflow-y-auto px-4 py-6">
+    <div className="relative flex-1 overflow-y-auto px-4 py-6" aria-live="polite" aria-relevant="additions">
       {/* Background watermark mascot — reacts to conversation state */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
         <Mascot

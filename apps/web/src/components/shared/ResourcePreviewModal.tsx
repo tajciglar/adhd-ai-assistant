@@ -1,12 +1,8 @@
 import { useState, useCallback } from "react";
 import { api } from "../../lib/api";
+import { formatFileSize } from "../../lib/format";
 import type { Resource } from "../../types/admin";
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import Modal from "./Modal";
 
 export default function ResourcePreviewModal({
   resource,
@@ -50,14 +46,9 @@ export default function ResourcePreviewModal({
   const isPdf = !cat.includes("video") && !cat.includes("article");
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="absolute inset-0 bg-black/40" />
-
+    <Modal onClose={onClose} ariaLabel={resource.title} className="items-end md:items-center">
       {viewing && pdfUrl ? (
-        <div className="relative z-10 w-full h-full md:w-[90%] md:h-[90%] md:max-w-5xl md:rounded-2xl overflow-hidden bg-white flex flex-col">
+        <div className="w-full h-full md:w-[90vw] md:h-[90vh] md:max-w-5xl md:rounded-2xl overflow-hidden bg-white flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-gradient-to-b from-harbor-bg-alt to-white">
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold text-harbor-primary font-display truncate">{resource.title}</h3>
@@ -81,7 +72,7 @@ export default function ResourcePreviewModal({
           <iframe src={pdfUrl} className="flex-1 w-full" title={resource.title} />
         </div>
       ) : (
-        <div className="relative z-10 w-full md:w-full md:max-w-md mx-4 bg-white rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden">
+        <div className="w-full md:w-full md:max-w-md mx-4 bg-white rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-br from-harbor-primary to-harbor-primary/80 px-6 py-8 text-white text-center relative">
             <div className="absolute inset-0 opacity-10 flex items-center justify-center">
               <span className="material-symbols-outlined" style={{ fontSize: "120px", fontVariationSettings: "'FILL' 1" }}>
@@ -132,6 +123,6 @@ export default function ResourcePreviewModal({
           </div>
         </div>
       )}
-    </div>
+    </Modal>
   );
 }

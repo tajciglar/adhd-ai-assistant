@@ -6,12 +6,7 @@ import DesktopSidebar from "./DesktopSidebar";
 import LoadingScreen from "../shared/LoadingScreen";
 import ResourcePreviewModal from "../shared/ResourcePreviewModal";
 import type { Resource } from "../../types/admin";
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import { formatFileSize } from "../../lib/format";
 
 const FOLDER_COLORS = [
   { bg: "bg-harbor-primary/10", text: "text-harbor-primary", icon: "folder" },
@@ -200,12 +195,10 @@ export default function LibraryPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search all resources"
               />
             </div>
           </div>
-          <button className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-50 text-slate-500 border border-slate-100">
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
-          </button>
         </header>
 
         {/* ── Mobile Search ── */}
@@ -217,6 +210,7 @@ export default function LibraryPage() {
               placeholder="Search resources…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search resources"
             />
           </div>
         </div>

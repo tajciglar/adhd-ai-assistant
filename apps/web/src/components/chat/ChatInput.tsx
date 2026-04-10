@@ -63,6 +63,7 @@ export default function ChatInput({ onSend, disabled, childName }: ChatInputProp
           <button
             onClick={handleSend}
             disabled={disabled || !hasText}
+            aria-label="Send message"
             className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer mb-0.5 ${
               hasText && !disabled
                 ? "bg-harbor-primary text-white shadow-sm shadow-harbor-primary/25 active:scale-95"

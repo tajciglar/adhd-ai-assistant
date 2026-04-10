@@ -18,6 +18,12 @@
   /* Text */
   --color-harbor-text: #3E4C59;
 
+  /* Neutrals — use these instead of raw slate for theme-ability */
+  --color-harbor-muted: #94a3b8;
+  --color-harbor-border: #e2e8f0;
+  --color-harbor-border-soft: #f1f5f9;
+  --color-harbor-subtle: #f8fafc;
+
   /* Accent aliases — orange from logo */
   --color-harbor-accent: #F5841F;
   --color-harbor-primary-light: #F5841F;
@@ -46,6 +52,38 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Dark Mode ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-harbor-bg: #1a1625;
+    --color-harbor-bg-alt: #221d2e;
+    --color-harbor-surface: #2a2438;
+    --color-harbor-surface-soft: #332b42;
+    --color-harbor-text: #e2dce8;
+    --color-harbor-muted: #8b839a;
+    --color-harbor-border: #3d3550;
+    --color-harbor-border-soft: #2f2940;
+    --color-harbor-subtle: #241f30;
+    --color-harbor-primary: #9b6ff0;
+    --color-harbor-accent-light: #6b4d2e;
+    --color-harbor-error: #e09882;
+    --color-harbor-success: #5ee8b0;
+  }
+
+  /* Override Tailwind's slate scale for dark surfaces */
+  .bg-white { background-color: var(--color-harbor-surface); }
+  .bg-slate-50, .bg-slate-100 { background-color: var(--color-harbor-subtle); }
+  .border-slate-100, .border-slate-200 { border-color: var(--color-harbor-border); }
+  .border-slate-50 { border-color: var(--color-harbor-border-soft); }
+  .text-slate-900, .text-slate-800 { color: var(--color-harbor-text); }
+  .text-slate-700 { color: #c9c2d4; }
+  .text-slate-500, .text-slate-400 { color: var(--color-harbor-muted); }
+  .text-slate-300 { color: #5e5672; }
+  .text-white { color: #f0ecf5; }
+  .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .shadow-xl { box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+}
+
 /* ── Animations ── */
 @keyframes slide-in-left {
   from { transform: translateX(-100%); }
@@ -71,7 +109,7 @@ html, body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #f0d9b8;
+  background: var(--color-harbor-accent-light);
   border-radius: 10px;
 }
 
@@ -223,6 +261,6 @@ html, body {
 
 .chat-markdown hr {
   border: none;
-  border-top: 1px solid rgba(26, 26, 26, 0.1);
+  border-top: 1px solid var(--color-harbor-border);
   margin: 0.75rem 0;
 }
