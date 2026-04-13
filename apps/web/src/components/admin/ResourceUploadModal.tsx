@@ -169,7 +169,7 @@ export default function ResourceUploadModal({
                 <button
                   type="button"
                   onClick={() => { setIsCustom(false); setCustomCategory(""); }}
-                  className="px-3 py-2 text-xs text-harbor-text/50 hover:text-harbor-text rounded-lg hover:bg-slate-100"
+                  className="px-3 py-2 text-xs text-harbor-text/50 hover:text-harbor-text rounded-lg hover:bg-harbor-border"
                 >
                   Cancel
                 </button>

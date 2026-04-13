@@ -104,7 +104,7 @@ export default function AdminUsers() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="client@example.com"
-              className="flex-1 p-3 rounded-xl border border-slate-200 focus:border-harbor-orange/40 focus:ring-2 focus:ring-harbor-orange/20 bg-white text-harbor-text outline-none transition-all text-sm"
+              className="flex-1 p-3 rounded-xl border border-harbor-border focus:border-harbor-orange/40 focus:ring-2 focus:ring-harbor-orange/20 bg-white text-harbor-text outline-none transition-all text-sm"
             />
             <button
               type="submit"
@@ -125,7 +125,7 @@ export default function AdminUsers() {
                 <span className="material-symbols-outlined text-[16px]">check_circle</span>
                 Invite sent to {invitedEmail} — copy the link below to share manually too:
               </p>
-              <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 px-3 py-2">
+              <div className="flex items-center gap-2 bg-harbor-subtle rounded-xl border border-harbor-border px-3 py-2">
                 <span className="flex-1 text-xs text-harbor-text/60 truncate font-mono">
                   {inviteLink}
                 </span>
@@ -182,7 +182,7 @@ export default function AdminUsers() {
                     className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer disabled:opacity-50 ${
                       user.hasChatAccess
                         ? "bg-emerald-50 text-emerald-600 hover:bg-red-50 hover:text-red-500"
-                        : "bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
+                        : "bg-harbor-border text-harbor-muted hover:bg-emerald-50 hover:text-emerald-600"
                     }`}
                     title={user.hasChatAccess ? "Click to revoke access" : "Click to grant access"}
                   >

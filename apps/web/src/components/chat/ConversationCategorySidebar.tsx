@@ -46,10 +46,10 @@ export default function ConversationCategorySidebar({
         )}
         <button
           onClick={() => setExpanded((e) => !e)}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-harbor-primary/10 text-harbor-primary/50 transition-colors ml-auto"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-harbor-primary/10 text-harbor-primary/50 transition-colors ml-auto"
           aria-label={expanded ? "Collapse topics" : "Expand topics"}
         >
-          <span className="material-symbols-outlined text-[18px]">
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
             {expanded ? "chevron_right" : "chevron_left"}
           </span>
         </button>

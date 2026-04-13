@@ -1,3 +1,4 @@
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Message } from "../../types/chat";
 import ResourceDownloadCard from "./ResourceDownloadCard";
@@ -57,7 +58,7 @@ interface ChatMessageProps {
   onFeedback?: (messageId: string, rating: number) => void;
 }
 
-export default function ChatMessage({ message, streaming, onFeedback }: ChatMessageProps) {
+function ChatMessage({ message, streaming, onFeedback }: ChatMessageProps) {
   const isUser = message.role === "USER";
   const isOptimistic = message.id.startsWith("optimistic-");
   const currentRating = message.feedback?.rating ?? null;
@@ -142,3 +143,14 @@ export default function ChatMessage({ message, streaming, onFeedback }: ChatMess
     </div>
   );
 }
+
+export default memo(ChatMessage, (prev, next) => {
+  // Re-render only when the message content/feedback changes or streaming flips on the last message
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.content === next.message.content &&
+    prev.message.feedback?.rating === next.message.feedback?.rating &&
+    prev.streaming === next.streaming &&
+    prev.onFeedback === next.onFeedback
+  );
+});

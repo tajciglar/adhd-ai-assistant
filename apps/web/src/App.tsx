@@ -56,8 +56,13 @@ function AppRoutes() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [hasChatAccess, setHasChatAccess] = useState<boolean | null>(null);
 
+  // Depend on user.id, not session — Supabase rotates the session reference
+  // on every token refresh (~every hour), which would otherwise refetch
+  // /api/user/me unnecessarily.
+  const userId = session?.user?.id ?? null;
+
   useEffect(() => {
-    if (!session) return;
+    if (!userId) return;
 
     let active = true;
 
@@ -90,7 +95,7 @@ function AppRoutes() {
       active = false;
       clearTimeout(timeout);
     };
-  }, [session]);
+  }, [userId]);
 
   const shouldWaitForUserData =
     Boolean(session) && (userRole === null || hasChatAccess === null);
