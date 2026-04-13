@@ -1,11 +1,9 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type { KnowledgeEntry } from "../../types/admin";
 import { api } from "../../lib/api";
+import { useResizable } from "../../hooks/useResizable";
 
 const ALL_CATEGORIES = "__all__";
-const MIN_SIDEBAR_WIDTH = 160;
-const MAX_SIDEBAR_WIDTH = 360;
-const DEFAULT_SIDEBAR_WIDTH = 200;
 
 interface EntryListProps {
   entries: KnowledgeEntry[];
@@ -33,38 +31,11 @@ export default function EntryList({
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   // Sidebar drag-to-resize
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
-  const isDragging = useRef(false);
-  const dragStartX = useRef(0);
-  const dragStartWidth = useRef(DEFAULT_SIDEBAR_WIDTH);
-
-  const onDragStart = useCallback((e: React.MouseEvent) => {
-    isDragging.current = true;
-    dragStartX.current = e.clientX;
-    dragStartWidth.current = sidebarWidth;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  }, [sidebarWidth]);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
-      const delta = e.clientX - dragStartX.current;
-      const newWidth = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, dragStartWidth.current + delta));
-      setSidebarWidth(newWidth);
-    };
-    const onMouseUp = () => {
-      isDragging.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, []);
+  const { size: sidebarWidth, onPointerDown: onDragStart } = useResizable({
+    initial: 200,
+    min: 160,
+    max: 360,
+  });
 
   // Category editing
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
@@ -152,10 +123,10 @@ export default function EntryList({
           <p className="text-[10px] font-semibold text-harbor-text/40 uppercase tracking-wider">Categories</p>
           <button
             onClick={() => { setIsAddingCategory(true); setNewCategoryName(""); }}
-            title="Add category"
+            aria-label="Add category"
             className="w-6 h-6 flex items-center justify-center rounded hover:bg-harbor-accent/10 text-harbor-accent/60 hover:text-harbor-accent transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <span className="material-symbols-outlined text-base" aria-hidden="true">add</span>
           </button>
         </div>
 
@@ -254,10 +225,10 @@ export default function EntryList({
                   </span>
                   <button
                     onClick={(e) => { e.stopPropagation(); startEditCategory(name); }}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-harbor-accent/10 text-harbor-text/30 hover:text-harbor-accent transition-all cursor-pointer flex-shrink-0"
-                    title="Rename"
+                    className="md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 p-0.5 rounded hover:bg-harbor-accent/10 text-harbor-text/30 hover:text-harbor-accent transition-all cursor-pointer flex-shrink-0"
+                    aria-label={`Rename ${name}`}
                   >
-                    <span className="material-symbols-outlined text-sm">edit</span>
+                    <span className="material-symbols-outlined text-sm" aria-hidden="true">edit</span>
                   </button>
                 </>
               )}
@@ -267,7 +238,7 @@ export default function EntryList({
 
         {/* Drag handle */}
         <div
-          onMouseDown={onDragStart}
+          onPointerDown={onDragStart}
           className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-harbor-accent/30 transition-colors"
         />
       </div>
@@ -298,7 +269,7 @@ export default function EntryList({
             <button
               onClick={() => onAddEntry(selectedCategory === ALL_CATEGORIES ? "" : selectedCategory)}
               className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium bg-harbor-primary text-white hover:bg-harbor-primary/90 transition-colors cursor-pointer"
-              title="Add AI Answer"
+              aria-label="Add AI Answer"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">add</span>
@@ -308,7 +279,7 @@ export default function EntryList({
             <button
               onClick={onTestQuery}
               className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
-              title="Check AI Search"
+              aria-label="Check AI Search"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">quiz</span>
@@ -318,7 +289,7 @@ export default function EntryList({
             <button
               onClick={onSmartImport}
               className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium bg-harbor-primary text-white hover:bg-harbor-primary/90 transition-colors cursor-pointer"
-              title="Turn Document Into Answers"
+              aria-label="Turn Document Into Answers"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">auto_awesome</span>
@@ -328,7 +299,7 @@ export default function EntryList({
             <button
               onClick={onBulkImport}
               className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
-              title="Import Spreadsheet"
+              aria-label="Import Spreadsheet"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">upload_file</span>

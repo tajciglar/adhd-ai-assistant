@@ -104,7 +104,7 @@ export default function ChatMessage({ message, streaming, onFeedback }: ChatMess
               <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => onFeedback(message.id, 1)}
-                  className={`p-2 rounded-full transition-colors ${
+                  className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-colors ${
                     currentRating === 1
                       ? "text-harbor-primary"
                       : "text-harbor-text/25 hover:text-harbor-text/50"
@@ -117,7 +117,7 @@ export default function ChatMessage({ message, streaming, onFeedback }: ChatMess
                 </button>
                 <button
                   onClick={() => onFeedback(message.id, -1)}
-                  className={`p-2 rounded-full transition-colors ${
+                  className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-colors ${
                     currentRating === -1
                       ? "text-red-400"
                       : "text-harbor-text/25 hover:text-harbor-text/50"

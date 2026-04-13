@@ -414,7 +414,7 @@ export default function BulkImportModal({
                                 setEditValue(row.category);
                               }}
                               className="text-harbor-text/70 hover:text-harbor-accent cursor-pointer text-left"
-                              title="Click to edit category"
+                              aria-label={`Edit category for row ${i + 1}: ${row.category}`}
                             >
                               {row.category}
                             </button>

@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Modal from "../shared/Modal";
+import { useResizable } from "../../hooks/useResizable";
 
 export type AdminSection =
   | "overview"
@@ -191,28 +192,11 @@ function SidebarContent({
 
 export default function AdminSidebar(props: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(260);
-  const dragging = useRef(false);
-
-  const handleMouseDown = () => {
-    dragging.current = true;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragging.current) return;
-      const newWidth = Math.max(200, Math.min(480, e.clientX));
-      setSidebarWidth(newWidth);
-    };
-    const handleMouseUp = () => {
-      dragging.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  };
+  const { size: sidebarWidth, onPointerDown } = useResizable({
+    initial: 260,
+    min: 200,
+    max: 480,
+  });
 
   return (
     <>
@@ -222,7 +206,7 @@ export default function AdminSidebar(props: AdminSidebarProps) {
         className="md:hidden fixed top-3 left-3 z-40 p-2 rounded-xl bg-white shadow-lg border border-harbor-text/10 text-harbor-primary hover:bg-harbor-bg transition-colors cursor-pointer"
         aria-label="Open admin menu"
       >
-        <span className="material-symbols-outlined text-xl">menu</span>
+        <span className="material-symbols-outlined text-xl" aria-hidden="true">menu</span>
       </button>
 
       {/* Desktop sidebar — resizable */}
@@ -230,11 +214,14 @@ export default function AdminSidebar(props: AdminSidebarProps) {
         <div className="flex-1 overflow-hidden">
           <SidebarContent {...props} />
         </div>
-        {/* Resize handle */}
+        {/* Resize handle — wider hit area than visible bar */}
         <div
-          onMouseDown={handleMouseDown}
-          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-harbor-orange/30 active:bg-harbor-orange/50 transition-colors z-10"
-        />
+          onPointerDown={onPointerDown}
+          aria-hidden="true"
+          className="absolute top-0 right-0 -mr-2 w-4 h-full cursor-col-resize z-10 group"
+        >
+          <div className="absolute right-2 top-0 w-1 h-full group-hover:bg-harbor-orange/30 group-active:bg-harbor-orange/50 transition-colors" />
+        </div>
       </div>
 
       {/* Mobile drawer overlay */}

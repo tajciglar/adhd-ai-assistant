@@ -66,7 +66,7 @@ export default function ChatPage() {
             <button
               onClick={newConversation}
               className="text-slate-500 hover:bg-slate-100 rounded-lg p-1 cursor-pointer transition-colors"
-              title="New Chat"
+              aria-label="New Chat"
             >
               <span className="material-symbols-outlined text-lg">add</span>
             </button>

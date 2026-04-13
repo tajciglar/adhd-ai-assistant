@@ -164,7 +164,7 @@ export default function LibraryPage() {
         <div className="md:hidden flex items-center bg-gradient-to-b from-harbor-bg-alt to-white/80 backdrop-blur-md px-4 py-3 justify-between sticky top-0 z-10 border-b border-harbor-orange/10">
           <button
             onClick={handleBack}
-            className="text-slate-600 flex w-9 h-9 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 cursor-pointer transition-colors"
+            className="text-slate-600 flex w-11 h-11 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 cursor-pointer transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>

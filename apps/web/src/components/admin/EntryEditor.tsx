@@ -65,7 +65,7 @@ export default function EntryEditor({
                   onClick={handleClassify}
                   disabled={!canClassify || classifying}
                   className="text-xs text-harbor-text/40 hover:text-harbor-accent transition-colors disabled:opacity-30 cursor-pointer"
-                  title="Re-classify with AI"
+                  aria-label="Re-classify with AI"
                 >
                   {classifying ? "classifying…" : "re-classify"}
                 </button>

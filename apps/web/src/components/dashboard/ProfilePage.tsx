@@ -376,7 +376,7 @@ export default function ProfilePage() {
         <div className="md:hidden flex items-center bg-gradient-to-b from-harbor-bg-alt to-white/80 backdrop-blur-md border-b border-harbor-orange/10 px-4 py-3 justify-between sticky top-0 z-10">
           <button
             onClick={() => navigate(-1)}
-            className="flex w-9 h-9 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 cursor-pointer text-slate-700 transition-colors"
+            className="flex w-11 h-11 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 cursor-pointer text-slate-700 transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>

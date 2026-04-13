@@ -83,14 +83,14 @@ export default function DashboardPage() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => navigate("/resources")}
-              className="flex items-center justify-center w-9 h-9 text-harbor-primary/70 hover:text-harbor-primary hover:bg-harbor-primary/5 rounded-xl transition-colors"
+              className="flex items-center justify-center w-11 h-11 text-harbor-primary/70 hover:text-harbor-primary hover:bg-harbor-primary/5 rounded-xl transition-colors"
             >
               <span className="material-symbols-outlined text-[20px]">search</span>
             </button>
             {isAdmin && (
               <button
                 onClick={() => navigate("/admin")}
-                className="flex items-center justify-center w-9 h-9 text-harbor-primary/70 hover:text-harbor-primary hover:bg-harbor-primary/5 rounded-xl transition-colors"
+                className="flex items-center justify-center w-11 h-11 text-harbor-primary/70 hover:text-harbor-primary hover:bg-harbor-primary/5 rounded-xl transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
               </button>
@@ -185,10 +185,14 @@ export default function DashboardPage() {
           {/* ── Quick actions ── */}
           {hasConversations && (
             <div className="px-4 md:px-8 mb-6">
-              <div className="bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm cursor-pointer hover:bg-harbor-bg-alt/80 transition-colors" onClick={() => navigate("/chat")}>
+              <button
+                onClick={() => navigate("/chat")}
+                className="w-full text-left bg-harbor-bg-alt rounded-xl px-4 py-3 flex items-center gap-3 border border-harbor-orange/10 shadow-sm cursor-pointer hover:bg-harbor-bg-alt/80 transition-colors"
+              >
                 <span
                   className="material-symbols-outlined text-harbor-orange text-[20px]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
+                  aria-hidden="true"
                 >
                   chat_bubble
                 </span>
@@ -196,8 +200,8 @@ export default function DashboardPage() {
                   <p className="text-sm font-semibold text-slate-900">Continue your conversation</p>
                   <p className="text-xs text-slate-400">Pick up where you left off with Harbor</p>
                 </div>
-                <span className="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
-              </div>
+                <span className="material-symbols-outlined text-slate-300 text-[18px]" aria-hidden="true">chevron_right</span>
+              </button>
             </div>
           )}
 

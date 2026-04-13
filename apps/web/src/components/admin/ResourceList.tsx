@@ -262,7 +262,7 @@ function FolderSidebar({
         </p>
         <button
           onClick={onCreateFolder}
-          title="Add folder"
+          aria-label="Add folder"
           className="w-6 h-6 flex items-center justify-center rounded hover:bg-harbor-accent/10 text-harbor-accent/60 hover:text-harbor-accent transition-colors cursor-pointer"
         >
           <span className="material-symbols-outlined text-base">add</span>
@@ -510,7 +510,7 @@ export default function ResourceList({
             <button
               onClick={onBulkUpload}
               className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium border border-harbor-accent/30 text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
-              title="Bulk Upload"
+              aria-label="Bulk Upload"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">
@@ -522,7 +522,7 @@ export default function ResourceList({
             <button
               onClick={onUpload}
               className="px-2 md:px-4 py-2 rounded-lg text-sm font-medium bg-harbor-orange text-white hover:bg-harbor-orange/90 transition-colors cursor-pointer"
-              title="Upload PDF"
+              aria-label="Upload PDF"
             >
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base">

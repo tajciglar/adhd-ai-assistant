@@ -115,7 +115,7 @@ export default function ChildProfilePage() {
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
           <Mascot size={100} mood="waving" />
           <h2 className="text-xl font-bold text-harbor-primary font-display mt-4">No Child Profile Yet</h2>
-          <p className="text-slate-500 text-sm mt-2 max-w-sm">
+          <p className="text-harbor-muted text-sm mt-2 max-w-sm">
             Complete the ADHD assessment quiz to unlock your child's personalized profile and strategies.
           </p>
         </div>
@@ -198,7 +198,7 @@ export default function ChildProfilePage() {
                   if (!trait) return null;
                   const pct = Math.round((score / maxScore) * 100);
                   return (
-                    <div key={key} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                    <div key={key} className="bg-white rounded-xl p-4 border border-harbor-border-soft shadow-sm">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span
@@ -211,7 +211,7 @@ export default function ChildProfilePage() {
                         </div>
                         <span className="text-xs font-bold text-harbor-text/50">{score.toFixed(1)}/{maxScore}</span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2">
+                      <div className="w-full bg-harbor-border rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${trait.color} transition-all`}
                           style={{ width: `${pct}%` }}
@@ -227,7 +227,7 @@ export default function ChildProfilePage() {
             {report?.aboutChild && (
               <section className="mb-8">
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">About {childName}</h3>
-                <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
+                <div className="bg-white rounded-xl p-5 border border-harbor-border-soft shadow-sm">
                   <p className="text-sm text-harbor-text leading-relaxed">{report.aboutChild}</p>
                   {report.whatHelps?.aboutChild && <WhatHelpsBox text={report.whatHelps.aboutChild} />}
                 </div>
@@ -259,7 +259,7 @@ export default function ChildProfilePage() {
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">
                   The {archetypeName || "Archetype"}
                 </h3>
-                <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
+                <div className="bg-white rounded-xl p-5 border border-harbor-border-soft shadow-sm">
                   <p className="text-sm text-harbor-text leading-relaxed">{report.animalDescription}</p>
                 </div>
               </section>
@@ -271,14 +271,14 @@ export default function ChildProfilePage() {
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">How {childName}'s Brain Works</h3>
                 <div className="space-y-2">
                   {report.brainSections.map((section, i) => (
-                    <div key={i} className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div key={i} className="bg-white rounded-xl border border-harbor-border-soft shadow-sm overflow-hidden">
                       <button
                         onClick={() => setExpandedBrain(expandedBrain === i ? null : i)}
-                        className="w-full flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                        className="w-full flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-harbor-subtle transition-colors"
                       >
                         <span className="text-sm font-semibold text-harbor-text">{section.title}</span>
                         <span
-                          className="material-symbols-outlined text-slate-400 text-[20px] transition-transform"
+                          className="material-symbols-outlined text-harbor-muted text-[20px] transition-transform"
                           style={{ transform: expandedBrain === i ? "rotate(180deg)" : "" }}
                         >
                           expand_more
@@ -306,7 +306,7 @@ export default function ChildProfilePage() {
                     const info = DAY_ICONS[key];
                     if (!info || !text) return null;
                     return (
-                      <div key={key} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                      <div key={key} className="bg-white rounded-xl p-4 border border-harbor-border-soft shadow-sm">
                         <div className="flex items-center gap-2 mb-2">
                           <span
                             className={`material-symbols-outlined ${info.color} text-[18px]`}
@@ -331,11 +331,11 @@ export default function ChildProfilePage() {
             {(report?.drains?.length || report?.fuels?.length) ? (
               <section className="mb-8">
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">Energy Profile</h3>
-                <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-                  <div className="grid grid-cols-2 divide-x divide-slate-100">
+                <div className="bg-white rounded-xl border border-harbor-border-soft shadow-sm overflow-hidden">
+                  <div className="grid grid-cols-2 divide-x divide-harbor-border-soft">
                     {/* Drains column */}
                     <div>
-                      <div className="flex items-center gap-1.5 px-4 py-3 bg-rose-50 border-b border-slate-100">
+                      <div className="flex items-center gap-1.5 px-4 py-3 bg-rose-50 border-b border-harbor-border-soft">
                         <span
                           className="material-symbols-outlined text-rose-500 text-[16px]"
                           style={{ fontVariationSettings: "'FILL' 1" }}
@@ -344,7 +344,7 @@ export default function ChildProfilePage() {
                         </span>
                         <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">Energy Drains</span>
                       </div>
-                      <div className="divide-y divide-slate-50">
+                      <div className="divide-y divide-harbor-border-soft">
                         {(report?.drains ?? []).map((d, i) => (
                           <div key={i} className="flex items-start gap-2 px-4 py-2.5">
                             <span className="text-base leading-none mt-0.5">❌</span>
@@ -355,7 +355,7 @@ export default function ChildProfilePage() {
                     </div>
                     {/* Fuels column */}
                     <div>
-                      <div className="flex items-center gap-1.5 px-4 py-3 bg-emerald-50 border-b border-slate-100">
+                      <div className="flex items-center gap-1.5 px-4 py-3 bg-emerald-50 border-b border-harbor-border-soft">
                         <span
                           className="material-symbols-outlined text-emerald-500 text-[16px]"
                           style={{ fontVariationSettings: "'FILL' 1" }}
@@ -364,7 +364,7 @@ export default function ChildProfilePage() {
                         </span>
                         <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Energy Fuels</span>
                       </div>
-                      <div className="divide-y divide-slate-50">
+                      <div className="divide-y divide-harbor-border-soft">
                         {(report?.fuels ?? []).map((f, i) => (
                           <div key={i} className="flex items-start gap-2 px-4 py-2.5">
                             <span className="text-base leading-none mt-0.5">✅</span>
@@ -382,7 +382,7 @@ export default function ChildProfilePage() {
             {report?.overwhelm && (
               <section className="mb-8">
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">When {childName} is Overwhelmed</h3>
-                <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
+                <div className="bg-white rounded-xl p-5 border border-harbor-border-soft shadow-sm">
                   <p className="text-sm text-harbor-text leading-relaxed">{report.overwhelm}</p>
                   {report.whatHelps?.overwhelm && <WhatHelpsBox text={report.whatHelps.overwhelm} />}
                 </div>
@@ -395,20 +395,20 @@ export default function ChildProfilePage() {
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">
                   What {childName} Needs to Hear
                 </h3>
-                <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-                  <div className="grid grid-cols-2 divide-x divide-slate-100">
-                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">When…</span>
+                <div className="bg-white rounded-xl border border-harbor-border-soft shadow-sm overflow-hidden">
+                  <div className="grid grid-cols-2 divide-x divide-harbor-border-soft">
+                    <div className="px-4 py-2.5 bg-harbor-subtle border-b border-harbor-border-soft">
+                      <span className="text-xs font-bold text-harbor-muted uppercase tracking-wider">When…</span>
                     </div>
-                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                    <div className="px-4 py-2.5 bg-harbor-subtle border-b border-harbor-border-soft">
                       <span className="text-xs font-bold text-harbor-primary uppercase tracking-wider">Say…</span>
                     </div>
                   </div>
-                  <div className="divide-y divide-slate-50">
+                  <div className="divide-y divide-harbor-border-soft">
                     {report.affirmations
                       .filter((n) => n.when || n.say)
                       .map((item, i) => (
-                        <div key={i} className="grid grid-cols-2 divide-x divide-slate-100">
+                        <div key={i} className="grid grid-cols-2 divide-x divide-harbor-border-soft">
                           <div className="px-4 py-3">
                             <p className="text-xs text-harbor-text/60 leading-relaxed">{item.when}</p>
                           </div>
@@ -428,7 +428,7 @@ export default function ChildProfilePage() {
                 <h3 className="text-base font-bold text-harbor-primary font-display mb-3">Communication Guide</h3>
                 <div className="space-y-3">
                   {report.doNotSay.map((item, i) => (
-                    <div key={i} className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div key={i} className="bg-white rounded-xl border border-harbor-border-soft shadow-sm overflow-hidden">
                       {item.when && (
                         <div className="px-4 py-2.5 bg-harbor-primary border-b border-harbor-primary/80">
                           <span className="text-xs font-bold text-white uppercase tracking-wider">{item.when}</span>
@@ -439,7 +439,7 @@ export default function ChildProfilePage() {
                           <p className="text-xs font-semibold text-rose-500 mb-0.5">Instead of:</p>
                           <p className="text-sm text-harbor-text/70 line-through">{item.insteadOf}</p>
                         </div>
-                        <div className="w-px bg-slate-100" />
+                        <div className="w-px bg-harbor-border" />
                         <div className="flex-1">
                           <p className="text-xs font-semibold text-emerald-500 mb-0.5">Try this:</p>
                           <p className="text-sm text-harbor-text font-medium">{item.tryThis}</p>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReportTemplateData, ReportTemplateRecord } from "../../types/admin";
 import { normalizeReportTemplateData } from "../../lib/reportTemplate";
+import Modal from "../shared/Modal";
 
 interface ReportTemplateEditorProps {
   template: ReportTemplateRecord | null;
@@ -280,7 +281,7 @@ export default function ReportTemplateEditor({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+    <Modal onClose={onCancel} ariaLabel={title} className="p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-5xl w-full max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="px-6 py-4 border-b border-harbor-text/10 sticky top-0 bg-white z-10">
@@ -846,6 +847,6 @@ export default function ReportTemplateEditor({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
