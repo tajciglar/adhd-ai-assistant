@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import type { TestQueryResult } from "../../types/admin";
+import Modal from "../shared/Modal";
 
 interface TestQueryModalProps {
   results: TestQueryResult | null;
@@ -47,7 +48,7 @@ export default function TestQueryModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+    <Modal onClose={onClose} ariaLabel="Check AI Answer" className="p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b border-harbor-text/10">
           <h3 className="text-lg font-semibold text-harbor-text">Check AI Answer</h3>
@@ -64,6 +65,7 @@ export default function TestQueryModal({
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type a question a parent might ask..."
+              aria-label="Test query"
               className="flex-1 px-4 py-2.5 rounded-xl border border-harbor-text/15 text-sm focus:outline-none focus:border-harbor-accent/40 placeholder:text-harbor-text/30"
             />
             <button
@@ -206,6 +208,6 @@ export default function TestQueryModal({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

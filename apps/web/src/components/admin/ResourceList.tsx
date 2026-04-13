@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import type { Resource } from "../../types/admin";
+import Modal from "../shared/Modal";
 
 interface ResourceListProps {
   resources: Resource[];
@@ -96,10 +97,7 @@ function EditModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <Modal onClose={onClose} ariaLabel={`Edit resource: ${resource.title}`}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
         <div className="px-6 py-4 border-b border-harbor-text/10 flex items-center justify-between">
           <div>
@@ -112,9 +110,10 @@ function EditModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close edit resource"
             className="text-harbor-text/40 hover:text-harbor-text/70 p-1 rounded-lg hover:bg-harbor-bg transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-xl" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -218,7 +217,7 @@ function EditModal({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -656,19 +655,19 @@ export default function ResourceList({
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           onClick={() => setEditingResource(resource)}
+                          aria-label={`Edit ${resource.title}`}
                           className="p-1.5 rounded-lg text-harbor-accent/50 hover:text-harbor-accent hover:bg-harbor-accent/5 transition-colors cursor-pointer"
-                          title="Edit"
                         >
-                          <span className="material-symbols-outlined text-lg">
+                          <span className="material-symbols-outlined text-lg" aria-hidden="true">
                             edit
                           </span>
                         </button>
                         <button
                           onClick={() => setConfirmingDeleteId(resource.id)}
+                          aria-label={`Delete ${resource.title}`}
                           className="p-1.5 rounded-lg text-harbor-error/50 hover:text-harbor-error hover:bg-harbor-error/5 transition-colors cursor-pointer"
-                          title="Delete"
                         >
-                          <span className="material-symbols-outlined text-lg">
+                          <span className="material-symbols-outlined text-lg" aria-hidden="true">
                             delete
                           </span>
                         </button>

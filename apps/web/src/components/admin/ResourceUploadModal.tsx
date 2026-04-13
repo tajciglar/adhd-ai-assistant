@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import Modal from "../shared/Modal";
 
 interface ResourceUploadModalProps {
   uploading: boolean;
@@ -71,7 +72,7 @@ export default function ResourceUploadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <Modal onClose={onClose} ariaLabel="Upload PDF Resource">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
         <div className="px-6 py-4 border-b border-harbor-text/10">
           <h2 className="text-lg font-bold text-harbor-primary font-display">
@@ -85,12 +86,13 @@ export default function ResourceUploadModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* File picker */}
           <div>
-            <label className="block text-sm font-medium text-harbor-text mb-1">
+            <label htmlFor="resource-file" className="block text-sm font-medium text-harbor-text mb-1">
               PDF File
             </label>
-            <div
+            <button
+              type="button"
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-harbor-text/15 rounded-xl px-4 py-6 text-center cursor-pointer hover:border-harbor-orange/30 transition-colors"
+              className="w-full border-2 border-dashed border-harbor-text/15 rounded-xl px-4 py-6 text-center cursor-pointer hover:border-harbor-orange/30 transition-colors"
             >
               {file ? (
                 <p className="text-sm text-harbor-text">
@@ -104,9 +106,10 @@ export default function ResourceUploadModal({
                   Click to select a PDF file (max 20 MB)
                 </p>
               )}
-            </div>
+            </button>
             <input
               ref={fileRef}
+              id="resource-file"
               type="file"
               accept=".pdf,application/pdf"
               onChange={handleFileChange}
@@ -116,10 +119,11 @@ export default function ResourceUploadModal({
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-harbor-text mb-1">
+            <label htmlFor="resource-title" className="block text-sm font-medium text-harbor-text mb-1">
               Title
             </label>
             <input
+              id="resource-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -130,13 +134,14 @@ export default function ResourceUploadModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-harbor-text mb-1">
+            <label htmlFor="resource-description" className="block text-sm font-medium text-harbor-text mb-1">
               Description{" "}
               <span className="font-normal text-harbor-text/40">
                 (helps the AI recommend this resource)
               </span>
             </label>
             <textarea
+              id="resource-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
@@ -147,12 +152,13 @@ export default function ResourceUploadModal({
 
           {/* Category — dropdown with "create new" option */}
           <div>
-            <label className="block text-sm font-medium text-harbor-text mb-1">
+            <label htmlFor="resource-category" className="block text-sm font-medium text-harbor-text mb-1">
               Folder / Category
             </label>
             {isCustom ? (
               <div className="flex gap-2">
                 <input
+                  id="resource-category"
                   type="text"
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
@@ -170,6 +176,7 @@ export default function ResourceUploadModal({
               </div>
             ) : (
               <select
+                id="resource-category"
                 value={category}
                 onChange={(e) => {
                   if (e.target.value === "__new__") {
@@ -213,6 +220,6 @@ export default function ResourceUploadModal({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

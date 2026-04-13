@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import Modal from "../shared/Modal";
 
 interface ParsedEntry {
   category: string;
@@ -221,7 +222,7 @@ export default function SmartImportModal({
     });
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+    <Modal onClose={onClose} ariaLabel="Smart Import" className="p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b border-harbor-text/10">
           <h3 className="text-lg font-semibold text-harbor-text">
@@ -236,7 +237,8 @@ export default function SmartImportModal({
           {step === "input" ? (
             <div className="space-y-4">
               {/* File upload zone */}
-              <div
+              <button
+                type="button"
                 onDragOver={(e) => {
                   e.preventDefault();
                   setDragOver(true);
@@ -244,7 +246,8 @@ export default function SmartImportModal({
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                aria-label="Upload document"
+                className={`w-full border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
                   dragOver
                     ? "border-harbor-accent bg-harbor-accent/5"
                     : fileName
@@ -261,13 +264,16 @@ export default function SmartImportModal({
                 />
                 {fileName ? (
                   <div className="flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-green-600 text-xl">
+                    <span className="material-symbols-outlined text-green-600 text-xl" aria-hidden="true">
                       description
                     </span>
                     <span className="text-sm font-medium text-harbor-text">
                       {fileName}
                     </span>
-                    <button
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Clear selected file"
                       onClick={(e) => {
                         e.stopPropagation();
                         setFileName("");
@@ -275,14 +281,24 @@ export default function SmartImportModal({
                         if (fileInputRef.current)
                           fileInputRef.current.value = "";
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFileName("");
+                          setDocumentText("");
+                          if (fileInputRef.current)
+                            fileInputRef.current.value = "";
+                        }
+                      }}
                       className="text-harbor-text/30 hover:text-red-500 ml-1 cursor-pointer"
                     >
                       ×
-                    </button>
+                    </span>
                   </div>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-harbor-text/25 text-3xl mb-2">
+                    <span className="material-symbols-outlined text-harbor-text/25 text-3xl mb-2" aria-hidden="true">
                       upload_file
                     </span>
                     <p className="text-sm text-harbor-text/50">
@@ -295,14 +311,15 @@ export default function SmartImportModal({
                     </p>
                   </>
                 )}
-              </div>
+              </button>
 
               <div>
-                <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">
+                <label htmlFor="smart-module-name" className="block text-sm font-medium text-harbor-text/70 mb-1.5">
                   Category / Module Name{" "}
                   <span className="text-harbor-text/30">(optional — AI will auto-classify if empty)</span>
                 </label>
                 <input
+                  id="smart-module-name"
                   type="text"
                   value={moduleName}
                   onChange={(e) => setModuleName(e.target.value)}
@@ -312,10 +329,11 @@ export default function SmartImportModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">
+                <label htmlFor="smart-document-text" className="block text-sm font-medium text-harbor-text/70 mb-1.5">
                   Document Content
                 </label>
                 <textarea
+                  id="smart-document-text"
                   value={documentText}
                   onChange={(e) => {
                     setDocumentText(e.target.value);
@@ -499,7 +517,7 @@ export default function SmartImportModal({
                           <button
                             onClick={() => handleRemoveEntry(index)}
                             className="text-harbor-text/25 hover:text-red-500 transition-colors cursor-pointer text-lg leading-none"
-                            title="Remove this entry"
+                            aria-label="Remove this entry"
                           >
                             &times;
                           </button>
@@ -553,6 +571,6 @@ export default function SmartImportModal({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

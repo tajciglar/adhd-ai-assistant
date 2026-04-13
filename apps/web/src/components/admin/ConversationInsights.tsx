@@ -59,15 +59,17 @@ function formatTopic(topic: string): string {
 export default function ConversationInsights() {
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
 
   const fetchInsights = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await api.get(`/api/admin/conversation-insights?days=${days}`);
       setData(result as InsightsData);
     } catch (err) {
-      void err; // error displayed via empty data state
+      setError(err instanceof Error ? err.message : "Failed to load insights");
     } finally {
       setLoading(false);
     }
@@ -81,6 +83,20 @@ export default function ConversationInsights() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-6 h-6 border-2 border-harbor-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20" role="alert">
+        <p className="text-red-500 text-sm font-medium">{error}</p>
+        <button
+          onClick={fetchInsights}
+          className="mt-3 text-xs text-harbor-accent hover:underline cursor-pointer"
+        >
+          Try again
+        </button>
       </div>
     );
   }

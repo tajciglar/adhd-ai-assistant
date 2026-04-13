@@ -347,14 +347,16 @@ export default function EntryList({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title, category, or answer text..."
+              aria-label="Search entries"
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-harbor-text/15 text-sm focus:outline-none focus:ring-2 focus:ring-harbor-accent/30 focus:border-harbor-accent/40 bg-white placeholder:text-harbor-text/30"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-harbor-text/30 hover:text-harbor-text/60 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-lg">close</span>
+                <span className="material-symbols-outlined text-lg" aria-hidden="true">close</span>
               </button>
             )}
           </div>
@@ -384,20 +386,24 @@ export default function EntryList({
           <div className="divide-y divide-harbor-text/5">
             {filteredEntries.map((entry) => (
               <div key={entry.id}>
-                <div
-                  className="px-6 py-4 hover:bg-harbor-bg/50 transition-colors group cursor-pointer"
-                  onClick={() => onEdit(entry)}
-                >
-                  <div className="flex items-start justify-between">
+                <div className="px-6 py-4 hover:bg-harbor-bg/50 transition-colors group relative">
+                  <button
+                    type="button"
+                    className="absolute inset-0 w-full h-full text-left cursor-pointer"
+                    onClick={() => onEdit(entry)}
+                    aria-label={`Edit entry: ${entry.title}`}
+                  />
+                  <div className="flex items-start justify-between relative pointer-events-none">
                     <div className="flex-1 min-w-0 pr-4">
                       <h4 className="text-sm font-medium text-harbor-text truncate">{entry.title}</h4>
                       <p className="text-xs text-harbor-text/40 mt-1 line-clamp-2">{entry.content}</p>
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmingDeleteId(entry.id); }}
-                      className="opacity-0 group-hover:opacity-100 shrink-0 p-1.5 rounded hover:bg-harbor-error/10 text-harbor-text/30 hover:text-harbor-error transition-all cursor-pointer"
+                      aria-label={`Delete entry: ${entry.title}`}
+                      className="md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 shrink-0 p-1.5 rounded hover:bg-harbor-error/10 text-harbor-text/30 hover:text-harbor-error transition-all cursor-pointer pointer-events-auto relative z-10"
                     >
-                      <span className="material-symbols-outlined text-lg">delete</span>
+                      <span className="material-symbols-outlined text-lg" aria-hidden="true">delete</span>
                     </button>
                   </div>
                 </div>

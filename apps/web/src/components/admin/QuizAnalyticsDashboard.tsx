@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ASSESSMENT_CATEGORIES } from "@adhd-ai-assistant/shared";
 import { api } from "../../lib/api";
 
@@ -171,7 +171,10 @@ export default function QuizAnalyticsDashboard() {
   }
 
   const summary = analytics?.funnelSummary;
-  const maxViews = Math.max(...(analytics?.stepDropoff.map((s) => s.views) ?? [1]));
+  const maxViews = useMemo(
+    () => Math.max(...(analytics?.stepDropoff.map((s) => s.views) ?? [1])),
+    [analytics],
+  );
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8">

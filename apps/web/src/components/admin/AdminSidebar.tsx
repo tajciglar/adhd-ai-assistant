@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import Modal from "../shared/Modal";
 
 export type AdminSection =
   | "overview"
@@ -82,9 +83,10 @@ function SidebarContent({
         {onCloseMobile && (
           <button
             onClick={onCloseMobile}
+            aria-label="Close admin menu"
             className="md:hidden p-1 rounded-lg text-harbor-text/40 hover:text-harbor-text hover:bg-harbor-bg transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-xl" aria-hidden="true">close</span>
           </button>
         )}
       </div>
@@ -237,20 +239,14 @@ export default function AdminSidebar(props: AdminSidebarProps) {
 
       {/* Mobile drawer overlay */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40 transition-opacity"
-            onClick={() => setMobileOpen(false)}
-          />
-          {/* Drawer */}
-          <div className="relative z-10 animate-slide-in-left">
+        <Modal onClose={() => setMobileOpen(false)} ariaLabel="Admin menu" className="md:hidden items-stretch justify-start">
+          <div className="animate-slide-in-left h-full">
             <SidebarContent
               {...props}
               onCloseMobile={() => setMobileOpen(false)}
             />
           </div>
-        </div>
+        </Modal>
       )}
     </>
   );

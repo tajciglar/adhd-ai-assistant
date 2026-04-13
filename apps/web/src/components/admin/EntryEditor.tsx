@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import type { KnowledgeEntry } from "../../types/admin";
+import Modal from "../shared/Modal";
 
 interface EntryEditorProps {
   entry: KnowledgeEntry | null; // null = create new
@@ -43,7 +44,7 @@ export default function EntryEditor({
   }, [onClassify, canClassify, title, content]);
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+    <Modal onClose={onCancel} ariaLabel={entry ? "Edit Entry" : "New Entry"} className="p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-harbor-text/10">
           <h3 className="text-lg font-semibold text-harbor-text">
@@ -73,10 +74,11 @@ export default function EntryEditor({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">
+            <label htmlFor="entry-title" className="block text-sm font-medium text-harbor-text/70 mb-1.5">
               Title / Question
             </label>
             <input
+              id="entry-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -86,10 +88,11 @@ export default function EntryEditor({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-harbor-text/70 mb-1.5">
+            <label htmlFor="entry-content" className="block text-sm font-medium text-harbor-text/70 mb-1.5">
               Content
             </label>
             <textarea
+              id="entry-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="The detailed content or answer..."
@@ -121,6 +124,6 @@ export default function EntryEditor({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

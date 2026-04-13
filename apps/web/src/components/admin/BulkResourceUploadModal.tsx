@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { api } from "../../lib/api";
+import Modal from "../shared/Modal";
 
 interface PreparedFile {
   filename: string;
@@ -111,10 +112,7 @@ export default function BulkResourceUploadModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <Modal onClose={onClose} ariaLabel="Bulk Upload PDFs">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-harbor-text/10 flex items-center justify-between shrink-0">
@@ -132,9 +130,10 @@ export default function BulkResourceUploadModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close bulk upload"
             className="text-harbor-text/40 hover:text-harbor-text/60 p-1 rounded-lg hover:bg-harbor-bg transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -143,11 +142,13 @@ export default function BulkResourceUploadModal({
           {/* Stage: Select Files */}
           {stage === "select" && (
             <div className="space-y-4">
-              <div
+              <button
+                type="button"
                 onClick={() => fileRef.current?.click()}
-                className="border-2 border-dashed border-harbor-text/15 rounded-xl px-6 py-10 text-center cursor-pointer hover:border-harbor-accent/30 transition-colors"
+                aria-label="Select PDF files"
+                className="w-full border-2 border-dashed border-harbor-text/15 rounded-xl px-6 py-10 text-center cursor-pointer hover:border-harbor-accent/30 transition-colors"
               >
-                <span className="material-symbols-outlined text-harbor-text/20 text-4xl mb-2 block">
+                <span className="material-symbols-outlined text-harbor-text/20 text-4xl mb-2 block" aria-hidden="true">
                   upload_file
                 </span>
                 <p className="text-sm text-harbor-text/60">
@@ -156,7 +157,7 @@ export default function BulkResourceUploadModal({
                 <p className="text-xs text-harbor-text/30 mt-1">
                   Max 20 MB per file
                 </p>
-              </div>
+              </button>
               <input
                 ref={fileRef}
                 type="file"
@@ -359,6 +360,6 @@ export default function BulkResourceUploadModal({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import type { AdminImportJob } from "../../types/admin";
+import Modal from "../shared/Modal";
 
 interface ParsedRow {
   category: string;
@@ -166,7 +167,7 @@ export default function BulkImportModal({
     : 0;
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+    <Modal onClose={onClose} ariaLabel="Import AI Answers" className="p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b border-harbor-text/10">
           <h3 className="text-lg font-semibold text-harbor-text">
@@ -316,6 +317,7 @@ export default function BulkImportModal({
                             autoFocus
                             value={categoryRenameValue}
                             onChange={(e) => setCategoryRenameValue(e.target.value)}
+                            aria-label={`Rename category ${cat}`}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 const next = categoryRenameValue.trim();
@@ -469,6 +471,6 @@ export default function BulkImportModal({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

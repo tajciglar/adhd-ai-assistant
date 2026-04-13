@@ -47,7 +47,7 @@ export default function ConversationCategorySidebar({
         <button
           onClick={() => setExpanded((e) => !e)}
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-harbor-primary/10 text-harbor-primary/50 transition-colors ml-auto"
-          title={expanded ? "Collapse" : "Expand topics"}
+          aria-label={expanded ? "Collapse topics" : "Expand topics"}
         >
           <span className="material-symbols-outlined text-[18px]">
             {expanded ? "chevron_right" : "chevron_left"}
@@ -66,7 +66,7 @@ export default function ConversationCategorySidebar({
               ? "bg-harbor-primary/10 text-harbor-primary"
               : "hover:bg-harbor-primary/5 text-slate-500"
           }`}
-          title="All conversations"
+          aria-label="All conversations"
         >
           <div
             className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg ${
@@ -108,7 +108,7 @@ export default function ConversationCategorySidebar({
                   ? "bg-harbor-primary/10 text-harbor-primary"
                   : "hover:bg-harbor-primary/5 text-slate-500"
               }`}
-              title={name}
+              aria-label={`${name} (${count})`}
             >
               <div
                 className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg ${

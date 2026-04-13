@@ -1,21 +1,7 @@
 import { useState } from "react";
 import { useMemories, type Memory } from "../../hooks/useMemories";
-
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
-}
+import { timeAgo } from "../../lib/format";
+import Modal from "../shared/Modal";
 
 function MemoryCard({
   memory,
@@ -67,10 +53,10 @@ function MemoryCard({
         ) : (
           <button
             onClick={() => setConfirmDelete(true)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-rose-500 p-0.5 rounded"
-            title="Remove memory"
+            className="md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity text-slate-300 hover:text-rose-500 p-0.5 rounded"
+            aria-label="Remove memory"
           >
-            <span className="material-symbols-outlined text-[18px]">close</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
           </button>
         )}
       </div>
@@ -83,10 +69,7 @@ export default function MemoriesModal({ onClose }: { onClose: () => void }) {
   const [confirmClearAll, setConfirmClearAll] = useState(false);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <Modal onClose={onClose} ariaLabel="Harbor's Memory">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
@@ -108,9 +91,10 @@ export default function MemoriesModal({ onClose }: { onClose: () => void }) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Close memories"
             className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -191,6 +175,6 @@ export default function MemoriesModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
