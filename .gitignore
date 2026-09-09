@@ -24,3 +24,5 @@ yarn-error.log*
 .claude/promptfoo/.env
 promptfoo/.env
 promptfoo/.env
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
